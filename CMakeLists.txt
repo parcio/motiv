@@ -33,6 +33,7 @@ set(PROJECT_SOURCES
         src/models/SubTrace.cpp
         src/models/UITrace.cpp
         src/models/ViewSettings.cpp
+        src/models/ColorList.cpp
         src/models/communication/BlockingP2PCommunicationEvent.cpp
         src/models/communication/BlockingReceivEevent.cpp
         src/models/communication/BlockingSendEvent.cpp
@@ -42,15 +43,16 @@ set(PROJECT_SOURCES
         src/models/communication/NonBlockingReceiveEvent.cpp
         src/models/communication/NonBlockingSendEvent.cpp
         src/models/communication/RequestCancelledEvent.cpp
+        src/ui/ColorGenerator.cpp
         src/ui/ScrollSynchronizer.cpp
         src/ui/TimeUnit.cpp
         src/ui/TraceDataProxy.cpp
-        src/ui/views/CollectiveCommunicationIndicator.cpp
+        src/ui/views/CollectiveCommunicationIndicator.cpp     
         src/ui/views/CommunicationIndicator.cpp
         src/ui/views/GenericIndicator.cpp
         src/ui/views/SlotIndicator.cpp
         src/ui/views/TimelineView.cpp
-        src/ui/views/TraceOverviewTimelineView.cpp
+        src/ui/views/TraceOverviewTimelineView.cpp        
         src/ui/widgets/InformationDock.cpp
         src/ui/widgets/TimeInputField.cpp
         src/ui/widgets/TimeUnitLabel.cpp
@@ -71,6 +73,7 @@ set(PROJECT_SOURCES
         )
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+
 
 target_compile_options(${PROJECT_NAME} PRIVATE
         -DQT_NO_KEYWORDS

@@ -22,6 +22,7 @@
 #include <QGraphicsView>
 
 #include "src/ui/TraceDataProxy.hpp"
+//#include "src/ui/views/ColorGenerator.hpp"
 
 /**
  * @brief The main view component rendering the trace
@@ -73,6 +74,8 @@ private:
 
 private:
     TraceDataProxy *data = nullptr;
+  //  ColorGenerator colorgenerator;
+    
 };
 
 

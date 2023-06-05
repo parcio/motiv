@@ -20,6 +20,7 @@
 #include "src/ui/views/SlotIndicator.hpp"
 #include "src/ui/Constants.hpp"
 #include "CollectiveCommunicationIndicator.hpp"
+#include "src/ui/ColorGenerator.hpp"
 
 #include <QGraphicsRectItem>
 #include <QApplication>
@@ -32,7 +33,7 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
     this->setStyleSheet("background: transparent");
     this->setScene(scene);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
+    
     // @formatter:off
     connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
     connect(this->data, SIGNAL(filterChanged(Filter)), this, SLOT(updateView()));
@@ -72,7 +73,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             auto regionNameStr = regionName.str();
             auto startTime = slot->startTime.count();
             auto endTime = slot->endTime.count();
-
+           
 
             // Ensures slots starting before `begin` (like main) are considered to start at begin
             auto effectiveStartTime = qMax(begin, startTime);
@@ -90,7 +91,10 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             rectItem->setToolTip(regionNameStr.c_str());
 
             // Determine color based on name
-            QColor rectColor;
+            QColor rectColor = slot->color;
+            rectItem->setZValue(slot->priority);
+            
+            /*
             switch (slot->getKind()) {
                 case ::MPI:
                     rectColor = colors::COLOR_SLOT_MPI;
@@ -107,6 +111,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                     rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 0);
                     break;
             }
+            */
             rectItem->setBrush(rectColor);
             scene->addItem(rectItem);
         }

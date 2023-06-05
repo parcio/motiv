@@ -97,7 +97,7 @@ void MainWindow::createMenus() {
         openRecentMenu->addAction(clearRecentMenuAction);
         connect(clearRecentMenuAction, &QAction::triggered, [&] {
             AppSettings::getInstance().recentlyOpenedFilesClear();
-            openRecentMenu->clear();
+            //openRecentMenu->clear();   
         });
     }
 

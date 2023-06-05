@@ -17,8 +17,10 @@
  */
 #include "TraceOverviewTimelineView.hpp"
 #include "src/ui/views/CommunicationIndicator.hpp"
+#include "src/ui/ColorGenerator.hpp"
 #include "src/ui/Constants.hpp"
 #include "src/models/UITrace.hpp"
+
 
 #include <QGraphicsRectItem>
 #include <QApplication>
@@ -67,7 +69,10 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
             auto rectItem = scene->addRect(rect);
 
             // Determine color based on name
-            QColor rectColor;
+            QColor rectColor = slot->color;
+            rectItem->setZValue(slot->priority);
+            
+            /*
             switch (slot->getKind()) {
                 case ::MPI:
                     rectColor = colors::COLOR_SLOT_MPI;
@@ -79,10 +84,12 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
                     break;
                 case ::None:
                 case ::Plain:
+                default:
                     rectColor = colors::COLOR_SLOT_PLAIN;
                     rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 0);
                     break;
             }
+            */
 
             rectItem->setBrush(rectColor);
         }

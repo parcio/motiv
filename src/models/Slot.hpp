@@ -19,9 +19,11 @@
 #define MOTIV_SLOT_HPP
 
 #include <otf2xx/otf2.hpp>
+#include <QColor>
 #include "Builder.hpp"
 #include "src/types.hpp"
 #include "TimedElement.hpp"
+
 
 enum SlotKind {
     None    = 0b0000,
@@ -35,7 +37,7 @@ enum SlotKind {
  * location.
  */
 class Slot : public TimedElement {
-public:
+public:   
     /**
      * @brief Creates a new instance of the Slot class
      *
@@ -68,6 +70,13 @@ public:
      * @brief Region the slot occurred in. For example, the source file and line.
      */
     otf2::definition::region *region;
+    
+     /**
+     * @brief Color of the slot in the interface.
+     */
+    QColor color;    
+
+    int priority;
 
     /**
      *
@@ -87,7 +96,6 @@ public:
      * @copydoc TimedElement::getStartTime()
      */
     [[nodiscard]] types::TraceTime getEndTime() const override;
-
 
     BUILDER(Slot,
             BUILDER_FIELD(otf2::chrono::duration, start)
