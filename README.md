@@ -16,7 +16,7 @@ The code documentation is generated and available at [parcio.github.io/motiv](ht
 
 ## Build
 
-1. Clone this repository: `git clone https://github.com/parcio/motiv`
+1. Clone this repository: `git clone https://github.com/Azera5/motiv.git`
 2. Change to cloned repository: `cd motiv`
 3. Initialise the submodules: `git submodule update --init --recursive`
 4. Generate build system with CMake: `cmake -S . -B build`
