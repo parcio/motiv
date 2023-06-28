@@ -19,6 +19,7 @@
 #include <QString>
 #include "./Slot.hpp"
 #include "src/models/ColorList.hpp"
+#include "src/ui/ColorGenerator.hpp"
 #include "src/ui/Constants.hpp"
 
 
@@ -30,23 +31,31 @@ Slot::Slot(const otf2::chrono::duration &start, const otf2::chrono::duration &an
     endTime(anEnd),
     location(location),
     region(region){
-    switch(this->getKind()){
-        case ::MPI:
-            this->color = colors::COLOR_SLOT_MPI;
-            this->priority = layers::Z_LAYER_SLOTS_MIN_PRIORITY + 2;
-            break;
-        case ::OpenMP:
-            this->color = colors::COLOR_SLOT_OPEN_MP;
-            this->priority = layers::Z_LAYER_SLOTS_MIN_PRIORITY + 1;
-            break;
-        case ::None:
-        case ::Plain:
-            if(this->getKind()==Plain){
-                if (!this->color.isValid ()) colorlist->addColor(QString::fromStdString(region->name().str()));
-                this->color = colorlist->getColor(QString::fromStdString(region->name().str()));
+        QString function_ = QString::fromStdString(region->name().str());
+        switch(this->getKind()){
+            case ::MPI:
+                this->color = colorlist->getColor(function_);                
+                if(!this->color.isValid()) {
+                    this->color = colors::COLOR_SLOT_MPI;
+                    colorlist->addColor(function_, this->color);
+                }
+                this->priority = layers::Z_LAYER_SLOTS_MIN_PRIORITY + 2;
+                break;
+            case ::OpenMP:
+                this->color = colorlist->getColor(function_); 
+                if(!this->color.isValid()) {
+                    this->color = colors::COLOR_SLOT_OPEN_MP;
+                    colorlist->addColor(function_, this->color);
+                }               
+                this->priority = layers::Z_LAYER_SLOTS_MIN_PRIORITY + 1;
+                break;
+            case ::None:
+            case ::Plain:
+                if (!this->color.isValid ()) colorlist->addColor(function_);
+                this->color = colorlist->getColor(function_);
                 this->priority = layers::Z_LAYER_SLOTS_MIN_PRIORITY + 0;
-            }break;
-    }
+                break;
+        }
 }
 
 SlotKind Slot::getKind() const {
@@ -67,4 +76,34 @@ types::TraceTime Slot::getStartTime() const {
 
 types::TraceTime Slot::getEndTime() const {
     return endTime;
+}
+
+
+void Slot::setColor(QColor color_){
+    QString function_ = QString::fromStdString(region->name().str());    
+    if(!color_.isValid()){
+        if(colorlist->getColor(function_).isValid()){
+             this->color=colorlist->getColor(function_);
+             return;
+        }
+        switch(this->getKind()){
+            case ::MPI:                
+                this->color = colors::COLOR_SLOT_MPI;
+                colorlist->setColor(function_, this->color);                             
+                break;
+            case ::OpenMP:
+                this->color = colors::COLOR_SLOT_OPEN_MP;
+                colorlist->setColor(function_, this->color);               
+                break;
+            case ::None:
+            case ::Plain:                
+                this->color = ColorGenerator::getInstance()->GetNewColor();
+                colorlist->setColor(function_,this->color);
+                break;
+        } 
+    } else this->color = color_;
+}
+
+QColor Slot::getColor(){
+    return this->color;
 }

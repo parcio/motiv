@@ -57,6 +57,26 @@ public Q_SLOTS:
     void resetZoom();
 
     /**
+     * @brief Applies a gray filter to all generic functions. 
+     * 
+     * The change is not saved in the ColorConfigFile.
+     */
+    void grayFilter();
+
+    /**
+     * @brief Resets the custom colors.
+     * 
+     * Only the colors that were changed during the current session are reset.
+     */
+    void resetColors();
+
+
+    /**
+     * @brief Deletes all color settings
+     */
+    void deleteCustomColors();
+
+    /**
      * @brief Opens and shows the FilterPopup
      */
     void openFilterPopup();

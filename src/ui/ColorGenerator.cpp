@@ -16,23 +16,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "ColorGenerator.hpp"
+#include "src/ui/Constants.hpp"
 
 // Increment value for color updates, controls color diversity
 constexpr int COLOR_INCREMENT = 50;
 
+// Minimum value for color components, controls color saturation
+int MIN = 50;
+
 // Singleton instance
 ColorGenerator* ColorGenerator::instance = nullptr_t();
 
-ColorGenerator::ColorGenerator():red{255}, green {0}, blue{50}, min{0}, token {0}
+ColorGenerator::ColorGenerator():red{255}, green {0}, blue{50}, min{MIN}, token {0}
 {
 }
 
 ColorGenerator* ColorGenerator::getInstance()
 {
-    if (instance == nullptr) 
-    {
-        instance = new ColorGenerator(); 
-    }
+    if (instance == nullptr) instance = new ColorGenerator(); 
     return instance; 
 }
 
@@ -95,10 +96,18 @@ QColor ColorGenerator::GetNewColor(){
         break;
         
         default:
-        color = QColor(189,189,189);
+        color = colors::COLOR_SLOT_PLAIN;
         break;
     }
     return color;
 }
 
+
+void ColorGenerator::setDefault(){
+    this->red=255;
+    this->green=0;
+    this->blue=50;
+    this->min=MIN; 
+    this->token=0;
+}
 

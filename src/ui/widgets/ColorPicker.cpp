@@ -16,30 +16,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MOTIV_COLORLIST_HPP
-#define MOTIV_COLORLIST_HPP
+#include "ColorPicker.hpp"
 
-#include <unordered_map>
-#include <QColor>
-#include <QString>
+#include <QPushButton>
+#include <QVBoxLayout>
 
-/**
- * @brief Singleton class for managing a list of unique colors associated with function names.
- */
-class ColorList {
-private:    
-    static ColorList* instance;  
-    ColorList();  
-    ColorList(const ColorList& obj) = delete;
-   
-    std::unordered_map<QString, QColor> map;
+ColorPicker::ColorPicker(QWidget *parent) : QWidget(parent)
+{
+    m_dialog = new QColorDialog(this);
+}
 
-public:
-    static ColorList* getInstance();  
-    QColor getColor(QString);
-    void addColor(QString, QColor = nullptr, bool fromConfig = false);
-    void setColor(QString, QColor);
-    void clearColorList();
-};
+ColorPicker::~ColorPicker()
+{
+    
+}
 
-#endif //MOTIV_COLORLIST_HPP
+QColor ColorPicker::selectColor()
+{
+    QColor color_=  m_dialog->getColor();
+    if (color_.isValid()) 
+        return color_;
+    else 
+        return QColor();
+}

@@ -27,7 +27,7 @@
 /**
  * Defines the minimum size in pixels for a slot
  */
-#define MIN_SLOT_SIZE_PX 5
+#define MIN_SLOT_SIZE_PX 1
 
 /**
  * Defines the minimum size in pixels for a communication

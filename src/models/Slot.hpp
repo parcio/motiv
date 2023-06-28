@@ -25,6 +25,7 @@
 #include "TimedElement.hpp"
 
 
+
 enum SlotKind {
     None    = 0b0000,
     MPI     = 0b0001,
@@ -71,12 +72,9 @@ public:
      */
     otf2::definition::region *region;
     
-     /**
-     * @brief Color of the slot in the interface.
-     */
-    QColor color;    
-
     int priority;
+
+    
 
     /**
      *
@@ -96,6 +94,9 @@ public:
      * @copydoc TimedElement::getStartTime()
      */
     [[nodiscard]] types::TraceTime getEndTime() const override;
+   
+    void setColor(QColor);
+    QColor getColor();
 
     BUILDER(Slot,
             BUILDER_FIELD(otf2::chrono::duration, start)
@@ -103,6 +104,12 @@ public:
                 BUILDER_FIELD(otf2::definition::location * , location)
                 BUILDER_FIELD(otf2::definition::region * , region),
             start, end, location, region)
+
+private:
+    /**
+     * @brief Color of the slot in the interface.
+     */
+    QColor color;    
 };
 
 #endif //MOTIV_SLOT_HPP

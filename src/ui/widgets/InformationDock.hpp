@@ -21,10 +21,13 @@
 
 #include "TimeUnitLabel.hpp"
 #include "src/ui/TraceDataProxy.hpp"
+#include "src/ui/widgets/ColorPicker.hpp"
 #include "src/ui/widgets/infostrategies/InformationDockElementStrategy.hpp"
+
 #include <QLabel>
 #include <QFormLayout>
 #include <QDockWidget>
+#include <string>
 
 /**
  * @brief A UI component that shows additional information
@@ -68,6 +71,11 @@ private Q_SLOTS:
      * @brief Handler for clicked event of the zoom into view button
      */
     void zoomIntoViewPressed();
+
+     /**
+     * @brief Handler for clicked event of the set custom color button
+     */ 
+    void setCustomColorPressed();
 
 public Q_SLOTS:
 

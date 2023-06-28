@@ -105,6 +105,11 @@ public: Q_SIGNALS:
      */
     void infoElementSelected(TimedElement *);
 
+     /**
+     * Signals that the color of a slot has changed
+     */
+    void colorChanged();
+
     /**
      * Signals the filter was changes
      */

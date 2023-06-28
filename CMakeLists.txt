@@ -44,6 +44,8 @@ set(PROJECT_SOURCES
         src/models/communication/NonBlockingSendEvent.cpp
         src/models/communication/RequestCancelledEvent.cpp
         src/ui/ColorGenerator.cpp
+        src/ui/ColorSynchronizer.cpp
+        src/ui/widgets/InformationDock.cpp
         src/ui/ScrollSynchronizer.cpp
         src/ui/TimeUnit.cpp
         src/ui/TraceDataProxy.cpp
@@ -52,7 +54,8 @@ set(PROJECT_SOURCES
         src/ui/views/GenericIndicator.cpp
         src/ui/views/SlotIndicator.cpp
         src/ui/views/TimelineView.cpp
-        src/ui/views/TraceOverviewTimelineView.cpp        
+        src/ui/views/TraceOverviewTimelineView.cpp   
+        src/ui/widgets/ColorPicker.cpp     
         src/ui/widgets/InformationDock.cpp
         src/ui/widgets/TimeInputField.cpp
         src/ui/widgets/TimeUnitLabel.cpp

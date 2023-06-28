@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "TimeUnitLabel.hpp"
+#include "src/models/AppSettings.hpp"
+#include "src/ui/ColorSynchronizer.hpp"
 #include "src/utils.hpp"
 #include <QPushButton>
 #include <QFormLayout>
@@ -31,7 +33,7 @@ InformationDock::~InformationDock() {
     delete this->element_;
     for(auto &item : this->strategies_) {
         delete item.first;
-        delete item.second;
+        //delete item.second;
     }
 }
 
@@ -57,9 +59,21 @@ void InformationDock::zoomIntoViewPressed() {
     Q_EMIT zoomToWindow(element_->getStartTime() - padding, element_->getEndTime() + padding);
 }
 
-void InformationDock::setElement(TimedElement *element) {
-    element_ = element;
+void InformationDock::setCustomColorPressed() {
+    if(!element_) return;
+    auto colorPicker = new ColorPicker();    
+    auto color = colorPicker->selectColor();
+    if (!color.isValid()) return;
+    else
+    {
+        auto slot = dynamic_cast<Slot*>(element_);
+        AppSettings::getInstance().updateColorConfig(QString::fromStdString(slot->region->name().str()),color);
+        ColorSynchronizer::getInstance()->synchronizeColors(slot->region->name().str(), color);
+    }
+}
 
+void InformationDock::setElement(TimedElement* element) {  
+    element_ = element;  
     updateView();
 }
 
@@ -73,6 +87,10 @@ void InformationDock::addElementStrategy(InformationDockElementStrategy* s) {
     auto zoomIntoViewButton = new QPushButton(tr("Zoom into &view"));
     connect(zoomIntoViewButton, SIGNAL(clicked()), this, SLOT(zoomIntoViewPressed()));
     layout->addWidget(zoomIntoViewButton);
+
+    auto customColorButton = new QPushButton(tr("Set custom &color"));
+    connect(customColorButton, SIGNAL(clicked()), this, SLOT(setCustomColorPressed()));
+    layout->addWidget(customColorButton);
 
     widget->setLayout(layout);
 

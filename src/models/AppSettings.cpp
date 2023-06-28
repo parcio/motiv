@@ -16,13 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "AppSettings.hpp"
+#include "src/models/ColorList.hpp"
 
 #define SET_AND_EMIT(key) \
-    settings.setValue(#key, key##_); \
+    settings->setValue(#key, key##_); \
     Q_EMIT key##Changed(key##_);
 
 AppSettings::AppSettings() {
-    this->recentlyOpenedFiles_ = this->settings.value("recentlyOpenedFiles").toStringList();
+    this->recentlyOpenedFiles_ = this->settings->value("recentlyOpenedFiles").toStringList();
 }
 
 const QStringList &AppSettings::recentlyOpenedFiles() const {
@@ -44,4 +45,42 @@ void AppSettings::recentlyOpenedFilesRemove(const QString &filePath) {
 void AppSettings::recentlyOpenedFilesClear() {
     this->recentlyOpenedFiles_.clear();
     SET_AND_EMIT(recentlyOpenedFiles)
+}
+
+void AppSettings::setColorConfigName(QString &filePath){
+    this->colorConfigName_ = "Motiv/colors/";
+    size_t pos1 = filePath.lastIndexOf("/");
+    size_t pos2 = filePath.lastIndexOf("/",pos1 - 1);
+    this->colorConfigName_.append(filePath.mid(pos2 + 1, pos1 - pos2 - 1));
+    this->colorSettings = new QSettings (this->colorConfigName_);
+}
+
+void AppSettings::loadColorConfig () {
+  if (!this->colorSettings->contains ("Colors")) {
+    this->colorSettings->setValue ("Colors", "");
+    return;
+  }
+  ColorList *colorList = ColorList::getInstance ();
+  QStringList functions = colorSettings->allKeys ();
+  for (const QString &function : functions) {
+    QColor color = colorSettings->value (function).value<QColor> ();
+    colorList->addColor (function, color, true);
+  }
+}
+
+void AppSettings::colorConfigPush(QString function, QColor color){
+    this->colorSettings->setValue (function, color);
+    this->colorSettings->setValue ("Colors", "");
+    this->colorSettings->sync();
+   
+}
+
+void AppSettings::updateColorConfig(QString function, QColor color){
+    if (!this->colorSettings->contains (function)) this->colorConfigPush(function, color);
+    else this->colorSettings->setValue (function, color);  
+}
+
+void AppSettings::clearColorConfig(){
+     this->colorSettings->clear();
+     this->colorSettings->sync();
 }

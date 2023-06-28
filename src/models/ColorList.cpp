@@ -17,6 +17,7 @@
  */
 
 #include "ColorList.hpp"
+#include "src/models/AppSettings.hpp"
 #include "src/ui/ColorGenerator.hpp"
 
 ColorGenerator* colorgenerator = ColorGenerator::getInstance();
@@ -30,17 +31,29 @@ ColorList* ColorList::getInstance() {
     }return instance;
 }
 
-void ColorList::addColor(QString s) {
-    if (map.count(s) == 0) {
-        QColor c = colorgenerator->GetNewColor();
-        map[s] = c;
+void ColorList::addColor(QString function, QColor color,bool fromConfig) {
+    if (map.count(function) == 0) {
+        if (color == nullptr) color = colorgenerator->GetNewColor();
+        map[function] = color;
+        if(!fromConfig) AppSettings::getInstance().colorConfigPush(function,color);
+    
     }
 }
 
-QColor ColorList::getColor(QString s) {
-    if (map.count(s) > 0) {
-        return map[s];
+void ColorList::setColor(QString function, QColor color){
+    if (map.count(function) == 0) this->addColor(function,color);
+    else map[function] = color;
+    AppSettings::getInstance().updateColorConfig(function,color);
+}
+
+QColor ColorList::getColor(QString function) {
+    if (map.count(function) > 0) {
+        return map[function];
     } else {
-        return QColor(189, 189, 189);
+        return QColor();
     }
+}
+
+void ColorList::clearColorList(){
+    this->map.clear();
 }

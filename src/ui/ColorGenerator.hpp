@@ -40,6 +40,11 @@ class ColorGenerator{
 public:
   static ColorGenerator* getInstance(); 
   QColor GetNewColor();
+  
+  /**
+   * @brief Resets all values to their default values
+   */
+  void setDefault();
 
 };
 

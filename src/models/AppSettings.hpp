@@ -20,9 +20,12 @@
 
 
 #include <QSettings>
+#include <QString>
 
 /**
- * @brief Singleton holding persistent information
+ * @brief Singleton holding persistent information.
+ * 
+ * All config files are stored in /home/.config/Motiv
  */
 class AppSettings : QObject {
 Q_OBJECT
@@ -74,6 +77,31 @@ public:
      */
     void recentlyOpenedFilesClear();
 
+    /**
+     * @brief Sets the color configfile name based on a file path
+     */
+    void setColorConfigName(QString&);
+
+    /**
+     * @brief Loads the colors from the config file or creates it if not found
+     */
+    void loadColorConfig();
+
+    /**
+     * @brief Adds a color-function pair to the config file
+     */
+    void colorConfigPush(QString, QColor);
+
+    /**
+     * @brief Updates the color of a function in the config file
+     */
+    void updateColorConfig(QString, QColor);
+
+    /**
+     * @brief Clears the color config file
+     */
+    void clearColorConfig();
+
 public: Q_SIGNALS:
     /**
      * @brief Signals a change in the recently opened files
@@ -81,9 +109,12 @@ public: Q_SIGNALS:
     void recentlyOpenedFilesChanged(QStringList);
 
 private:
-    QSettings settings;
+    QSettings *settings = new QSettings ("Motiv/Motiv");
+    QSettings *colorSettings;
     QString leastRecentDirectory_;
     QStringList recentlyOpenedFiles_;
+    QString colorConfigName_;
+    QVariantList colorList_; 
 };
 
 

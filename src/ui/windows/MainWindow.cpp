@@ -29,6 +29,10 @@
 #include <utility>
 
 #include "src/models/AppSettings.hpp"
+#include "src/models/ColorList.hpp"
+#include "src/ui/ColorGenerator.hpp"
+#include "src/ui/ColorSynchronizer.hpp"
+#include "src/ui/Constants.hpp"
 #include "src/ui/widgets/License.hpp"
 #include "src/ui/widgets/Help.hpp"
 #include "src/ui/widgets/TimeInputField.hpp"
@@ -44,17 +48,26 @@
 #include "src/ui/widgets/infostrategies/InformationDockCollectiveCommunicationStrategy.hpp"
 
 
+
+ColorSynchronizer* colorsynchronizer = ColorSynchronizer::getInstance();
+
+
 MainWindow::MainWindow(QString filepath) : QMainWindow(nullptr), filepath(std::move(filepath)) {
     if (this->filepath.isEmpty()) {
         this->promptFile();
     }
-    this->loadSettings();
+    this->loadSettings();   
+    AppSettings::getInstance().setColorConfigName(this->filepath);
+    AppSettings::getInstance().loadColorConfig();
+ 
     this->loadTrace();
 
     this->createToolBars();
     this->createDockWidgets();
     this->createCentralWidget();
     this->createMenus();
+
+    colorsynchronizer->setData(this->data);
 }
 
 MainWindow::~MainWindow() {
@@ -124,7 +137,22 @@ void MainWindow::createMenus() {
     connect(resetZoomAction, SIGNAL(triggered()), this, SLOT(resetZoom()));
     resetZoomAction->setShortcut(tr("Ctrl+R"));
 
-    auto widgetMenu = new QMenu(tr("Tool Windows"));
+    auto widgetMenuCustomColors = new QMenu(tr("Custom Colors"));
+
+    auto grayFilter = new QAction (tr("Grayfilter"));
+    connect(grayFilter, SIGNAL(triggered()),this,SLOT(grayFilter()));
+
+    auto resetColors = new QAction (tr("Reset custom colors"));    
+    connect(resetColors, SIGNAL(triggered()),this,SLOT(resetColors()));
+
+    auto deleteCustomColors = new QAction (tr("Delete custom colors"));    
+    connect(deleteCustomColors, SIGNAL(triggered()),this,SLOT(deleteCustomColors()));
+
+    widgetMenuCustomColors->addAction(grayFilter);
+    widgetMenuCustomColors->addAction(resetColors);
+    widgetMenuCustomColors->addAction(deleteCustomColors);
+
+    auto widgetMenuToolWindows = new QMenu(tr("Tool Windows"));
 
     auto showOverviewAction = new QAction(tr("Show &trace overview"));
     showOverviewAction->setCheckable(true);
@@ -136,14 +164,15 @@ void MainWindow::createMenus() {
     connect(showDetailsAction, SIGNAL(toggled(bool)), this->information, SLOT(setVisible(bool)));
     connect(this->information, SIGNAL(visibilityChanged(bool)), showDetailsAction, SLOT(setChecked(bool)));
 
-    widgetMenu->addAction(showOverviewAction);
-    widgetMenu->addAction(showDetailsAction);
+    widgetMenuToolWindows->addAction(showOverviewAction);
+    widgetMenuToolWindows->addAction(showDetailsAction);
 
     auto viewMenu = menuBar->addMenu(tr("&View"));
     viewMenu->addAction(filterAction);
     viewMenu->addAction(searchAction);
-    viewMenu->addAction(resetZoomAction);
-    viewMenu->addMenu(widgetMenu);
+    viewMenu->addAction(resetZoomAction);   
+    viewMenu->addMenu(widgetMenuCustomColors);
+    viewMenu->addMenu(widgetMenuToolWindows);
 
     /// Window menu
     auto minimizeAction = new QAction(tr("&Minimize"));
@@ -276,6 +305,21 @@ void MainWindow::resetZoom() {
     data->setSelection(types::TraceTime(0), data->getTotalRuntime());
 }
 
+void MainWindow::grayFilter(){
+    colorsynchronizer->synchronizeColors(colors::COLOR_SLOT_PLAIN);
+}
+
+void MainWindow::resetColors(){
+    colorsynchronizer->synchronizeColors();
+}
+
+void MainWindow::deleteCustomColors(){
+    AppSettings::getInstance().clearColorConfig();
+    ColorList::getInstance()->clearColorList();
+    ColorGenerator::getInstance()->setDefault();
+    ColorSynchronizer::getInstance()->synchronizeColors(QColor(),true);
+    this->data->colorChanged();   
+}
 void MainWindow::openFilterPopup() {
     FilterPopup filterPopup(data->getSettings()->getFilter());
 

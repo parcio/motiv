@@ -37,6 +37,7 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
     // @formatter:off
     connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
     connect(this->data, SIGNAL(filterChanged(Filter)), this, SLOT(updateView()));
+    connect(this->data, SIGNAL(colorChanged()),this, SLOT(updateView()));
     // @formatter:on
 }
 
@@ -91,10 +92,15 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             rectItem->setToolTip(regionNameStr.c_str());
 
             // Determine color based on name
-            QColor rectColor = slot->color;
+            rectItem->setBrush(slot->getColor());
             rectItem->setZValue(slot->priority);
+            scene->addItem(rectItem);
             
             /*
+            QColor rectColor = slot->color;
+            
+            
+            
             switch (slot->getKind()) {
                 case ::MPI:
                     rectColor = colors::COLOR_SLOT_MPI;
@@ -111,9 +117,10 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                     rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 0);
                     break;
             }
-            */
+
             rectItem->setBrush(rectColor);
             scene->addItem(rectItem);
+            */          
         }
 
         top += ROW_HEIGHT;

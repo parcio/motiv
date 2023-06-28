@@ -69,7 +69,7 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
             auto rectItem = scene->addRect(rect);
 
             // Determine color based on name
-            QColor rectColor = slot->color;
+            QColor rectColor = slot->getColor();
             rectItem->setZValue(slot->priority);
             
             /*
