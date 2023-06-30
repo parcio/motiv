@@ -34,7 +34,7 @@ ReaderCallbacks::ReaderCallbacks(otf2::reader::reader &rdr) :
     slotsBuilding(),
     program_start_(),
     rdr_(rdr) {
-
+        
 }
 
 
