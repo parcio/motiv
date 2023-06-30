@@ -36,9 +36,28 @@ private:
 
 public:
     static ColorList* getInstance();  
+    
     QColor getColor(QString);
-    void addColor(QString, QColor = nullptr, bool fromConfig = false);
+    
+    /**
+    *@brief Adds a new color to a map with QString as the key
+    *
+    *@param QString The key for the map
+    *@param QColor The color to be added
+    *@param fromConfig A flag indicating whether the color was read from the config file or not (default false)
+    *
+    *If no color is given, it uses the ColorGenerator to create a new color. 
+    *If the color was not read from the config file, it adds the tuple of QString and QColor to the config file.
+    */
+    void addColor(QString, QColor = nullptr, bool fromConfig = false);    
+    
+    /**
+    *@brief Sets the color for a given key in the map and the config file
+    *
+    *This function updates the color for the given key in the map and also in the config file.
+    */
     void setColor(QString, QColor);
+
     void clearColorList();
 };
 

@@ -42,8 +42,9 @@ void AppSettings::recentlyOpenedFilesRemove(const QString &filePath) {
     SET_AND_EMIT(recentlyOpenedFiles)
 }
 
-void AppSettings::recentlyOpenedFilesClear() {
+void AppSettings::recentlyOpenedFilesClear(QString filepath) {
     this->recentlyOpenedFiles_.clear();
+    this->recentlyOpenedFiles_.push_back(filepath);
     SET_AND_EMIT(recentlyOpenedFiles)
 }
 
