@@ -109,9 +109,18 @@ void MainWindow::createMenus() {
 
         auto clearRecentMenuAction = new QAction(tr("&Clear history"));
         openRecentMenu->addAction(clearRecentMenuAction);
-        connect(clearRecentMenuAction, &QAction::triggered, [&] {
-            AppSettings::getInstance().recentlyOpenedFilesClear();
-            //openRecentMenu->clear();   
+        connect(clearRecentMenuAction, &QAction::triggered, [&, openRecentMenu] {
+        AppSettings::getInstance().recentlyOpenedFilesClear(this->filepath);
+            
+        // Make a copy of the list of actions
+        QList<QAction*> actions = openRecentMenu->actions();
+
+        for (auto action : actions) {                
+            if (action != clearRecentMenuAction && action->text()!= this->filepath) {
+                openRecentMenu->removeAction(action);                    
+                action->deleteLater();
+            }
+        }
         });
     }
 

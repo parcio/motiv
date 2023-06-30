@@ -75,7 +75,7 @@ public:
      *
      * After the list is cleared it is saved
      */
-    void recentlyOpenedFilesClear();
+    void recentlyOpenedFilesClear(const QString);
 
     /**
      * @brief Sets the color configfile name based on a file path
