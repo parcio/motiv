@@ -1,0 +1,241 @@
+#!/bin/bash
+
+# *** results ***
+file_name="stat_run@"$(date '+%Y-%m-%d_%H:%M:%S')
+touch $file_name
+
+
+# *** arguments ***
+# how many >>%h%v%u%<< do we have? (currently: two)
+res_count=2
+# how precise do we want to calculate the times?
+precision=3
+# do we want to measure memory use? (0 <=> no) 
+memory=1
+# do we want to see debug information? (0 <=> no) 
+dbg_info=0
+dbg_log=""
+# how many arguments do we have?
+argc=$#
+# how many samples do we want? (first argument)
+count=$1
+
+
+# *** data aggregations ***
+# we will accumulate the ram usage of traces in here
+ram_sum_array=()
+# ee
+#time_sum_array=()
+# ee
+maxsize=10
+
+# we need a path as first argument for the next while loop
+shift
+# $2 (now $1), $3 (now $2), etc. <=> paths to the tracefiles
+i=1
+while [ -n "$1" ]; do
+    declare path$i=$1
+    shift
+    i=$((i+1))
+    
+    # we need a place for every trace, unrelated to the rest of the loop
+    ram_sum_array+=(0)
+done
+
+
+# *** gadgetry for progress indication ***
+loading_frames1=(" / " " ‒ " " \\ " " | ")
+loading_frames2=("working   " "working.  " "working.. " "working...")
+frame_index=0
+loading() {
+    # we slide in cyclic manner through our frames
+    ((frame_index=(frame_index+1)%4))
+    # https://www.baeldung.com/linux/echo-printf-overwrite-terminal-line
+    echo -ne "$j.trace@$p.sample${loading_frames1[frame_index]}\033[0K\r"
+}
+
+
+# *** actual work ***
+# FAQ: Q1,Q2 & Q3
+# main loop, one iteration per given path
+for j in $(seq 1 $((argc-1)))
+do
+    # FAQ: Q0
+    loc_var=path$j
+    cur_path=${!loc_var}
+    
+    # nothing important, just the calculation regarding the amount of stars that we need to append for format reasons
+    log=$log"\n\n\n***************"${cur_path//?/*}"\n*** trace: "$cur_path" ***\n***************"${cur_path//?/*}"\n\n\n"
+
+    if [ $dbg_info -ne 0 ]; then
+        echo -e $dbg_log
+        dbg_log=""
+    fi
+    
+    # we need an extra place for the accumulation
+    sum_array=(0 0)
+
+
+    # *** collecting samples ***
+    # one iteration per sample
+    for ((p=1; p<=count; p++))
+    do
+    	# we indicate some progress
+    	loading
+    	
+    	# we collect the raw data
+    	output_time=$(time (./build/motiv -t $cur_path 2>/dev/null) 2>&1)
+    		
+    	# that's the array pattern: e(mpty) h(int) v(value) u(unit), e h v u ... time values (user, real, sys)
+    	ehvu_array=()
+        IFS="%"
+        read -d $'' -r -a ehvu_array <<< "$output_time"
+        IFS=" "
+        
+        # RAM usage review
+        if [ "$memory" -ne 0 ]; then
+            ./build/motiv $cur_path 2>> tmpfile &
+            prog_pid=$!
+            sleep 2
+            while true; do
+                if grep -q "motiv ready" tmpfile; then
+                    break
+                fi
+            done
+            ram_usage_all=$(smem -k -c "pid uss")
+            ram_usage_raw=$( echo -e "$ram_usage_all" | grep -w $prog_pid)
+            read -r m_pid m_uss <<< "$ram_usage_raw"
+            m_uss_val=${m_uss%%[^0-9.]*}
+            # we count the numericals and cut that amount of symbols
+            m_uss_unit="["${m_uss:${#m_uss_val}}"]"
+            kill $prog_pid
+            if [ ${#m_uss_val} -gt $maxsize ]; then
+                maxsize=${#m_uss_val}
+            fi
+        fi
+        
+        # a log entry for every sample
+        log=$log$p"# iteration @ "$(date)"\nresults:\n"
+        
+        # we update the duration sums
+        for ((q=1; q<=res_count; q++))
+        do
+            # e(mpty) h(int) v(value)[index 2] u(unit), e h v[index 6] u ... etc. -> we need the positions 2, 6, 10 etc.
+            val_pos=$((4*$q-2))
+                        
+            # individual sample stats
+            log=$log${ehvu_array[$val_pos]}${ehvu_array[$(($val_pos+1))]}" ("${ehvu_array[$(($val_pos-1))]}")\n"
+            
+            # unit conversion: we want a uniform calculation of in seconds
+            # QElapsedTimer uses only [ms]
+            # please consider the permutation: if we check from smallest to biggest, we'll scale to much
+            if [ "${ehvu_array[$(($val_pos+1))]}" = "[h]" ]; then
+            	ehvu_array[$val_pos]=$(echo "scale=$precision; ${ehvu_array[$val_pos]} * 60^2" | bc)
+            	ehvu_array[$(($val_pos+1))]="[s]"
+            fi
+            if [ "${ehvu_array[$(($val_pos+1))]}" = "[m]" ]; then
+            	ehvu_array[$val_pos]=$(echo "scale=$precision; ${ehvu_array[$val_pos]} * 60" | bc)
+            	ehvu_array[$(($val_pos+1))]="[s]"
+            fi
+            if [ "${ehvu_array[$(($val_pos+1))]}" = "[ms]" ]; then
+            	ehvu_array[$val_pos]=$(echo "scale=$precision; ${ehvu_array[$val_pos]} / 1000" | bc)
+            	# bc drops the leading zero, that can cause problems
+            	[[ ${ehvu_array[$val_pos]} == .* ]] && ehvu_array[$val_pos]="0${ehvu_array[$val_pos]}"
+            	ehvu_array[$(($val_pos+1))]="[s]"
+            fi
+            
+            # we have to add the measured value to the acumulated sum
+            if [ "$dbg_info" -ne 0 ]; then
+            	dbg_log=$dbg_log"\n"$j".trace | "$p". sample | "$q". sum-operation ""${sum_array[*]}"" + "${ehvu_array[$val_pos]}${ehvu_array[$(($val_pos+1))]}
+            fi
+
+            # we have to add the measured value to the acumulated sum
+            sum_array[(($q-1))]=$(echo "scale=$precision; ${sum_array[(($q-1))]} + ${ehvu_array[$val_pos]}" | bc)
+            if [ ${#sum_array[(($q-1))]} -gt $maxsize ]; then
+                maxsize=${#sum_array[(($q-1))]}
+            fi
+            
+            if [ "$dbg_info" -ne 0 ]; then
+            	dbg_log=$dbg_log" -> ""${sum_array[*]}"
+            fi
+            
+        done
+        
+        if [ "$memory" -ne 0 ]; then
+            # unit conversion: we want a uniform calculation of memory in M
+            # we're not sure if to scale with 1000 or 1024...
+            # we assume that smem uses binary prefixes: K=2^10, M=2^20, G=2^30, T=2^40
+            # please consider the permutation: if we check from smallest to biggest, we'll scale to much
+            if [ "$m_uss_unit" = "[T]" ]; then
+            	m_uss_val=$(echo "scale=$precision; $m_uss_val * 1024^2" | bc)
+            	m_uss_unit="[M]"
+            fi
+            if [ "$m_uss_unit" = "[G]" ]; then
+            	m_uss_val=$(echo "scale=$precision; $m_uss_val * 1024" | bc)
+            	m_uss_unit="[M]"
+            fi
+            if [ "$m_uss_unit" = "[K]" ]; then
+            	m_uss_val=$(echo "scale=$precision; $m_uss_val / 1024" | bc)
+            	# bc drops the leading zero, that can cause problems
+            	[[ $rm_uss_val == .* ]] && rm_uss_val="0$rm_uss_val"
+            	m_uss_unit="[M]"
+            fi
+
+        
+            # ram usage sum update (for every sample just one)
+            ram_sum_array[$(($j-1))]=$(echo "scale=$precision; ${ram_sum_array[$(($j-1))]} + $m_uss_val" | bc)
+        
+            # the last thing is our uss-value and the time (real,user,sys) values    
+            log=$log$m_uss_val$m_uss_unit" (Unique Set Size, via smem)\n"${ehvu_array[-1]}"\n"
+        fi
+    done
+
+    log=$log"\n"
+
+    
+    # *** writing down the stats ***   
+    echo -e "\nTRACE:\n"${!loc_var} >> $file_name
+    for ((r=1; r<=res_count; r++))
+    do
+        # we write three information-pieces:
+        # (1) what was the average time?,
+        print_avg_val=0
+        print_avg_val=$(echo "scale=$precision; ${sum_array[(($r-1))]} / $count" | bc)
+        print_avg_val=$(tr '.' ',' <<< "$print_avg_val")
+        # (2) what was the unit,
+        print_unit=" ø "${ehvu_array[$((4*$r-1))]} 
+        # (3) what's the name of the functionality?
+        print_func=${ehvu_array[$((4*$r-3))]}
+        # the actual print (for every time metric)
+        printf "%${maxsize}.${precision}f $print_unit $print_func\n" $print_avg_val >> $file_name
+    done    
+    # memory results
+    if [ "$memory" -ne 0 ]; then
+        # the actual print
+        print_avg_val=$(echo "scale=$precision; ${ram_sum_array[$(($j-1))]} / $count" | bc)
+        print_avg_val=$(tr '.' ',' <<< "$print_avg_val")
+        printf "%${maxsize}.${precision}f  ø [M] Unique Set Size (via smem)\n" $print_avg_val >> $file_name
+    fi
+done
+
+
+# *** context-information ***
+echo -e "\n\n\n" >> $file_name
+echo -e "***************************\n*** context information ***\n***************************" >> $file_name
+echo -e "\nOS:\n"$(uname -a) >> $file_name
+echo -e "\nCPU:\n"$(lscpu | grep "Model name:" | sed -r 's/Model name:\s{1,}//g') >> $file_name
+echo -e "\nRAM:\n"$(free -h) >> $file_name
+echo -e "\nSAMPLE SIZE:\n"$count"#" >> $file_name
+echo -e "\nSAMPLE-LOG:\n"$log >> $file_name
+rm tmpfile
+
+
+# *** FAQ ***
+
+# Q0: How are >>loc_var<<, >>path$j<< and >>cur_path<< related? -> we can't directly use >>$path$j<<, so we save the >>path$j<< as an actual string in the >>loc_var<< variable, then we use this interpretation >>${!loc_var}<< to save the actual path in >>cur_path<<.
+
+# Q1: What's the array pattern? -> e(mpty) h(int) v(value) u(unit), e h v u ...,  up until the time values (user, real, sys) for comparison.
+
+# Q2: What's up with >>IFS="%"<<? -> that's our seperator, we combine it with an unspecified delimiter >>-d ''<< in read, this allows to seperate the >>h v u<< outputs by >>%<< as well as fetching the whole output of >>time<< (including the newlines!) into >>control<<.
+
+# Q3: What's the purpuse of >>e<< between the >>h v u<< pattern? -> please consider this output "%h%v%u%%h%v%u%...etc.", we have to somehow deal with empty seperation results, e.g. ">>empty<<%h%v%u%>>empty<<%h%v%u%...etc.".

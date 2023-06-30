@@ -20,6 +20,10 @@
 
 
 #include <QMainWindow>
+#include <QElapsedTimer>
+#include <iostream>
+
+#include<QDebug>
 
 #include "src/ui/widgets/TimeInputField.hpp"
 #include "src/ui/TraceDataProxy.hpp"
