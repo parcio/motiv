@@ -631,18 +631,15 @@ if [ -n "$(whereis -b git | cut -d ' ' -f 2)" ]; then
     git_branch=$(git branch --show-current)
     git_info=$git_info"\nBranch:\t\t"$git_branch
 
-    # documentation of the development progress
-    git_last_commit=$(git log -n 1 --pretty=format:"%H %ad %D" --date=short)
-    read -d " " -r git_last_commit_hash <<< $git_last_commit
+    # documentation of the development status
 
     # we assume that $(git rev-parse HEAD) represents the current used revision
     git_local_commit_hash=$(git rev-parse HEAD)
 
-    git_info=$git_info"\nLast Commit:\t"$git_last_commit
-    # do we have any changes relative to the most recent commit?
-    git_info=$git_info"\n\t\t-> any difference to the latest commit?\n"$(git diff --stat $git_last_commit_hash | sed 's/ /\t\t/')
+    # do we have any changes relative to the most recent branch commit?
+    git_info=$git_info"\n\t\t-> any difference to the latest commit?\n"$git_last_commit$(git diff --stat $git_branch | sed 's/ /\t\t/')
 
-    git_info=$git_info"\nHEAD (Hash):\t"$git_local_commit_hash
+    git_info=$git_info"\n\nHEAD (Hash):\t"$git_local_commit_hash
     # do we have any changes relative to the used "version" of our branch?
     git_info=$git_info"\n\t\t-> any difference to the used revision?\n"$(git diff --stat $git_local_commit_hash | sed 's/ /\t\t/')
 fi
