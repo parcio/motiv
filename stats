@@ -235,7 +235,7 @@ if [ "$1" = "-c" ] || [ "$1" = "--calibration" ]; then
     if ! [ -f "$CFG_LOCATION" ]; then
         echo -e "${YELLOW}${BOLD}Info${NOFORMAT}: could not find the config file ${CFG_LOCATION} for stats, will create a default config..."
         echo -e "# do we want to measure memory use? (0 <=> no)\nmemory=0\n# how many seconds have to pass between the start of motiv and the memory snapshot via smem?\ngrace_period=2\n# amount of decimal places after the decimal point\nprecision=3\n# do we want to see debug information? (0 <=> no)\n dbg_info=0\n# how many >>%h%v%u%<< do we have?\ntriplet_count=2\n# where do we want to save the results? ("" <=> same dir as stats)\nres_path=\"\"" >> $CFG_LOCATION
-        echo -e "[-/6] Do you wish to proceed with the calibration of the newly created <stats.cfg>? (Y/N)"
+        echo -e "[-/6] Do you wish to proceed with the calibration of the newly created <stats.cfg>? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
         echo ""
         read -p "" -n 1 answer1
         case $answer1 in
@@ -425,7 +425,7 @@ if [ -n "$errorlog" ]; then
     echo ""
     while true; do
         echo -e $errorlog
-        echo -e "\nDo you wish to continue? (Y/N)\n"
+        echo -e "\nDo you wish to continue? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})\n"
         read -p "Answer: " -n 1 answer4
         case $answer4 in
             [Yy]* ) conditional_clear; break;;
