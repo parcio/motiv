@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 		testRun = true;
         auto dummyWindow = new MainWindow(parser.value(testrunOption));
         app.quit();
-        std::cout << "%application in general%" << appTimer.elapsed() << "%[ms]%";
+        std::cout << "%application in general%" << appTimer.elapsed() << "%ms%";
         return EXIT_SUCCESS;
 	}
 

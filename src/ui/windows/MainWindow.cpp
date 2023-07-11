@@ -317,7 +317,7 @@ void MainWindow::loadTrace() {
     this->data = new TraceDataProxy(trace, this->settings, this);
 
     if(testRun==true){
-        std::cout << "%MainWindow::loadTrace()%" << loadTraceTimer.elapsed() << "%[ms]%";
+        std::cout << "%MainWindow::loadTrace()%" << loadTraceTimer.elapsed() << "%ms%";
     }
 }
 
