@@ -19,6 +19,7 @@
 #include "src/models/AppSettings.hpp"
 #include "src/ui/ColorSynchronizer.hpp"
 #include "src/utils.hpp"
+#include <QCheckBox>
 #include <QPushButton>
 #include <QFormLayout>
 #include "InformationDock.hpp"
@@ -67,31 +68,59 @@ void InformationDock::setCustomColorPressed() {
     else
     {
         auto slot = dynamic_cast<Slot*>(element_);
-        AppSettings::getInstance().updateColorConfig(QString::fromStdString(slot->region->name().str()),color);
+        AppSettings::getInstance().colorConfigPush(QString::fromStdString(slot->region->name().str()),color);
         ColorSynchronizer::getInstance()->synchronizeColors(slot->region->name().str(), color);
     }
 }
 
 void InformationDock::setElement(TimedElement* element) {  
-    element_ = element;  
+    element_ = element;
     updateView();
+    Q_EMIT slotSelected(dynamic_cast<Slot*>(element) != nullptr);
 }
 
 void InformationDock::addElementStrategy(InformationDockElementStrategy* s) {
     auto widget = new QWidget();
     auto layout = new QFormLayout(widget);
-    layout->setAlignment(Qt::AlignLeading | Qt::AlignTop);
+    layout->setAlignment(Qt::AlignLeading | Qt::AlignTop | Qt::AlignLeft );
 
     s->setup(layout);
 
+    auto gridWidget = new QWidget(); 
+    auto gridLayout = new QGridLayout(gridWidget);
+    gridLayout->setAlignment(Qt::AlignLeft);
+
     auto zoomIntoViewButton = new QPushButton(tr("Zoom into &view"));
     connect(zoomIntoViewButton, SIGNAL(clicked()), this, SLOT(zoomIntoViewPressed()));
-    layout->addWidget(zoomIntoViewButton);
+    gridLayout->addWidget(zoomIntoViewButton,0,0);
 
-    auto customColorButton = new QPushButton(tr("Set custom &color"));
+    auto customColorButton = new QPushButton(tr("Set custom &color"));   
     connect(customColorButton, SIGNAL(clicked()), this, SLOT(setCustomColorPressed()));
-    layout->addWidget(customColorButton);
+    connect(this, SIGNAL(slotSelected(bool)), customColorButton, SLOT(setEnabled(bool)));
+    connect(this, &InformationDock::slotSelected, this, [this, customColorButton](bool selected) {
+        if (selected) customColorButton->setStyleSheet("");        
+        else customColorButton->setStyleSheet("background-color: #d3d3d3;");
+    });
+    gridLayout->addWidget(customColorButton,1,0);
 
+    auto globalCheckBox = new QCheckBox("global");
+    connect(globalCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
+    Q_EMIT globalColorChanged(state == Qt::Checked);
+    });
+    connect(this, &InformationDock::globalColorChanged, &AppSettings::getInstance(), &AppSettings::toggleGlobalColorConfig);
+    gridLayout->addWidget(globalCheckBox,1,1);
+    
+    auto infoLabel = new QLabel(tr("ⓘ"));
+    infoLabel->setToolTip(tr("Check the box to store the colors in GlobalColors.conf"));
+    connect(infoLabel, SIGNAL(hovered()), infoLabel, SLOT(showToolTip()));
+    connect(infoLabel, SIGNAL(unhovered()), infoLabel, SLOT(hideToolTip()));
+    gridLayout->addWidget(infoLabel,1,2);
+    gridLayout->setContentsMargins(0, 0, 0, 0);
+
+    gridLayout->setAlignment(Qt::AlignLeft);
+
+    layout->addRow(gridWidget);
+    
     widget->setLayout(layout);
 
     strategies_.emplace_back(widget, s);

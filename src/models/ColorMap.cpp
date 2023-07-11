@@ -16,37 +16,36 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ColorList.hpp"
+#include "ColorMap.hpp"
 #include "src/models/AppSettings.hpp"
 #include "src/ui/ColorGenerator.hpp"
 
 ColorGenerator* colorgenerator = ColorGenerator::getInstance();
 
-ColorList* ColorList::instance = nullptr;
-ColorList::ColorList() {}
+ColorMap* ColorMap::instance = nullptr;
+ColorMap::ColorMap() {}
 
-ColorList* ColorList::getInstance() {
+ColorMap* ColorMap::getInstance() {
     if (instance == nullptr) {
-        instance = new ColorList();
+        instance = new ColorMap();
     }return instance;
 }
 
-void ColorList::addColor(QString function, QColor color,bool fromConfig) {
+void ColorMap::addColor(QString function, QColor color,bool fromConfig) {
     if (map.count(function) == 0) {
         if (color == nullptr) color = colorgenerator->GetNewColor();
         map[function] = color;
-        if(!fromConfig) AppSettings::getInstance().colorConfigPush(function,color);
-    
+        if(!fromConfig) AppSettings::getInstance().colorConfigPush(function,color);    
     }
 }
 
-void ColorList::setColor(QString function, QColor color){
+void ColorMap::setColor(QString function, QColor color){
     if (map.count(function) == 0) this->addColor(function,color);
     else map[function] = color;
-    AppSettings::getInstance().updateColorConfig(function,color);
+    AppSettings::getInstance().colorConfigPush(function,color);
 }
 
-QColor ColorList::getColor(QString function) {
+QColor ColorMap::getColor(QString function) {
     if (map.count(function) > 0) {
         return map[function];
     } else {
@@ -54,6 +53,10 @@ QColor ColorList::getColor(QString function) {
     }
 }
 
-void ColorList::clearColorList(){
+void ColorMap::clearColorMap(){
     this->map.clear();
+}
+
+std::unordered_map<QString, QColor> ColorMap::getMap(){
+    return this->map;    
 }

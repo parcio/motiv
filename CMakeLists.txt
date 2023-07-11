@@ -33,7 +33,7 @@ set(PROJECT_SOURCES
         src/models/SubTrace.cpp
         src/models/UITrace.cpp
         src/models/ViewSettings.cpp
-        src/models/ColorList.cpp
+        src/models/ColorMap.cpp
         src/models/communication/BlockingP2PCommunicationEvent.cpp
         src/models/communication/BlockingReceivEevent.cpp
         src/models/communication/BlockingSendEvent.cpp

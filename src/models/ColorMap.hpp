@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MOTIV_COLORLIST_HPP
-#define MOTIV_COLORLIST_HPP
+#ifndef MOTIV_ColorMap_HPP
+#define MOTIV_ColorMap_HPP
 
 #include <unordered_map>
 #include <QColor>
@@ -26,16 +26,16 @@
 /**
  * @brief Singleton class for managing a list of unique colors associated with function names.
  */
-class ColorList {
+class ColorMap {
 private:    
-    static ColorList* instance;  
-    ColorList();  
-    ColorList(const ColorList& obj) = delete;
+    static ColorMap* instance;  
+    ColorMap();  
+    ColorMap(const ColorMap& obj) = delete;
    
     std::unordered_map<QString, QColor> map;
 
 public:
-    static ColorList* getInstance();  
+    static ColorMap* getInstance();  
     
     QColor getColor(QString);
     
@@ -52,13 +52,16 @@ public:
     void addColor(QString, QColor = nullptr, bool fromConfig = false);    
     
     /**
-    *@brief Sets the color for a given key in the map and the config file
+    *@brief Sets the color for a given key in the map and the config file.
     *
-    *This function updates the color for the given key in the map and also in the config file.
+    *@note This function updates the color for the given key in the map and also in the config file.
     */
     void setColor(QString, QColor);
 
-    void clearColorList();
+    void clearColorMap();
+
+    std::unordered_map<QString, QColor> getMap();
+
 };
 
-#endif //MOTIV_COLORLIST_HPP
+#endif //MOTIV_ColorMap_HPP

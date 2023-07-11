@@ -65,6 +65,11 @@ public Q_SLOTS:
      */
     void setSelectionWindow(types::TraceTime from, types::TraceTime to);
 
+    /**
+     * @brief Updates modified colors of the slots in UITrace
+     * @see UITrace "A subtrace optimized for rendering"
+     */
+    void updateUITrace();
 
 protected:
     /**

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "AppSettings.hpp"
-#include "src/models/ColorList.hpp"
+#include "src/models/ColorMap.hpp"
 
 #define SET_AND_EMIT(key) \
     settings->setValue(#key, key##_); \
@@ -56,32 +56,60 @@ void AppSettings::setColorConfigName(QString &filePath){
     this->colorSettings = new QSettings (this->colorConfigName_);
 }
 
-void AppSettings::loadColorConfig () {
-  if (!this->colorSettings->contains ("Colors")) {
-    this->colorSettings->setValue ("Colors", "");
-    return;
-  }
-  ColorList *colorList = ColorList::getInstance ();
-  QStringList functions = colorSettings->allKeys ();
-  for (const QString &function : functions) {
-    QColor color = colorSettings->value (function).value<QColor> ();
-    colorList->addColor (function, color, true);
-  }
+void AppSettings::loadColorConfigs () {
+    ColorMap *colorMap_ = ColorMap::getInstance ();
+    QList<QSettings*> settingsList = {this->colorSettings, this->globalColorSettings};
+    for (QSettings *settings : settingsList) {
+        if (!settings->contains ("Colors")) {
+            settings->setValue ("Colors", "");
+            continue; 
+        }
+        QStringList functions = settings->allKeys ();
+        for (const QString &function : functions) {
+            QColor color = settings->value (function).value<QColor> ();
+            colorMap_->addColor (function, color, true);
+        }
+    }
+}
+
+void AppSettings::saveAsGlobalColors(){
+    ColorMap *colorMap_ = ColorMap::getInstance ();
+    for (auto& [key, value]: colorMap_->getMap()){
+        this->globalColorSettings->setValue(key,value);
+    }this->globalColorSettings->sync();
 }
 
 void AppSettings::colorConfigPush(QString function, QColor color){
-    this->colorSettings->setValue (function, color);
-    this->colorSettings->setValue ("Colors", "");
+    this->colorSettings->setValue (function, color);    
     this->colorSettings->sync();
-   
+    
+    if(this->useGlobalColorConfig){
+        this->globalColorSettings->setValue(function, color);
+        this->globalColorSettings->sync();
+    }
 }
 
-void AppSettings::updateColorConfig(QString function, QColor color){
-    if (!this->colorSettings->contains (function)) this->colorConfigPush(function, color);
-    else this->colorSettings->setValue (function, color);  
+void AppSettings::loadGlobalColors(){
+    QStringList functions = globalColorSettings->allKeys ();
+    ColorMap *colorMap_ = ColorMap::getInstance ();
+    for (const QString &function : functions) {
+        QColor color = globalColorSettings->value (function).value<QColor> ();
+        colorMap_->setColor(function, color);
+        this->colorSettings->setValue(function,color);
+    }
+    this->colorSettings->sync();
 }
 
 void AppSettings::clearColorConfig(){
      this->colorSettings->clear();
      this->colorSettings->sync();
+}
+
+void AppSettings::toggleGlobalColorConfig(bool checked)
+{
+    this->useGlobalColorConfig = checked;
+}
+
+bool AppSettings::getuseGlobalColorConfig(){
+    return this->useGlobalColorConfig;
 }

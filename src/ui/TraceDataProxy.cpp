@@ -22,6 +22,7 @@ TraceDataProxy::TraceDataProxy(FileTrace *trace, ViewSettings *settings, QObject
     : QObject(parent), trace(trace), settings(settings), begin(trace->getStartTime()),
       end(trace->getStartTime() + trace->getRuntime()) {
     updateSelection();
+    connect(this, &TraceDataProxy::colorChanged, this, &TraceDataProxy::updateSelection);
 }
 
 TraceDataProxy::~TraceDataProxy() {

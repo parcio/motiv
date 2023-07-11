@@ -29,7 +29,7 @@
 #include <utility>
 
 #include "src/models/AppSettings.hpp"
-#include "src/models/ColorList.hpp"
+#include "src/models/ColorMap.hpp"
 #include "src/ui/ColorGenerator.hpp"
 #include "src/ui/ColorSynchronizer.hpp"
 #include "src/ui/Constants.hpp"
@@ -59,7 +59,7 @@ MainWindow::MainWindow(QString filepath) : QMainWindow(nullptr), filepath(std::m
     }
     this->loadSettings();   
     AppSettings::getInstance().setColorConfigName(this->filepath);
-    AppSettings::getInstance().loadColorConfig();
+    AppSettings::getInstance().loadColorConfigs();
  
     this->loadTrace();
 
@@ -149,18 +149,22 @@ void MainWindow::createMenus() {
 
     auto widgetMenuCustomColors = new QMenu(tr("Custom Colors"));
 
-    auto grayFilter = new QAction (tr("Grayfilter"));
-    connect(grayFilter, SIGNAL(triggered()),this,SLOT(grayFilter()));
+    auto loadGlobalColorsAction = new QAction(tr("&Load gobal colors"));
+    connect(loadGlobalColorsAction, SIGNAL(triggered()),this,SLOT(loadGlobalColors()));
 
-    auto resetColors = new QAction (tr("Reset custom colors"));    
-    connect(resetColors, SIGNAL(triggered()),this,SLOT(resetColors()));
+    auto saveAsGlobalColorsAction = new QAction(tr("&Save as gobal colors"));
+    connect(saveAsGlobalColorsAction, SIGNAL(triggered()),this,SLOT(saveAsGlobalColors()));
 
-    auto deleteCustomColors = new QAction (tr("Delete custom colors"));    
-    connect(deleteCustomColors, SIGNAL(triggered()),this,SLOT(deleteCustomColors()));
+    auto grayFilterAction = new QAction (tr("Grayfilter"));
+    connect(grayFilterAction, SIGNAL(triggered()),this,SLOT(grayFilter()));
+ 
+    auto deleteCustomColorsAction = new QAction (tr("&Delete custom colors"));
+    connect(deleteCustomColorsAction, SIGNAL(triggered()),this,SLOT(deleteCustomColors()));
 
-    widgetMenuCustomColors->addAction(grayFilter);
-    widgetMenuCustomColors->addAction(resetColors);
-    widgetMenuCustomColors->addAction(deleteCustomColors);
+    widgetMenuCustomColors->addAction(loadGlobalColorsAction);
+    widgetMenuCustomColors->addAction(saveAsGlobalColorsAction);
+    widgetMenuCustomColors->addAction(grayFilterAction);
+    widgetMenuCustomColors->addAction(deleteCustomColorsAction);
 
     auto widgetMenuToolWindows = new QMenu(tr("Tool Windows"));
 
@@ -326,20 +330,41 @@ void MainWindow::resetZoom() {
 }
 
 void MainWindow::grayFilter(){
+    // Shows a warning message if save as global color is checked
+    if(AppSettings::getInstance().getuseGlobalColorConfig()){
+        QMessageBox warningBox;
+        warningBox.setIcon(QMessageBox::Warning);
+        warningBox.setWindowTitle("Saving gray filter globally");
+        warningBox.setText("You are about to save the color changes globally. This will affect all traces in the application. \n\nAre you sure you want to continue?");
+        warningBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        warningBox.setDefaultButton(QMessageBox::No);
+        int choice = warningBox.exec();
+        if(choice == QMessageBox::No) return;
+    }
     colorsynchronizer->synchronizeColors(colors::COLOR_SLOT_PLAIN);
-}
-
-void MainWindow::resetColors(){
-    colorsynchronizer->synchronizeColors();
 }
 
 void MainWindow::deleteCustomColors(){
     AppSettings::getInstance().clearColorConfig();
-    ColorList::getInstance()->clearColorList();
+    ColorMap::getInstance()->clearColorMap();
     ColorGenerator::getInstance()->setDefault();
-    ColorSynchronizer::getInstance()->synchronizeColors(QColor(),true);
-    this->data->colorChanged();   
+    ColorSynchronizer::getInstance()->reCalculateColors();
 }
+
+void MainWindow::loadGlobalColors(){
+    AppSettings::getInstance().loadGlobalColors();
+    colorsynchronizer->synchronizeColors();
+}
+
+void MainWindow::saveAsGlobalColors(){
+    AppSettings::getInstance().saveAsGlobalColors();
+    QMessageBox infoBox;
+    infoBox.setIcon(QMessageBox::Information);
+    infoBox.setWindowTitle("Global Color Option");
+    infoBox.setText("Current colors saved as global");
+    infoBox.exec();
+}
+
 void MainWindow::openFilterPopup() {
     FilterPopup filterPopup(data->getSettings()->getFilter());
 

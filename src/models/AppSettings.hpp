@@ -27,7 +27,7 @@
  * 
  * All config files are stored in /home/.config/Motiv
  */
-class AppSettings : QObject {
+class AppSettings : public QObject {
 Q_OBJECT
 private:
     AppSettings();
@@ -83,9 +83,15 @@ public:
     void setColorConfigName(QString&);
 
     /**
-     * @brief Loads the colors from the config file or creates it if not found
+     * @brief Loads the colors from both the trace specific and the global config files or creates them if not found.
+     * @note The trace specific config file is loaded first, followed by the global config file.
      */
-    void loadColorConfig();
+    void loadColorConfigs();
+
+    /**
+     * @brief Saves the current color settings to the global color config
+     */
+    void saveAsGlobalColors();
 
     /**
      * @brief Adds a color-function pair to the config file
@@ -93,28 +99,39 @@ public:
     void colorConfigPush(QString, QColor);
 
     /**
-     * @brief Updates the color of a function in the config file
+     * @brief Overwrites the current color configuration with the global colors
      */
-    void updateColorConfig(QString, QColor);
+    void loadGlobalColors();
 
     /**
      * @brief Clears the color config file
      */
     void clearColorConfig();
 
+    bool getuseGlobalColorConfig();
+    
 public: Q_SIGNALS:
     /**
      * @brief Signals a change in the recently opened files
      */
     void recentlyOpenedFilesChanged(QStringList);
 
+public Q_SLOTS:
+    /**
+     * @brief A slot that toggles the global color option in the app settings
+     *
+     * @param checked True if the global checkbox is checked, false otherwise
+     */
+    void toggleGlobalColorConfig(bool);
+
 private:
     QSettings *settings = new QSettings ("Motiv/Motiv");
+    QSettings *globalColorSettings = new QSettings ("Motiv/colors/GlobalColors");
     QSettings *colorSettings;
     QString leastRecentDirectory_;
     QStringList recentlyOpenedFiles_;
     QString colorConfigName_;
-    QVariantList colorList_; 
+    bool useGlobalColorConfig = false;
 };
 
 

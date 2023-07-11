@@ -68,17 +68,19 @@ public Q_SLOTS:
     void grayFilter();
 
     /**
-     * @brief Resets the custom colors.
-     * 
-     * Only the colors that were changed during the current session are reset.
-     */
-    void resetColors();
-
-
-    /**
      * @brief Deletes all color settings
      */
     void deleteCustomColors();
+
+    /**
+     * @brief Overwrites the current color configuration with the global color configuration
+     */
+    void loadGlobalColors();
+
+    /**
+     * @brief Saves the current color configuration as global color configuration
+     */
+    void saveAsGlobalColors();
 
     /**
      * @brief Opens and shows the FilterPopup

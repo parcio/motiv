@@ -46,9 +46,14 @@ public:
     void synchronizeColors(const QColor&, bool = false);
     
     /**
-     * @brief Recolors all slots based on the ColorList structure
+     * @brief Recolors all slots based on the ColorMap structure
      */   
     void synchronizeColors();
+
+    /**
+     * @brief Recalculates and updates the colors of all slots after deleting the custom colors
+     */
+    void reCalculateColors();
 
     /**
      * @brief Sets the data member, which is needed by synchronizeColors to access and update all slots

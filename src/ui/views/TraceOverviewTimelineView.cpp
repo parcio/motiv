@@ -115,6 +115,11 @@ void TraceOverviewTimelineView::resizeEvent(QResizeEvent *event) {
     QGraphicsView::resizeEvent(event);
 }
 
+void TraceOverviewTimelineView::updateUITrace(){    
+    uiTrace = UITrace::forResolution(fullTrace, window()->size().width());
+     this->updateView();
+}
+
 void TraceOverviewTimelineView::updateView() {
     this->scene()->clear();
 
