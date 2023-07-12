@@ -38,13 +38,13 @@ trap 'error_line ${LINENO}' ERR
 # we probably don't want to keep logs from situations like "ctrl+c"-ed runs
 clean_up_full() {
     exitcode=$?
-    if [ -f "tmpfile@$file_name" ]; then
+    if [ -f "tmpfile@$file_name" ] && [ "$memory" = "1" ]; then
         rm tmpfile@$file_name
     fi
-    if [ -f "$file_name" ] && [ "$exitcode" -gt 0 ]; then
+    if [ -f "$file_name" ] && [ "$dbg_info" = "0" ] && [ "$exitcode" -gt 0 ]; then
         rm $file_name
     fi
-    if [ -f "$path_plus_file_name" ] && [ "$exitcode" -gt 0 ]; then
+    if [ -f "$path_plus_file_name" ] && [ "$dbg_info" = "0" ] && [ "$exitcode" -gt 0 ]; then
         rm $path_plus_file_name
     fi
     exit 1
@@ -132,6 +132,9 @@ write_nonflag_param() {
 }
 
 read_all_nonflag_params() {
+    if ! [ -f "$CFG_LOCATION" ]; then
+        return 1;
+    fi
     memory_new=$(grep "^memory=" $CFG_LOCATION | cut -d '=' -f 2)
     grace_period_new=$(grep "^grace_period=" $CFG_LOCATION | cut -d '=' -f 2)
     precision_new=$(grep "^precision=" $CFG_LOCATION | cut -d '=' -f 2)
@@ -188,7 +191,7 @@ read_all_nonflag_params() {
             fi
         fi
     else
-        echo "${RED}${BOLD}Error${NOFORMAT}: could not find <res_path=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT}, stats will create the results localy: $(pwd)"
+        errorlog=$errorlog"${RED}${BOLD}\nError${NOFORMAT}: could not find <res_path=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT}, stats will create the results localy: ${BG_YELLOW}$(pwd)${NOFORMAT}"
     fi
 }
 
@@ -234,7 +237,7 @@ if [ "$1" = "-c" ] || [ "$1" = "--calibration" ]; then
     conditional_clear
     if ! [ -f "$CFG_LOCATION" ]; then
         echo -e "${YELLOW}${BOLD}Info${NOFORMAT}: could not find the config file ${CFG_LOCATION} for stats, will create a default config..."
-        echo -e "# do we want to measure memory use? (0 <=> no)\nmemory=0\n# how many seconds have to pass between the start of motiv and the memory snapshot via smem?\ngrace_period=2\n# amount of decimal places after the decimal point\nprecision=3\n# do we want to see debug information? (0 <=> no)\n dbg_info=0\n# how many >>%h%v%u%<< do we have?\ntriplet_count=2\n# where do we want to save the results? ("" <=> same dir as stats)\nres_path=\"\"" >> $CFG_LOCATION
+        echo -e "# do we want to measure memory use? (0 <=> no)\nmemory=0\n# how many seconds have to pass between the start of motiv and the memory snapshot via smem?\ngrace_period=2\n# amount of decimal places after the decimal point\nprecision=3\n# do we want to see debug information? (0 <=> no)\ndbg_info=0\n# how many >>%h%v%u%<< do we have?\ntriplet_count=2\n# where do we want to save the results? ("" <=> same dir as stats)\nres_path=\"\"" >> $CFG_LOCATION
         echo -e "[-/6] Do you wish to proceed with the calibration of the newly created <stats.cfg>? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
         echo ""
         read -p "" -n 1 answer1
@@ -322,6 +325,8 @@ if [ "$1" = "-c" ] || [ "$1" = "--calibration" ]; then
         fi
         echo ""
         read -p "Answer: " answer6
+        # we may have to expand the path
+        answer6=$(echo ${answer6/"~"/"/home/$(whoami)"})
         if ! [ -n "$answer6" ] ; then
             write_nonflag_param res_path "\"\""
             break
@@ -663,7 +668,9 @@ echo -e "\nSAMPLE-LOG\n"$log >> $path_plus_file_name
 conditional_clear
 echo "${BOLD}stats${NOFORMAT}: ${BG_CYAN}${path_plus_file_name}${NOFORMAT}"
 # small clean up
-rm tmpfile@$file_name
+if [ "$memory" = "1" ]; then
+    rm tmpfile@$file_name
+fi
 exit 0
 
 
