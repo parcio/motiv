@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "TimelineView.hpp"
+#include "src/models/ViewSettings.hpp"
 #include "src/ui/views/CommunicationIndicator.hpp"
 #include "src/ui/views/SlotIndicator.hpp"
 #include "src/ui/Constants.hpp"
@@ -38,6 +39,7 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
     connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
     connect(this->data, SIGNAL(filterChanged(Filter)), this, SLOT(updateView()));
     connect(this->data, SIGNAL(colorChanged()),this, SLOT(updateView()));
+    connect(this->data, SIGNAL(verticalZoomChanged()),this,SLOT(updateView()));
     // @formatter:on
 }
 
@@ -63,7 +65,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
 
     auto top = 20;
-    auto ROW_HEIGHT = 30;
+    auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
     for (const auto &item: selection->getSlots()) {
         // Display slots
         for (const auto &slot: item.second) {
@@ -194,7 +196,7 @@ void TimelineView::updateView() {
     // TODO it might be more performant to keep track of items and add/remove new/leaving items and resizing them
     this->scene()->clear();
 
-    auto ROW_HEIGHT = 30;
+    auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
     auto sceneHeight = this->data->getSelection()->getSlots().size() * ROW_HEIGHT;
     auto sceneRect = this->rect();
     sceneRect.setHeight(sceneHeight);

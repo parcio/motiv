@@ -31,7 +31,7 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         const auto &rankName = ranks.first->name().str();
         auto item = new QListWidgetItem(this);
         item->setText(QString::fromStdString(rankName));
-        item->setSizeHint(QSize(0, 30 /* TODO ROW_HEIGHT */));
+        item->setSizeHint(QSize(0, this->ROW_HEIGHT));
         item->setTextAlignment(Qt::AlignCenter);
         this->addItem(item);
     }

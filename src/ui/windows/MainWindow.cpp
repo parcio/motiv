@@ -25,6 +25,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QProcess>
+#include <QPushButton>
 #include <QToolBar>
 #include <utility>
 
@@ -255,6 +256,14 @@ void MainWindow::createToolBars() {
 
     this->bottomToolbar->addWidget(bottomContainerWidget);
 
+    auto zoomInButton = new QPushButton(tr("+"));
+    auto zoomOutButton = new QPushButton(tr("-"));
+    containerLayout->addWidget(zoomInButton);
+    containerLayout->addWidget(zoomOutButton);
+
+    connect(zoomInButton, &QPushButton::clicked, this, &MainWindow::verticalZoomIn);
+    connect(zoomOutButton, &QPushButton::clicked, this, &MainWindow::verticalZoomOut);
+    
 }
 
 void MainWindow::createDockWidgets() {
@@ -322,7 +331,7 @@ void MainWindow::loadTrace() {
 }
 
 void MainWindow::loadSettings() {
-    this->settings = new ViewSettings();
+    this->settings = ViewSettings::getInstance();
 }
 
 void MainWindow::resetZoom() {
@@ -386,3 +395,18 @@ void MainWindow::openNewWindow(QString path) {
             QStringList(path));
 }
 
+void MainWindow::verticalZoomIn(){
+    auto currentRowHeight=this->settings->getRowHeight();
+    this->settings->setRowHeight(currentRowHeight+5);
+    auto timeline = new Timeline(data, this);
+    this->setCentralWidget(timeline);
+    Q_EMIT this->data->verticalZoomChanged();    
+}
+
+void MainWindow::verticalZoomOut(){
+    auto currentRowHeight=this->settings->getRowHeight();
+    this->settings->setRowHeight(currentRowHeight-5);
+    auto timeline = new Timeline(data, this);
+    this->setCentralWidget(timeline);
+    Q_EMIT this->data->verticalZoomChanged();    
+}

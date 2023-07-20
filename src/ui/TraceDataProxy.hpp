@@ -115,6 +115,8 @@ public: Q_SIGNALS:
      */
     void filterChanged(Filter);
 
+    void verticalZoomChanged();
+
 public Q_SLOTS:
     /**
      * Change the start time of the selection
