@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "TimelineView.hpp"
+#include "src/models/ViewSettings.hpp"
 #include "src/ui/views/CommunicationIndicator.hpp"
 #include "src/ui/views/SlotIndicator.hpp"
 #include "src/ui/Constants.hpp"
@@ -41,6 +42,7 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
     connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
     connect(this->data, SIGNAL(filterChanged(Filter)), this, SLOT(updateView()));
     connect(this->data, SIGNAL(colorChanged()),this, SLOT(updateView()));
+    connect(this->data, SIGNAL(verticalZoomChanged()),this,SLOT(updateView()));
     // @formatter:on
 }
 
@@ -66,8 +68,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
 
     auto top = 20;
-    auto ROW_HEIGHT = 30;
-    
+    auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
     for (const auto &item: selection->getSlots()) {
 
 
@@ -210,7 +211,8 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             // Determine color based on name
             rectItem->setBrush(slot->getColor());
             rectItem->setZValue(slot->priority);
-            scene->addItem(rectItem);        
+
+            scene->addItem(rectItem);
         }
         top += ROW_HEIGHT;
         */
@@ -302,6 +304,33 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         rectItem->setPen(collectiveCommunicationPen);
         rectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
         scene->addItem(rectItem);
+
+        for (const auto &member: communication->getMembers()){
+            auto memberFromTime = static_cast<qreal>(member->start.count());
+            auto memberEffectiveFromTime = qMax(beginR, memberFromTime) - beginR;
+
+            auto memberToTime =  static_cast<qreal>(member->end.count());
+            auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
+
+            auto locationGroupNameStr = member->getLocation()->location_group().name().str();
+            size_t pos = locationGroupNameStr.find_last_of(' ');
+            int y = std::stoi(locationGroupNameStr.substr(pos + 1));      
+
+            auto memberFromX = (memberEffectiveFromTime / runtimeR) * width;
+            auto memberFromY = y*ROW_HEIGHT+20;
+
+            auto memberToX = (memberEffectiveToTime / runtimeR) * width;
+            auto memberToY = top - (top - (y+1)*ROW_HEIGHT)+20;
+
+            auto memberRectItem = new CollectiveCommunicationIndicator(communication);
+            memberRectItem->setOnSelected(onTimedElementSelected);
+            memberRectItem->setRect(QRectF(QPointF(memberFromX, memberFromY), QPointF(memberToX, memberToY)));            
+            memberRectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
+            QBrush brush(Qt::black);
+            brush.setStyle(Qt::BDiagPattern);
+            memberRectItem->setBrush(brush);
+            scene->addItem(memberRectItem);
+        }
     }
 
 }
@@ -316,7 +345,7 @@ void TimelineView::updateView() {
     // TODO it might be more performant to keep track of items and add/remove new/leaving items and resizing them
     this->scene()->clear();
 
-    auto ROW_HEIGHT = 30;
+    auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
     auto sceneHeight = this->data->getSelection()->getSlots().size() * ROW_HEIGHT;
     auto sceneRect = this->rect();
     sceneRect.setHeight(sceneHeight);

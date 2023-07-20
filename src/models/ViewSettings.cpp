@@ -17,6 +17,16 @@
  */
 #include "ViewSettings.hpp"
 
+ViewSettings* ViewSettings::instance = nullptr_t();
+
+ViewSettings::ViewSettings(){}
+
+ViewSettings* ViewSettings::getInstance()
+{
+    if (instance == nullptr) instance = new ViewSettings(); 
+    return instance; 
+}
+
 int ViewSettings::getZoomQuotient() const {
     return zoomFactor_;
 }
@@ -31,4 +41,12 @@ Filter ViewSettings::getFilter() const {
 
 void ViewSettings::setFilter(Filter filter) {
     filter_ = filter;
+}
+
+int ViewSettings::getRowHeight(){
+    return this->rowHeight;
+}
+
+void ViewSettings::setRowHeight(int height){
+    if(height>=15) this->rowHeight = height;
 }

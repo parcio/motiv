@@ -21,6 +21,7 @@
 
 #include <QListWidget>
 
+#include "src/models/ViewSettings.hpp"
 #include "src/ui/TraceDataProxy.hpp"
 
 /**
@@ -61,6 +62,8 @@ protected:
 
 private:
     TraceDataProxy *data = nullptr;
+    QListWidget* widgetList;
+    int ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
 };
 
 

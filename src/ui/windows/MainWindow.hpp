@@ -92,6 +92,16 @@ public Q_SLOTS:
      */
     void openNewTrace();
 
+    /**
+     * @brief Zooms in the timeline view vertically
+     */
+    void verticalZoomIn();
+
+    /**
+     * @brief Zooms out the timeline view vertically
+     */
+    void verticalZoomOut();
+
 private: // methods
     void createMenus();
     void createToolBars();

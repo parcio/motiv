@@ -22,6 +22,7 @@
 #include "Filter.hpp"
 
 #define SETTINGS_DEFAULT_ZOOM_QUOTIENT 25
+#define SETTINGS_DEFAULT_ROW_HEIGHT 30
 
 /**
  * @brief The ViewSettings class encapsulates settings for the main view.
@@ -31,6 +32,7 @@
  */
 class ViewSettings {
 public:
+    static ViewSettings* getInstance();
 
     /**
      * @brief Returns the current filter.
@@ -63,7 +65,15 @@ public:
      */
     void setZoomFactor(int zoomFactor);
 
+    int getRowHeight();
+
+    void setRowHeight(int height );
+
 private:
+    static ViewSettings* instance;    
+    ViewSettings();
+    ViewSettings(const ViewSettings& obj) = delete;
+
     /**
      * Backing field for the current zoom factor.
      */
@@ -72,6 +82,8 @@ private:
      * Backing field for the current filter.
      * */
     Filter filter_;
+
+    int rowHeight = SETTINGS_DEFAULT_ROW_HEIGHT;
 };
 
 
