@@ -94,33 +94,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             // Determine color based on name
             rectItem->setBrush(slot->getColor());
             rectItem->setZValue(slot->priority);
-            scene->addItem(rectItem);
-            
-            /*
-            QColor rectColor = slot->color;
-            
-            
-            
-            switch (slot->getKind()) {
-                case ::MPI:
-                    rectColor = colors::COLOR_SLOT_MPI;
-                    rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 2);
-                    break;
-                case ::OpenMP:
-                    rectColor = colors::COLOR_SLOT_OPEN_MP;
-                    rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 1);
-                    break;
-                case ::None:
-                case ::Plain:
-                default:
-                    rectColor = colors::COLOR_SLOT_PLAIN;
-                    rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 0);
-                    break;
-            }
-
-            rectItem->setBrush(rectColor);
-            scene->addItem(rectItem);
-            */          
+            scene->addItem(rectItem);                   
         }
 
         top += ROW_HEIGHT;
@@ -179,6 +153,33 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         rectItem->setPen(collectiveCommunicationPen);
         rectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
         scene->addItem(rectItem);
+
+        for (const auto &member: communication->getMembers()){
+            auto memberFromTime = static_cast<qreal>(member->start.count());
+            auto memberEffectiveFromTime = qMax(beginR, memberFromTime) - beginR;
+
+            auto memberToTime =  static_cast<qreal>(member->end.count());
+            auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
+
+            auto locationGroupNameStr = member->getLocation()->location_group().name().str();
+            size_t pos = locationGroupNameStr.find_last_of(' ');
+            int y = std::stoi(locationGroupNameStr.substr(pos + 1));      
+
+            auto memberFromX = (memberEffectiveFromTime / runtimeR) * width;
+            auto memberFromY = y*ROW_HEIGHT+20;
+
+            auto memberToX = (memberEffectiveToTime / runtimeR) * width;
+            auto memberToY = top - (top - (y+1)*ROW_HEIGHT)+20;
+
+            auto memberRectItem = new CollectiveCommunicationIndicator(communication);
+            memberRectItem->setOnSelected(onTimedElementSelected);
+            memberRectItem->setRect(QRectF(QPointF(memberFromX, memberFromY), QPointF(memberToX, memberToY)));            
+            memberRectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
+            QBrush brush(Qt::black);
+            brush.setStyle(Qt::BDiagPattern);
+            memberRectItem->setBrush(brush);
+            scene->addItem(memberRectItem);
+        }
     }
 
 }
