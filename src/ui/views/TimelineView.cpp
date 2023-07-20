@@ -22,9 +22,12 @@
 #include "CollectiveCommunicationIndicator.hpp"
 #include "src/ui/ColorGenerator.hpp"
 
+#include <map>
 #include <QGraphicsRectItem>
 #include <QApplication>
 #include <QWheelEvent>
+#include <set>
+
 
 TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsView(parent), data(data) {
     auto scene = new QGraphicsScene();
@@ -64,9 +67,122 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
     auto top = 20;
     auto ROW_HEIGHT = 30;
+    
     for (const auto &item: selection->getSlots()) {
-        // Display slots
+
+
+        std::set<std::string> threadKeySet;
+        // Rank offset has to be set to the amount of threads (- 1, we don't want to double count the master thread)
+        // rankOffset.insert({item.first->name().str(), threadKeySet.size()-1});
+        rankOffset.insert({item.first->ref().get(), -1});
+        rankOffset.at(item.first->ref().get())=-1;
+        // First variant, very weird behavior for resize
+        /*
+        std::multimap<std::string, Slot*> slotMap;
+
+        // Prepare slots
         for (const auto &slot: item.second) {
+            //qInfo() << "\nslot preparation ... " << slot->region->name().str().c_str() << slot->location->name().str().c_str();
+            if (!(slot->getKind() & data->getSettings()->getFilter().getSlotKinds())) continue;
+            auto threadKey = slot->location->name().str();
+            slotMap.insert({threadKey, slot});
+            threadKeySet.insert(threadKey);
+            //qInfo() << "\nslotMap size: " << slotMap.size() << "\n";
+        }
+
+        // Display slots
+        for (const std::string & key: threadKeySet) {
+            while(slotMap.count(key) > 0) {
+                // extract returns a node!
+                auto & slot = slotMap.extract(key).mapped();
+                auto region = slot->region;
+                auto regionName = region->name();
+                auto regionNameStr = regionName.str();
+                auto startTime = slot->startTime.count();
+                auto endTime = slot->endTime.count();
+                //auto mpiRankStr = slot->location->location_group().name().str();
+
+                // Ensures slots starting before `begin` (like main) are considered to start at begin
+                auto effectiveStartTime = qMax(begin, startTime);
+                // Ensures slots ending after `end` (like main) are considered to end at end
+                auto effectiveEndTime = qMin(end, endTime);
+
+                auto slotBeginPos = (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) * width;
+                auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
+                auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
+
+                QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
+                auto rectItem = new SlotIndicator(rect, slot);
+                rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
+                rectItem->setOnSelected(onTimedElementSelected);
+                //QString qstr = "blabla";
+                //rectItem->setToolTip(qstr);
+                rectItem->setToolTip(slot->location->name().str().c_str());
+                //rectItem->setToolTip(regionNameStr.c_str());
+
+                // Determine color based on name
+                rectItem->setBrush(slot->getColor());
+                rectItem->setZValue(slot->priority);
+                scene->addItem(rectItem);
+            }
+            //top += ROW_HEIGHT;
+
+        }
+        // Rank offset has to be set to the amount of threads (- 1, we don't want to double count the master thread)
+        rankOffset.insert({item.first->name().str(), threadKeySet.size()-1});
+        top += ROW_HEIGHT;
+        */
+
+        // Prepare slots
+        for (const auto &slot_: item.second) {
+            //qInfo() << "\nslot preparation ... " << slot_->region->name().str().c_str() << slot_->location->name().str().c_str();
+            threadKeySet.insert(slot_->location->name().str());
+            //qInfo() << "\nslotMap size: " << slotMap.size() << "\n";
+        }
+
+        // Display slots
+        for (const std::string & key: threadKeySet) {
+            for (const auto &slot: item.second) {
+                // Do we really want to draw this slot?
+                if (!(slot->getKind() & data->getSettings()->getFilter().getSlotKinds())) continue;
+                // Does it belong to the currently drawn thread?
+                if (!(slot->location->name().str() == key)) continue;
+                auto region = slot->region;
+                auto regionName = region->name();
+                auto regionNameStr = regionName.str();
+                auto startTime = slot->startTime.count();
+                auto endTime = slot->endTime.count();
+
+                // Ensures slots starting before `begin` (like main) are considered to start at begin
+                auto effectiveStartTime = qMax(begin, startTime);
+                // Ensures slots ending after `end` (like main) are considered to end at end
+                auto effectiveEndTime = qMin(end, endTime);
+
+                auto slotBeginPos = (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) * width;
+                auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
+                auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
+
+                QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
+                auto rectItem = new SlotIndicator(rect, slot);
+                rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
+                rectItem->setOnSelected(onTimedElementSelected);
+                rectItem->setToolTip(slot->location->name().str().c_str());
+                //rectItem->setToolTip(regionNameStr.c_str());
+
+                // Determine color based on name
+                rectItem->setBrush(slot->getColor());
+                rectItem->setZValue(slot->priority);
+                scene->addItem(rectItem);
+            }
+            top += ROW_HEIGHT;
+            // We need to consider every extra row
+            rankOffset.at(item.first->ref().get())++;
+        }
+        //top += ROW_HEIGHT;
+
+        // Classic variant
+        /*
+        for (const auto &slot: item.second) {    
             if (!(slot->getKind() & data->getSettings()->getFilter().getSlotKinds())) continue;
 
             auto region = slot->region;
@@ -74,7 +190,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             auto regionNameStr = regionName.str();
             auto startTime = slot->startTime.count();
             auto endTime = slot->endTime.count();
-           
+
 
             // Ensures slots starting before `begin` (like main) are considered to start at begin
             auto effectiveStartTime = qMax(begin, startTime);
@@ -94,36 +210,18 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             // Determine color based on name
             rectItem->setBrush(slot->getColor());
             rectItem->setZValue(slot->priority);
-            scene->addItem(rectItem);
-            
-            /*
-            QColor rectColor = slot->color;
-            
-            
-            
-            switch (slot->getKind()) {
-                case ::MPI:
-                    rectColor = colors::COLOR_SLOT_MPI;
-                    rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 2);
-                    break;
-                case ::OpenMP:
-                    rectColor = colors::COLOR_SLOT_OPEN_MP;
-                    rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 1);
-                    break;
-                case ::None:
-                case ::Plain:
-                default:
-                    rectColor = colors::COLOR_SLOT_PLAIN;
-                    rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 0);
-                    break;
-            }
-
-            rectItem->setBrush(rectColor);
-            scene->addItem(rectItem);
-            */          
+            scene->addItem(rectItem);        
         }
-
         top += ROW_HEIGHT;
+        */
+
+    }
+
+    // Thread-Handling
+    //auto offsetThreads = rankOffset.at(endEvent->getLocation()->name().str());
+    int offsetThreadsSum = 0;
+    for (const auto& r : rankOffset) {
+        offsetThreadsSum += r.second;
     }
 
     for (const auto &communication: selection->getCommunications()) {
@@ -146,17 +244,42 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto fromRank = startEvent->getLocation()->ref().get();
         auto toRank = endEvent->getLocation()->ref().get();
 
+        int higherPos = 0;
+        int lowerPos = 0;
+        // the arrow points to the bottom
+        toRank > fromRank ? (higherPos=fromRank, lowerPos=toRank) : (higherPos=toRank, lowerPos=fromRank);
+
+        // How many threads were rendered above the arrow?
+        int higherOffset = 0;
+        for (int i = higherPos; i > 0; i--) {
+            higherOffset += rankOffset.at(i)*ROW_HEIGHT;
+        }
+
+        // How many threads were rendered extra within the arrow?
+        int innerOffset = 0;
+        for (int i = lowerPos; i > higherPos; i--) {
+            innerOffset += rankOffset.at(i)*ROW_HEIGHT;
+        }
+
+        int toOffset = 0;
+        int fromOffset = 0;
+        // if the arrow points to the bottom (higher ranks are rendered lower) we have to use the toOffset as the sum of higherOffset and innerOffset
+        toRank > fromRank ? (toOffset=higherOffset+innerOffset, fromOffset=higherOffset) : (toOffset=higherOffset, fromOffset=higherOffset+innerOffset);
+
+        QString dbgInfo = QString::fromStdString("higherPos["+std::to_string(higherPos)+"]"+"lowerPos["+std::to_string(lowerPos)+"]"+"toOffset["+std::to_string(toOffset)+"]"+"fromOffset["+std::to_string(fromOffset)+"]");
+
         auto fromX = effectiveFromTime / runtimeR * width;
-        auto fromY = static_cast<qreal>(fromRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20;
+        auto fromY = static_cast<qreal>(fromRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + fromOffset;
 
         auto toX = effectiveToTime / runtimeR * width;
-        auto toY = static_cast<qreal> (toRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20;
+        auto toY = static_cast<qreal> (toRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + toOffset;
 
         auto arrow = new CommunicationIndicator(communication, fromX, fromY, toX, toY);
         arrow->setOnSelected(onTimedElementSelected);
         arrow->setOnDoubleClick(onTimedElementDoubleClicked);
         arrow->setPen(arrowPen);
         arrow->setZValue(layers::Z_LAYER_P2P_COMMUNICATIONS);
+        arrow->setToolTip(dbgInfo);
         scene->addItem(arrow);
     }
 

@@ -75,7 +75,7 @@ private:
 private:
     TraceDataProxy *data = nullptr;
   //  ColorGenerator colorgenerator;
-    
+    std::map<OTF2_StringRef, int> rankOffset;
 };
 
 
