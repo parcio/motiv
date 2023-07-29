@@ -22,8 +22,7 @@
 #include <QMainWindow>
 #include <QElapsedTimer>
 #include <iostream>
-
-#include<QDebug>
+#include <QDebug>
 
 #include "src/ui/widgets/TimeInputField.hpp"
 #include "src/ui/TraceDataProxy.hpp"
@@ -101,6 +100,11 @@ public Q_SLOTS:
      * @brief Zooms out the timeline view vertically
      */
     void verticalZoomOut();
+
+    /**
+     * @brief todo
+     */
+    void expansionEvent();
 
 private: // methods
     void createMenus();

@@ -263,7 +263,9 @@ void MainWindow::createToolBars() {
 
     connect(zoomInButton, &QPushButton::clicked, this, &MainWindow::verticalZoomIn);
     connect(zoomOutButton, &QPushButton::clicked, this, &MainWindow::verticalZoomOut);
-    
+
+    //connect(data, SIGNAL(expansionEventHappend()), this, &MainWindow::expansionEvent);
+    connect(data, SIGNAL(expansionEventHappend()), this, SLOT(expansionEvent()));
 }
 
 void MainWindow::createDockWidgets() {
@@ -409,4 +411,11 @@ void MainWindow::verticalZoomOut(){
     auto timeline = new Timeline(data, this);
     this->setCentralWidget(timeline);
     Q_EMIT this->data->verticalZoomChanged();    
+}
+
+void MainWindow::expansionEvent(){
+    auto currentRowHeight=this->settings->getRowHeight();
+    this->settings->setRowHeight(currentRowHeight);
+    auto timeline = new Timeline(data, this);
+    this->setCentralWidget(timeline);  
 }

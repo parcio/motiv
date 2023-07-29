@@ -117,6 +117,8 @@ public: Q_SIGNALS:
 
     void verticalZoomChanged();
 
+    void expansionEventHappend();
+
 public Q_SLOTS:
     /**
      * Change the start time of the selection

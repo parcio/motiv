@@ -50,3 +50,19 @@ int ViewSettings::getRowHeight(){
 void ViewSettings::setRowHeight(int height){
     if(height>=15) this->rowHeight = height;
 }
+
+std::map<QString, int>* ViewSettings::getRankOffsetMap() {
+    return &rankOffsetMap;
+}
+
+std::map<QString, bool>* ViewSettings::getToggledRankMap() {
+    return &toggledRankMap;
+}
+
+std::map<QString, bool>* ViewSettings::getMultithreadingRankMap() {
+    return &multithreadingRankMap;
+}
+
+QIcon* ViewSettings::getIcon(std::string key) {
+    return &Icons_.at(key);
+}

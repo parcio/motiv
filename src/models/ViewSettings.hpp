@@ -21,6 +21,8 @@
 #include "src/models/Slot.hpp"
 #include "Filter.hpp"
 
+#include <QIcon>
+
 #define SETTINGS_DEFAULT_ZOOM_QUOTIENT 25
 #define SETTINGS_DEFAULT_ROW_HEIGHT 30
 
@@ -67,7 +69,15 @@ public:
 
     int getRowHeight();
 
-    void setRowHeight(int height );
+    void setRowHeight(int height);
+
+    std::map<QString, int>* getRankOffsetMap();
+
+    std::map<QString, bool>* getToggledRankMap();
+
+    std::map<QString, bool>* getMultithreadingRankMap();
+
+    QIcon* getIcon(std::string key);
 
 private:
     static ViewSettings* instance;    
@@ -84,6 +94,19 @@ private:
     Filter filter_;
 
     int rowHeight = SETTINGS_DEFAULT_ROW_HEIGHT;
+
+    std::map<QString, int> rankOffsetMap{};
+    std::map<QString, bool> toggledRankMap{};
+    std::map<QString, bool> multithreadingRankMap{};
+
+    std::map<std::string, QIcon> Icons_ {
+        {std::pair<std::string, QIcon>{"plus", "../res/tango_icons_png/plus.png"}},
+        {std::pair<std::string, QIcon>{"plus_grey", "../res/tango_icons_png/plus_grey.png"}},
+        {std::pair<std::string, QIcon>{"minus", "../res/tango_icons_png/minus.png"}}
+    };
+
+    //QIcon iconPlus{"../res/tango_icons/List-add.svg"};
+    //QIcon iconMinus{"../res/tango_icons/List-remove.svg"};
 };
 
 
