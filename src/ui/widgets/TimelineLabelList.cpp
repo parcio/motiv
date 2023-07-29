@@ -41,9 +41,10 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         auto minusIcon = ViewSettings::getInstance()->getIcon("minus");
         auto item = new QListWidgetItem(this);
         
+
         // Multithreading check
+        std::set<std::string> threadKeySet{};
         if(multithreadingRankMap->count(rankName)==0){
-            std::set<std::string> threadKeySet{};
             for (const auto &slot_: rank.second) {         
                 threadKeySet.insert(slot_->location->name().str());
             }
@@ -66,22 +67,9 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         }
 
         item->setText(rankName);
-        item->setSizeHint(QSize(0, this->ROW_HEIGHT));
-        item->setTextAlignment(Qt::AlignCenter);
+        item->setSizeHint(QSize(0, this->ROW_HEIGHT+(rankOffsetMap->at(rankName)*this->ROW_HEIGHT*toggledRankMap->at(rankName))));
+        item->setTextAlignment(Qt::AlignCenter);  
         this->addItem(item);
-        
-        // We use these to create relative offsets for the actual rank labels
-        if(toggledRankMap->count(rankName)>0){
-            if(toggledRankMap->at(rankName)){
-                for (int i = rankOffsetMap->at(rankName); i > 0; i--) {
-                    auto dummy = new QListWidgetItem(this);
-                    dummy->setText(" ");
-                    dummy->setSizeHint(QSize(0, this->ROW_HEIGHT));
-                    this->addItem(dummy);
-                }
-            }
-        }
-
     }
 }
 
@@ -90,9 +78,6 @@ void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
     auto *item = this->itemAt(event->pos());  
     // Assuming we have clicked on a rank...
     if (item != nullptr) {
-        // We don't want our dummies to be interactive
-        if(item->text()==" ")return;
-        
         QString rankName = item->text();
         auto settings = ViewSettings::getInstance();
         // We toggle the thread-view via a bool-flip 
