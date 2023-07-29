@@ -23,7 +23,6 @@
 #include <QVBoxLayout>
 #include <QMouseEvent>
 #include <set>
-#include <string>
 
 TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QListWidget(parent), data(data) {
     this->setFrameShape(QFrame::NoFrame);
@@ -67,6 +66,7 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         }
 
         item->setText(rankName);
+        item->setToolTip(QString::fromStdString("node: "+rank.first->parent().name().str()));
         item->setSizeHint(QSize(0, this->ROW_HEIGHT+(rankOffsetMap->at(rankName)*this->ROW_HEIGHT*toggledRankMap->at(rankName))));
         item->setTextAlignment(Qt::AlignCenter);  
         this->addItem(item);

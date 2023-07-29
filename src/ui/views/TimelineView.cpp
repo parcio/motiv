@@ -180,7 +180,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         // if the arrow points to the bottom (higher ranks are rendered lower) we have to use the toOffset as the sum of higherOffset and innerOffset
         toRank > fromRank ? (toOffset=higherOffset+innerOffset, fromOffset=higherOffset) : (toOffset=higherOffset, fromOffset=higherOffset+innerOffset);
 
-        QString dbgInfo = QString::fromStdString("higherPos["+std::to_string(higherPos)+"]"+"lowerPos["+std::to_string(lowerPos)+"]"+"toOffset["+std::to_string(toOffset)+"]"+"fromOffset["+std::to_string(fromOffset)+"]");
+        QString Info = QString::fromStdString("ranks:  "+std::to_string(fromRank)+"  to  "+std::to_string(toRank));
 
         auto fromX = effectiveFromTime / runtimeR * width;
         auto fromY = static_cast<qreal>(fromRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + fromOffset;
@@ -193,7 +193,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         arrow->setOnDoubleClick(onTimedElementDoubleClicked);
         arrow->setPen(arrowPen);
         arrow->setZValue(layers::Z_LAYER_P2P_COMMUNICATIONS);
-        arrow->setToolTip(dbgInfo);
+        arrow->setToolTip(Info);
         scene->addItem(arrow);
     }
 
