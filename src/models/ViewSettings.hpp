@@ -71,11 +71,7 @@ public:
 
     void setRowHeight(int height);
 
-    std::map<QString, int>* getRankOffsetMap();
-
-    std::map<QString, bool>* getToggledRankMap();
-
-    std::map<QString, bool>* getMultithreadingRankMap();
+    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>>* getRankThreadMap();
 
     QIcon* getIcon(std::string key);
 
@@ -95,18 +91,20 @@ private:
 
     int rowHeight = SETTINGS_DEFAULT_ROW_HEIGHT;
 
-    std::map<QString, int> rankOffsetMap{};
-    std::map<QString, bool> toggledRankMap{};
-    std::map<QString, bool> multithreadingRankMap{};
+    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>> rankThreadMap{};
 
     std::map<std::string, QIcon> Icons_ {
         {std::pair<std::string, QIcon>{"plus", "../res/tango_icons_png/plus.png"}},
         {std::pair<std::string, QIcon>{"plus_grey", "../res/tango_icons_png/plus_grey.png"}},
-        {std::pair<std::string, QIcon>{"minus", "../res/tango_icons_png/minus.png"}}
+        {std::pair<std::string, QIcon>{"minus", "../res/tango_icons_png/minus.png"}},
+        {std::pair<std::string, QIcon>{"zoom_in", "../res/tango_icons_png/zoom_in.png"}},
+        {std::pair<std::string, QIcon>{"zoom_out", "../res/tango_icons_png/zoom_out.png"}},
+        {std::pair<std::string, QIcon>{"zoom_fit", "../res/tango_icons_png/zoom_fit.png"}},
+        {std::pair<std::string, QIcon>{"search", "../res/tango_icons_png/search.png"}},
+        {std::pair<std::string, QIcon>{"book", "../res/tango_icons_png/book.png"}},
+        {std::pair<std::string, QIcon>{"refresh", "../res/tango_icons_png/refresh.png"}},
+        {std::pair<std::string, QIcon>{"maximize", "../res/tango_icons_png/maximize.png"}}
     };
-
-    //QIcon iconPlus{"../res/tango_icons/List-add.svg"};
-    //QIcon iconMinus{"../res/tango_icons/List-remove.svg"};
 };
 
 

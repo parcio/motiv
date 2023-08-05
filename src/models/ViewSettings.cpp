@@ -51,16 +51,8 @@ void ViewSettings::setRowHeight(int height){
     if(height>=15) this->rowHeight = height;
 }
 
-std::map<QString, int>* ViewSettings::getRankOffsetMap() {
-    return &rankOffsetMap;
-}
-
-std::map<QString, bool>* ViewSettings::getToggledRankMap() {
-    return &toggledRankMap;
-}
-
-std::map<QString, bool>* ViewSettings::getMultithreadingRankMap() {
-    return &multithreadingRankMap;
+std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>>* ViewSettings::getRankThreadMap() {
+    return &rankThreadMap;
 }
 
 QIcon* ViewSettings::getIcon(std::string key) {

@@ -32,43 +32,59 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
 
     for (const auto &rank: this->data->getSelection()->getSlots()) {
         const QString &rankName = QString::fromStdString(rank.first->name().str());
-        auto toggledRankMap = ViewSettings::getInstance()->getToggledRankMap();
-        auto rankOffsetMap = ViewSettings::getInstance()->getRankOffsetMap();
-        auto multithreadingRankMap = ViewSettings::getInstance()->getMultithreadingRankMap();
+        auto rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
         auto plusIcon = ViewSettings::getInstance()->getIcon("plus");
         auto plusIconGrey = ViewSettings::getInstance()->getIcon("plus_grey");
         auto minusIcon = ViewSettings::getInstance()->getIcon("minus");
         auto item = new QListWidgetItem(this);
-        
 
         // Multithreading check
-        std::set<std::string> threadKeySet{};
-        if(multithreadingRankMap->count(rankName)==0){
-            for (const auto &slot_: rank.second) {         
-                threadKeySet.insert(slot_->location->name().str());
+        // If we haven't seen this rank before...
+        if(rankThreadMap->count(rank.first->ref().get())==0){            
+            std::map<std::string, int> threadMap{};
+            // We use that one to figure out the thread position <=> threadNumber
+            std::map<std::string, std::string> threadMap_{};
+            //qInfo() << "... working on rank ..." << rank.first->ref().get();
+            for (const auto &slot_: rank.second) {
+                auto threadRef = std::to_string(slot_->location->ref().get());
+                auto threadName = slot_->location->name().str();
+                // If we haven't seen this thread before...
+                if(!threadMap_.count(threadRef)){
+                    threadMap_.insert({threadName, threadRef});
+                }
             }
-            threadKeySet.size() > 1 ? multithreadingRankMap->insert({rankName, true}) : multithreadingRankMap->insert({rankName, false});
-            rankOffsetMap->insert({rankName, threadKeySet.size()-1});
-            toggledRankMap->insert({rankName, false});
+            // Whats their position? (threadNumber for main thread => 1)
+            auto threadNumber = threadMap.size();
+            for (auto &threadItem: threadMap_) {
+                threadNumber++;
+                //qInfo() << threadItem.first.c_str() << "... is nr. ..." << threadNumber;
+                threadMap.insert({threadItem.second, threadNumber});
+            }
+            rankThreadMap->insert({rank.first->ref().get(), std::make_pair(false, threadMap)});
         }
 
         // Determine the fitting icon
-        if(!multithreadingRankMap->at(rankName)){
+        auto iconToggleStatus = rankThreadMap->at(rank.first->ref().get()).first;
+        auto rankSizeOffset = rankThreadMap->at(rank.first->ref().get()).second.size()-1;
+        QBrush backgroundPattern = QBrush(QColorConstants::Svg::lightsteelblue, Qt::Dense4Pattern);
+
+        // If the amount of threads (<=> rankSizeOffset+1) < 2 => non-expandable <=> grey icon
+        if(rankSizeOffset<1){
             item->setIcon(*plusIconGrey);
-        }
-        else if(toggledRankMap->count(rankName)>0){
-            toggledRankMap->at(rankName) ? item->setIcon(*minusIcon) : item->setIcon(*plusIcon);
+            backgroundPattern.setColor(QColorConstants::Svg::silver);
         }
         else{
-            // Well, we *have* multithreading but didn't check the toggle-status yet
-            // We assume that no multithreaded rank is expanded
-            item->setIcon(*plusIcon);
+            iconToggleStatus ? (item->setIcon(*minusIcon), backgroundPattern.setStyle(Qt::Dense6Pattern)) : item->setIcon(*plusIcon);
         }
+        //qInfo() << "rank " << rank.first->ref().get() << " has" << rankThreadMap->at(rank.first->ref().get()).second.size() << "threads";
 
         item->setText(rankName);
+        item->setData(Qt::UserRole, rank.first->ref().get());
         item->setToolTip(QString::fromStdString("node: "+rank.first->parent().name().str()));
-        item->setSizeHint(QSize(0, this->ROW_HEIGHT+(rankOffsetMap->at(rankName)*this->ROW_HEIGHT*toggledRankMap->at(rankName))));
-        item->setTextAlignment(Qt::AlignCenter);  
+        //item->setSizeHint(QSize(0, this->ROW_HEIGHT+(rankOffsetMap->at(rankName)*this->ROW_HEIGHT*toggledRankMap->at(rankName))));
+        item->setSizeHint(QSize(0, this->ROW_HEIGHT+(rankSizeOffset*this->ROW_HEIGHT*iconToggleStatus)));
+        item->setTextAlignment(Qt::AlignCenter);
+        item->setBackground(backgroundPattern); 
         this->addItem(item);
     }
 }
@@ -78,10 +94,14 @@ void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
     auto *item = this->itemAt(event->pos());  
     // Assuming we have clicked on a rank...
     if (item != nullptr) {
-        QString rankName = item->text();
         auto settings = ViewSettings::getInstance();
-        // We toggle the thread-view via a bool-flip 
-        settings->getToggledRankMap()->insert_or_assign(rankName, !settings->getToggledRankMap()->at(rankName));
+        QString rankName = item->text();
+        int rankRef = item->data(Qt::UserRole).toInt();
+        //qInfo() << "expansion ---> " << rankRef;
+        // We don't really care if the threads were expanded or not...
+        bool formerStatus = settings->getRankThreadMap()->at(rankRef).first;
+        // ... we just want to flip the bool value for every mousePressEvent 
+        settings->getRankThreadMap()->insert_or_assign(rankRef, std::pair(!formerStatus, settings->getRankThreadMap()->at(rankRef).second));
         Q_EMIT this->data->expansionEventHappend();
     }
     return;

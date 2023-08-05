@@ -29,6 +29,8 @@
 #include <QApplication>
 #include <QWheelEvent>
 
+#include <QDebug>
+
 
 TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsView(parent), data(data) {
     auto scene = new QGraphicsScene();
@@ -65,38 +67,36 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     auto onTimedElementDoubleClicked = [this](TimedElement *element) {
         this->data->setSelection(element->getStartTime(), element->getEndTime());
     };
-
-    //item.first->ref().get()
-    //QString::fromStdString(item.first->name().str())
     
     auto top = 20;
     auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
-    //todo: get the map with the toggled ranks
-    auto * toggledRankMap = ViewSettings::getInstance()->getToggledRankMap();
-    auto * rankOffsetMap = ViewSettings::getInstance()->getRankOffsetMap();
 
-    // We need that later to calculate the right communication offsets
-    std::map<OTF2_StringRef, QString> rankIndexMap{};
+    auto * rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
 
     for (const auto &item: selection->getSlots()) {
 
-        std::set<std::string> threadKeySet;
-        auto rankNameSdt = item.first->name().str();
-        auto rankName = QString::fromStdString(rankNameSdt);
-        rankIndexMap.insert({item.first->ref().get(), rankName});
+        auto rankNameStd = item.first->name().str();
+        auto rankName = QString::fromStdString(rankNameStd);
 
-        // Prepare slots
-        for (const auto &slot_: item.second) {
-            threadKeySet.insert(slot_->location->name().str());
+        // Do we have the thread view expanded?
+        auto toggleStatus = rankThreadMap->at(item.first->ref().get()).first;
+        int threadCount = rankThreadMap->at(item.first->ref().get()).second.size();
+
+        // Preparation
+        std::vector<std::string> threadRefVector(threadCount, std::to_string(0));
+        for (const auto& [threadRef, threadNumber]: rankThreadMap->at(item.first->ref().get()).second) {
+            // First threadRef has to go to index 0 etc.
+            threadRefVector[threadNumber-1]=threadRef;
         }
 
         // Display slots
-        for (const std::string & key: threadKeySet) {
+        for (int i = 0; i < threadCount; i++) {
             for (const auto &slot: item.second) {
                 // Do we really want to draw this slot?
                 if (!(slot->getKind() & data->getSettings()->getFilter().getSlotKinds())) continue;
                 // Does it belong to the currently drawn thread?
-                if (!(slot->location->name().str() == key)) continue;
+                auto threadRef = std::to_string(slot->location->ref().get());
+                if (!(threadRef == threadRefVector[i])) continue;
                 auto region = slot->region;
                 auto regionName = region->name();
                 auto regionNameStr = regionName.str();
@@ -124,11 +124,11 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                 rectItem->setZValue(slot->priority);
                 scene->addItem(rectItem);
             }
-            if(toggledRankMap->at(rankName)==true){
+            if(toggleStatus){
                 top += ROW_HEIGHT;
             }
         }
-        if(toggledRankMap->at(rankName)==false){
+        if(!toggleStatus){
             top += ROW_HEIGHT;
         }
     }
@@ -140,8 +140,8 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
 
         const CommunicationEvent *endEvent = communication->getEndEvent();
-        auto endEventEnd = static_cast<qreal>(startEvent->getEndTime().count());
-        auto endEventStart = static_cast<qreal>(startEvent->getStartTime().count());
+        auto endEventEnd = static_cast<qreal>(endEvent->getEndTime().count());
+        auto endEventStart = static_cast<qreal>(endEvent->getStartTime().count());
 
 
         auto fromTime = startEventStart + (startEventEnd - startEventStart) / 2;
@@ -150,8 +150,29 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto toTime = endEventStart + (endEventEnd - endEventStart) / 2;
         auto effectiveToTime = qMin(endR, toTime) - beginR;
 
+        // With the new support for threads we have also to consider the thread-location (fromThread, to Thread)
+        auto fromRank = startEvent->getLocation()->location_group().ref().get();
+        auto fromThreadRef = startEvent->getLocation()->ref().get();
+        auto toRank = endEvent->getLocation()->location_group().ref().get(); 
+        auto toThreadRef = endEvent->getLocation()->ref().get(); 
+        /*
+        This is the original way to get rank references:
         auto fromRank = startEvent->getLocation()->ref().get();
-        auto toRank = endEvent->getLocation()->ref().get();
+        auto toRank = endEvent->getLocation()->ref().get(); 
+
+        We changed it based on the assumption that:
+        location <=> Thread
+        location group <=> Rank
+        (Page 4, MOTIV Report)
+        */
+      
+        // Correction if we point from and/or to somthing else than a mainthread (=> -1)
+        bool fromToggleStatus = rankThreadMap->at(fromRank).first;
+        int fromThreadNumber = rankThreadMap->at(fromRank).second.at(std::to_string(fromThreadRef));
+        bool toToggleStatus = rankThreadMap->at(toRank).first;
+        int toThreadNumber = rankThreadMap->at(toRank).second.at(std::to_string(toThreadRef));
+        int fromThreadOffset = fromToggleStatus*(fromThreadNumber-1)*ROW_HEIGHT;
+        int toThreadOffset = toToggleStatus*(toThreadNumber-1)*ROW_HEIGHT;
 
         int higherPos = 0;
         int lowerPos = 0;
@@ -163,24 +184,35 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         // Idea: We only accumulate the offset from positions above (<=> lower ranks) higherPos => higherPos-1
         int higherOffset = 0;
         for (int i = higherPos-1; i >= 0; i--) {
-            currentRank = rankIndexMap.at(i);
-            higherOffset += rankOffsetMap->at(currentRank)*ROW_HEIGHT*toggledRankMap->at(currentRank);
+            // Do we have the thread view expanded?
+            bool toggleStatus = rankThreadMap->at(i).first;
+            // How many Threads are there? apart from the main thread => -1
+            int threadCount = rankThreadMap->at(i).second.size()-1;
+            higherOffset += toggleStatus*threadCount*ROW_HEIGHT;
         }
 
         // How many threads were rendered extra within the arrow?
         // Idea: The same as for higherOffset
         int innerOffset = 0;
         for (int i = lowerPos-1; i >= higherPos; i--) {
-            currentRank = rankIndexMap.at(i);
-            innerOffset += rankOffsetMap->at(currentRank)*ROW_HEIGHT*toggledRankMap->at(currentRank);
+            // Do we have the thread view expanded?
+            bool toggleStatus = rankThreadMap->at(i).first;
+            // How many Threads are there? apart from the main thread => -1
+            int threadCount = rankThreadMap->at(i).second.size()-1;
+            innerOffset += toggleStatus*threadCount*ROW_HEIGHT;
         }
 
-        int toOffset = 0;
         int fromOffset = 0;
-        // if the arrow points to the bottom (higher ranks are rendered lower) we have to use the toOffset as the sum of higherOffset and innerOffset
-        toRank > fromRank ? (toOffset=higherOffset+innerOffset, fromOffset=higherOffset) : (toOffset=higherOffset, fromOffset=higherOffset+innerOffset);
+        int toOffset = 0;
 
-        QString Info = QString::fromStdString("ranks:  "+std::to_string(fromRank)+"  to  "+std::to_string(toRank));
+        // if the arrow points to the bottom (higher ranks are rendered lower) we have to use the toOffset as the sum of higherOffset and innerOffset
+        toRank > fromRank ? (toOffset=higherOffset+innerOffset+toThreadOffset, fromOffset=higherOffset+fromThreadOffset) : (toOffset=higherOffset+toThreadOffset, fromOffset=higherOffset+innerOffset+fromThreadOffset);
+
+        auto rankNameFrom = startEvent->getLocation()->location_group().name().str();
+        auto threadNameFrom = startEvent->getLocation()->name().str();
+        auto rankNameTo = endEvent->getLocation()->location_group().name().str();
+        auto threadNameTo = endEvent->getLocation()->name().str();
+        QString Info = QString::fromStdString("From:\t"+rankNameFrom+"\n\t"+threadNameFrom+"\nTo:\t"+rankNameTo+"\n\t"+threadNameTo);
 
         auto fromX = effectiveFromTime / runtimeR * width;
         auto fromY = static_cast<qreal>(fromRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + fromOffset;
@@ -194,6 +226,11 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         arrow->setPen(arrowPen);
         arrow->setZValue(layers::Z_LAYER_P2P_COMMUNICATIONS);
         arrow->setToolTip(Info);
+        // Line modification, currently not used, problem: CommunicationIndicator is a QGraphicsPolygonItem (closed polygon)
+        //QPolygonF pointPath = arrow->polygon();
+        //pointPath.insert(1, QPointF(fromX, toY));    
+        //arrow->setPolygon(pointPath);
+
         scene->addItem(arrow);
     }
 
@@ -225,27 +262,38 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
 
             auto locationGroupNameStr = member->getLocation()->location_group().name().str();
-            //std::string * test = &locationGroupNameStr;
-            //qInfo() << "(1) aktuell..." << QString::fromStdString(locationGroupNameStr);
-            //qInfo() << "(2) aktuell..." << member->getLocation()->location_group().ref().get();
             size_t pos = locationGroupNameStr.find_last_of(' ');
             int y = std::stoi(locationGroupNameStr.substr(pos + 1));      
 
             int IndicatorOffset = 0;
+            auto rankRef = member->getLocation()->location_group().ref().get();
+            auto threadRef = std::to_string(member->getLocation()->ref().get());
+            /*
             QString lowerRank;
-            // We accumulate the ROW_HEIGHTs for every expanded thread
-            // Hint: lower rank <=> above our current position
             for (int i = member->getLocation()->location_group().ref().get()-1; i >= 0; i--) {
                 lowerRank = rankIndexMap.at(i);
                 IndicatorOffset += rankOffsetMap->at(lowerRank)*ROW_HEIGHT*toggledRankMap->at(lowerRank);
             }
+            */
+           
+            // We accumulate the ROW_HEIGHTs for every expanded thread
+            // Hint: lower rank <=> above our current position
+            for (int i = rankRef-1; i >= 0; i--) {
+                // Do we have the thread view expanded?
+                bool toggleStatus = rankThreadMap->at(i).first;
+                // How many Threads are there? apart from the main thread => -1
+                int threadCount = rankThreadMap->at(i).second.size()-1;
+                IndicatorOffset += toggleStatus*threadCount*ROW_HEIGHT;
+            }
+
+            // Correction if the Indicator is *itself* situated within a thread
+            // No need to multiply with toggleStatus: main thread case => (1-1)*ROW_HEIGHT
+            IndicatorOffset += (rankThreadMap->at(rankRef).second.at(threadRef)-1)*ROW_HEIGHT;
 
             auto memberFromX = (memberEffectiveFromTime / runtimeR) * width;
-            //auto memberFromY = y*ROW_HEIGHT+20;
             auto memberFromY = y*ROW_HEIGHT+20+IndicatorOffset;
 
             auto memberToX = (memberEffectiveToTime / runtimeR) * width;
-            //auto memberToY = top - (top - (y+1)*ROW_HEIGHT)+20;
             auto memberToY = top - (top - (y+1)*ROW_HEIGHT)+20+IndicatorOffset;
 
             auto memberRectItem = new CollectiveCommunicationIndicator(communication);
