@@ -28,8 +28,6 @@
 #include <QGraphicsRectItem>
 #include <QApplication>
 #include <QWheelEvent>
-#include <QMessageBox>
-#include <QGraphicsSimpleTextItem>
 
 
 TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsView(parent), data(data) {
@@ -59,8 +57,6 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     auto end = begin + runtime;
     auto endR = static_cast<qreal>(end);
 
-    std::string ErrLog{};
-
     QPen arrowPen(Qt::black, 1);
     QPen collectiveCommunicationPen(colors::COLOR_COLLECTIVE_COMMUNICATION, 2);
 
@@ -75,322 +71,238 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
     auto * rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
 
-
-    int slotCounter = 0;
-    int slotFailures = 0;
-    std::set<std::string> slotExceptionSet{};
     for (const auto &item: selection->getSlots()) {
-        try
-        {
-            slotCounter++;
-            auto rankNameStd = item.first->name().str();
-            auto rankName = QString::fromStdString(rankNameStd);
 
-            // Do we have the thread view expanded?
-            auto toggleStatus = rankThreadMap->at(item.first->ref().get()).first;
-            int threadCount = rankThreadMap->at(item.first->ref().get()).second.size();
+        auto rankNameStd = item.first->name().str();
+        auto rankName = QString::fromStdString(rankNameStd);
 
-            // Preparation
-            std::vector<std::string> threadRefVector(threadCount, std::to_string(0));
-            for (const auto& [threadRef, threadNumber]: rankThreadMap->at(item.first->ref().get()).second) {
-                // First threadRef has to go to index 0 etc.
-                threadRefVector[threadNumber-1]=threadRef;
+        // Do we have the thread view expanded?
+        auto toggleStatus = rankThreadMap->at(item.first->ref().get()).first;
+        int threadCount = rankThreadMap->at(item.first->ref().get()).second.size();
+
+        // Preparation
+        std::vector<std::string> threadRefVector(threadCount, std::to_string(0));
+        for (const auto& [threadRef, threadNumber]: rankThreadMap->at(item.first->ref().get()).second) {
+            // First threadRef has to go to index 0 etc.
+            threadRefVector[threadNumber-1]=threadRef;
+        }
+
+        // Display slots
+        for (int i = 0; i < threadCount; i++) {
+            for (const auto &slot: item.second) {
+                // Do we really want to draw this slot?
+                if (!(slot->getKind() & data->getSettings()->getFilter().getSlotKinds())) continue;
+                // Does it belong to the currently drawn thread?
+                auto threadRef = std::to_string(slot->location->ref().get());
+                if (!(threadRef == threadRefVector[i])) continue;
+                auto region = slot->region;
+                auto regionName = region->name();
+                auto regionNameStr = regionName.str();
+                auto startTime = slot->startTime.count();
+                auto endTime = slot->endTime.count();
+
+                // Ensures slots starting before `begin` (like main) are considered to start at begin
+                auto effectiveStartTime = qMax(begin, startTime);
+                // Ensures slots ending after `end` (like main) are considered to end at end
+                auto effectiveEndTime = qMin(end, endTime);
+
+                auto slotBeginPos = (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) * width;
+                auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
+                auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
+
+                QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
+                auto rectItem = new SlotIndicator(rect, slot);
+                rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
+                rectItem->setOnSelected(onTimedElementSelected);
+                rectItem->setToolTip(slot->location->name().str().c_str());
+                //rectItem->setToolTip(regionNameStr.c_str());
+
+                // Determine color based on name
+                rectItem->setBrush(slot->getColor());
+                rectItem->setZValue(slot->priority);
+                scene->addItem(rectItem);
             }
-
-            // Display slots
-            for (int i = 0; i < threadCount; i++) {
-                for (const auto &slot: item.second) {
-                    // Do we really want to draw this slot?
-                    if (!(slot->getKind() & data->getSettings()->getFilter().getSlotKinds())) continue;
-                    // Does it belong to the currently drawn thread?
-                    auto threadRef = std::to_string(slot->location->ref().get());
-                    if (!(threadRef == threadRefVector[i])) continue;
-                    auto region = slot->region;
-                    auto regionName = region->name();
-                    auto regionNameStr = regionName.str();
-                    auto startTime = slot->startTime.count();
-                    auto endTime = slot->endTime.count();
-
-                    // Ensures slots starting before `begin` (like main) are considered to start at begin
-                    auto effectiveStartTime = qMax(begin, startTime);
-                    // Ensures slots ending after `end` (like main) are considered to end at end
-                    auto effectiveEndTime = qMin(end, endTime);
-
-                    auto slotBeginPos = (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) * width;
-                    auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
-                    auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
-
-                    QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
-                    auto rectItem = new SlotIndicator(rect, slot);
-                    rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
-                    rectItem->setOnSelected(onTimedElementSelected);
-                    rectItem->setToolTip(slot->location->name().str().c_str());
-                    //rectItem->setToolTip(regionNameStr.c_str());
-
-                    // Determine color based on name
-                    rectItem->setBrush(slot->getColor());
-                    rectItem->setZValue(slot->priority);
-                    scene->addItem(rectItem);
-                }
-                if(toggleStatus){
-                    top += ROW_HEIGHT;
-                }
-            }
-            if(!toggleStatus){
+            if(toggleStatus){
                 top += ROW_HEIGHT;
             }
         }
-        catch(const std::exception& e)
-        {
-            //std::cerr << e.what() << '\n';
-            slotExceptionSet.insert(e.what());
-            slotFailures++;
-            continue;
-        }
-        catch(...)
-        {
-            slotFailures++;
-            continue;
+        if(!toggleStatus){
+            top += ROW_HEIGHT;
         }
     }
-    if(slotFailures){
-        std::string errString{};
-        for (auto& errType: slotExceptionSet){
-                errString+=" "+errType;
-        }
-        ErrLog+="\nfailed "+std::to_string(slotFailures)+" times to draw a p2p communication (arrows) of total "+std::to_string(slotCounter)+"\nexception types:"+errString;
-    }
 
-
-    int p2pCommCounter = 0;
-    int p2pCommFailures = 0;
-    std::set<std::string> p2pExceptionSet{};
     for (const auto &communication: selection->getCommunications()) {
-        try
-        {
-            p2pCommCounter++;
-            const CommunicationEvent *startEvent = communication->getStartEvent();
-            auto startEventEnd = static_cast<qreal>(startEvent->getEndTime().count());
-            auto startEventStart = static_cast<qreal>(startEvent->getStartTime().count());
+        const CommunicationEvent *startEvent = communication->getStartEvent();
+        auto startEventEnd = static_cast<qreal>(startEvent->getEndTime().count());
+        auto startEventStart = static_cast<qreal>(startEvent->getStartTime().count());
 
 
-            const CommunicationEvent *endEvent = communication->getEndEvent();
-            auto endEventEnd = static_cast<qreal>(endEvent->getEndTime().count());
-            auto endEventStart = static_cast<qreal>(endEvent->getStartTime().count());
+        const CommunicationEvent *endEvent = communication->getEndEvent();
+        auto endEventEnd = static_cast<qreal>(endEvent->getEndTime().count());
+        auto endEventStart = static_cast<qreal>(endEvent->getStartTime().count());
 
 
-            auto fromTime = startEventStart + (startEventEnd - startEventStart) / 2;
-            auto effectiveFromTime = qMax(beginR, fromTime) - beginR;
+        auto fromTime = startEventStart + (startEventEnd - startEventStart) / 2;
+        auto effectiveFromTime = qMax(beginR, fromTime) - beginR;
 
-            auto toTime = endEventStart + (endEventEnd - endEventStart) / 2;
-            auto effectiveToTime = qMin(endR, toTime) - beginR;
+        auto toTime = endEventStart + (endEventEnd - endEventStart) / 2;
+        auto effectiveToTime = qMin(endR, toTime) - beginR;
 
-            // With the new support for threads we have also to consider the thread-location (fromThread, to Thread)
-            auto fromRank = startEvent->getLocation()->location_group().ref().get();
-            auto fromThreadRef = startEvent->getLocation()->ref().get();
-            auto toRank = endEvent->getLocation()->location_group().ref().get(); 
-            auto toThreadRef = endEvent->getLocation()->ref().get();
-            /*
-            This is the original way to get rank references:
-            auto fromRank = startEvent->getLocation()->ref().get();
-            auto toRank = endEvent->getLocation()->ref().get(); 
+        // With the new support for threads we have also to consider the thread-location (fromThread, to Thread)
+        auto fromRank = startEvent->getLocation()->location_group().ref().get();
+        auto fromThreadRef = startEvent->getLocation()->ref().get();
+        auto toRank = endEvent->getLocation()->location_group().ref().get(); 
+        auto toThreadRef = endEvent->getLocation()->ref().get(); 
+        /*
+        This is the original way to get rank references:
+        auto fromRank = startEvent->getLocation()->ref().get();
+        auto toRank = endEvent->getLocation()->ref().get(); 
 
-            We changed it based on the assumption that:
-            location <=> Thread
-            location group <=> Rank
-            (Page 4, MOTIV Report)
-            */
-        
-            auto rankNameFrom = startEvent->getLocation()->location_group().name().str();
-            auto threadNameFrom = startEvent->getLocation()->name().str();
-            auto rankNameTo = endEvent->getLocation()->location_group().name().str();
-            auto threadNameTo = endEvent->getLocation()->name().str();
-            QString Info = QString::fromStdString("From:\t"+rankNameFrom+"\n\t"+threadNameFrom+"\nTo:\t"+rankNameTo+"\n\t"+threadNameTo);
+        We changed it based on the assumption that:
+        location <=> Thread
+        location group <=> Rank
+        (Page 4, MOTIV Report)
+        */
+      
+        // Correction if we point from and/or to somthing else than a mainthread (=> -1)
+        bool fromToggleStatus = rankThreadMap->at(fromRank).first;
+        int fromThreadNumber = rankThreadMap->at(fromRank).second.at(std::to_string(fromThreadRef));
+        bool toToggleStatus = rankThreadMap->at(toRank).first;
+        int toThreadNumber = rankThreadMap->at(toRank).second.at(std::to_string(toThreadRef));
+        int fromThreadOffset = fromToggleStatus*(fromThreadNumber-1)*ROW_HEIGHT;
+        int toThreadOffset = toToggleStatus*(toThreadNumber-1)*ROW_HEIGHT;
 
-            // Correction if we point from and/or to somthing else than a mainthread (=> -1)
-            bool fromToggleStatus = rankThreadMap->at(fromRank).first;
-            int fromThreadNumber = rankThreadMap->at(fromRank).second.at(std::to_string(fromThreadRef));
-            bool toToggleStatus = rankThreadMap->at(toRank).first;
-            int toThreadNumber = rankThreadMap->at(toRank).second.at(std::to_string(toThreadRef));
-            int fromThreadOffset = fromToggleStatus*(fromThreadNumber-1)*ROW_HEIGHT;
-            int toThreadOffset = toToggleStatus*(toThreadNumber-1)*ROW_HEIGHT;
+        int higherPos = 0;
+        int lowerPos = 0;
+        QString currentRank;
+        // the arrow points to the bottom
+        toRank > fromRank ? (higherPos=fromRank, lowerPos=toRank) : (higherPos=toRank, lowerPos=fromRank);
 
-            int higherPos = 0;
-            int lowerPos = 0;
-            QString currentRank;
-            // the arrow points to the bottom
-            toRank > fromRank ? (higherPos=fromRank, lowerPos=toRank) : (higherPos=toRank, lowerPos=fromRank);
-
-            // How many threads were rendered above the arrow?
-            // Idea: We only accumulate the offset from positions above (<=> lower ranks) higherPos => higherPos-1
-            int higherOffset = 0;
-            for (int i = higherPos-1; i >= 0; i--) {
-                // Do we have the thread view expanded?
-                bool toggleStatus = rankThreadMap->at(i).first;
-                // How many Threads are there? apart from the main thread => -1
-                int threadCount = rankThreadMap->at(i).second.size()-1;
-                higherOffset += toggleStatus*threadCount*ROW_HEIGHT;
-            }
-
-            // How many threads were rendered extra within the arrow?
-            // Idea: The same as for higherOffset
-            int innerOffset = 0;
-            for (int i = lowerPos-1; i >= higherPos; i--) {
-                // Do we have the thread view expanded?
-                bool toggleStatus = rankThreadMap->at(i).first;
-                // How many Threads are there? apart from the main thread => -1
-                int threadCount = rankThreadMap->at(i).second.size()-1;
-                innerOffset += toggleStatus*threadCount*ROW_HEIGHT;
-            }
-
-            int fromOffset = 0;
-            int toOffset = 0;
-
-            // if the arrow points to the bottom (higher ranks are rendered lower) we have to use the toOffset as the sum of higherOffset and innerOffset
-            toRank > fromRank ? (toOffset=higherOffset+innerOffset+toThreadOffset, fromOffset=higherOffset+fromThreadOffset) : (toOffset=higherOffset+toThreadOffset, fromOffset=higherOffset+innerOffset+fromThreadOffset);
-
-            auto fromX = effectiveFromTime / runtimeR * width;
-            auto fromY = static_cast<qreal>(fromRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + fromOffset;
-
-            auto toX = effectiveToTime / runtimeR * width;
-            auto toY = static_cast<qreal> (toRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + toOffset;
-
-            auto arrow = new CommunicationIndicator(communication, fromX, fromY, toX, toY);
-            arrow->setOnSelected(onTimedElementSelected);
-            arrow->setOnDoubleClick(onTimedElementDoubleClicked);
-            arrow->setPen(arrowPen);
-            arrow->setZValue(layers::Z_LAYER_P2P_COMMUNICATIONS);
-            arrow->setToolTip(Info);
-            // Line modification, currently not used, problem: CommunicationIndicator is a QGraphicsPolygonItem (closed polygon)
-            //QPolygonF pointPath = arrow->polygon();
-            //pointPath.insert(1, QPointF(fromX, toY));    
-            //arrow->setPolygon(pointPath);
-
-            scene->addItem(arrow);
+        // How many threads were rendered above the arrow?
+        // Idea: We only accumulate the offset from positions above (<=> lower ranks) higherPos => higherPos-1
+        int higherOffset = 0;
+        for (int i = higherPos-1; i >= 0; i--) {
+            // Do we have the thread view expanded?
+            bool toggleStatus = rankThreadMap->at(i).first;
+            // How many Threads are there? apart from the main thread => -1
+            int threadCount = rankThreadMap->at(i).second.size()-1;
+            higherOffset += toggleStatus*threadCount*ROW_HEIGHT;
         }
-        catch(const std::exception& e)
-        {
-            //std::cerr << e.what() << '\n';
-            p2pExceptionSet.insert(e.what());
-            p2pCommFailures++;
-            continue;
+
+        // How many threads were rendered extra within the arrow?
+        // Idea: The same as for higherOffset
+        int innerOffset = 0;
+        for (int i = lowerPos-1; i >= higherPos; i--) {
+            // Do we have the thread view expanded?
+            bool toggleStatus = rankThreadMap->at(i).first;
+            // How many Threads are there? apart from the main thread => -1
+            int threadCount = rankThreadMap->at(i).second.size()-1;
+            innerOffset += toggleStatus*threadCount*ROW_HEIGHT;
         }
-        catch(...)
-        {
-            p2pCommFailures++;
-            continue;
-        }
+
+        int fromOffset = 0;
+        int toOffset = 0;
+
+        // if the arrow points to the bottom (higher ranks are rendered lower) we have to use the toOffset as the sum of higherOffset and innerOffset
+        toRank > fromRank ? (toOffset=higherOffset+innerOffset+toThreadOffset, fromOffset=higherOffset+fromThreadOffset) : (toOffset=higherOffset+toThreadOffset, fromOffset=higherOffset+innerOffset+fromThreadOffset);
+
+        auto rankNameFrom = startEvent->getLocation()->location_group().name().str();
+        auto threadNameFrom = startEvent->getLocation()->name().str();
+        auto rankNameTo = endEvent->getLocation()->location_group().name().str();
+        auto threadNameTo = endEvent->getLocation()->name().str();
+        QString Info = QString::fromStdString("From:\t"+rankNameFrom+"\n\t"+threadNameFrom+"\nTo:\t"+rankNameTo+"\n\t"+threadNameTo);
+
+        auto fromX = effectiveFromTime / runtimeR * width;
+        auto fromY = static_cast<qreal>(fromRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + fromOffset;
+
+        auto toX = effectiveToTime / runtimeR * width;
+        auto toY = static_cast<qreal> (toRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + toOffset;
+
+        auto arrow = new CommunicationIndicator(communication, fromX, fromY, toX, toY);
+        arrow->setOnSelected(onTimedElementSelected);
+        arrow->setOnDoubleClick(onTimedElementDoubleClicked);
+        arrow->setPen(arrowPen);
+        arrow->setZValue(layers::Z_LAYER_P2P_COMMUNICATIONS);
+        arrow->setToolTip(Info);
+        // Line modification, currently not used, problem: CommunicationIndicator is a QGraphicsPolygonItem (closed polygon)
+        //QPolygonF pointPath = arrow->polygon();
+        //pointPath.insert(1, QPointF(fromX, toY));    
+        //arrow->setPolygon(pointPath);
+
+        scene->addItem(arrow);
     }
-    if(p2pCommFailures){
-        std::string errString{};
-        for (auto& errType: p2pExceptionSet){
-                errString+=" "+errType;
-        }
-        ErrLog+="\nfailed "+std::to_string(p2pCommFailures)+" times to draw a p2p communication (arrows) of total "+std::to_string(p2pCommCounter)+"\nexception types:"+errString;
-    } 
 
-
-    int collectiveCommCounter = 0;
-    int collectiveCommFailures = 0;
-    std::set<std::string> collectiveExceptionSet{};
     for (const auto &communication: selection->getCollectiveCommunications()) {
-        try{
-            collectiveCommCounter++;
-            auto fromTime = static_cast<qreal>(communication->getStartTime().count());
-            auto effectiveFromTime = qMax(beginR, fromTime) - beginR;
+        auto fromTime = static_cast<qreal>(communication->getStartTime().count());
+        auto effectiveFromTime = qMax(beginR, fromTime) - beginR;
 
-            auto toTime = static_cast<qreal>(communication->getEndTime().count());
-            auto effectiveToTime = qMin(endR, toTime) - beginR;
+        auto toTime = static_cast<qreal>(communication->getEndTime().count());
+        auto effectiveToTime = qMin(endR, toTime) - beginR;
 
-            auto fromX = (effectiveFromTime / runtimeR) * width;
-            auto fromY = 10;
+        auto fromX = (effectiveFromTime / runtimeR) * width;
+        auto fromY = 10;
 
-            auto toX = (effectiveToTime / runtimeR) * width;
-            auto toY = top + 10;
+        auto toX = (effectiveToTime / runtimeR) * width;
+        auto toY = top + 10;
 
-            auto rectItem = new CollectiveCommunicationIndicator(communication);
-            rectItem->setOnSelected(onTimedElementSelected);
-            rectItem->setRect(QRectF(QPointF(fromX, fromY), QPointF(toX, toY)));
-            rectItem->setPen(collectiveCommunicationPen);
-            rectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
-            scene->addItem(rectItem);
+        auto rectItem = new CollectiveCommunicationIndicator(communication);
+        rectItem->setOnSelected(onTimedElementSelected);
+        rectItem->setRect(QRectF(QPointF(fromX, fromY), QPointF(toX, toY)));
+        rectItem->setPen(collectiveCommunicationPen);
+        rectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
+        scene->addItem(rectItem);
 
-            for (const auto &member: communication->getMembers()){
-                auto memberFromTime = static_cast<qreal>(member->start.count());
-                auto memberEffectiveFromTime = qMax(beginR, memberFromTime) - beginR;
+        for (const auto &member: communication->getMembers()){
+            auto memberFromTime = static_cast<qreal>(member->start.count());
+            auto memberEffectiveFromTime = qMax(beginR, memberFromTime) - beginR;
 
-                auto memberToTime =  static_cast<qreal>(member->end.count());
-                auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
+            auto memberToTime =  static_cast<qreal>(member->end.count());
+            auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
 
-                auto locationGroupNameStr = member->getLocation()->location_group().name().str();
-                size_t pos = locationGroupNameStr.find_last_of(' ');
-                int y = std::stoi(locationGroupNameStr.substr(pos + 1));      
+            auto locationGroupNameStr = member->getLocation()->location_group().name().str();
+            size_t pos = locationGroupNameStr.find_last_of(' ');
+            int y = std::stoi(locationGroupNameStr.substr(pos + 1));      
 
-                int IndicatorOffset = 0;
-                auto rankRef = member->getLocation()->location_group().ref().get();
-                auto threadRef = std::to_string(member->getLocation()->ref().get());
-                /*
-                QString lowerRank;
-                for (int i = member->getLocation()->location_group().ref().get()-1; i >= 0; i--) {
-                    lowerRank = rankIndexMap.at(i);
-                    IndicatorOffset += rankOffsetMap->at(lowerRank)*ROW_HEIGHT*toggledRankMap->at(lowerRank);
-                }
-                */
-            
-                // We accumulate the ROW_HEIGHTs for every expanded thread
-                // Hint: lower rank <=> above our current position
-                for (int i = rankRef-1; i >= 0; i--) {
-                    // Do we have the thread view expanded?
-                    bool toggleStatus = rankThreadMap->at(i).first;
-                    // How many Threads are there? apart from the main thread => -1
-                    int threadCount = rankThreadMap->at(i).second.size()-1;
-                    IndicatorOffset += toggleStatus*threadCount*ROW_HEIGHT;
-                }
-
-                // Correction if the Indicator is *itself* situated within a thread
-                // No need to multiply with toggleStatus: main thread case => (1-1)*ROW_HEIGHT
-                IndicatorOffset += (rankThreadMap->at(rankRef).second.at(threadRef)-1)*ROW_HEIGHT;
-
-                auto memberFromX = (memberEffectiveFromTime / runtimeR) * width;
-                auto memberFromY = y*ROW_HEIGHT+20+IndicatorOffset;
-
-                auto memberToX = (memberEffectiveToTime / runtimeR) * width;
-                auto memberToY = top - (top - (y+1)*ROW_HEIGHT)+20+IndicatorOffset;
-
-                auto memberRectItem = new CollectiveCommunicationIndicator(communication);
-                memberRectItem->setOnSelected(onTimedElementSelected);
-                memberRectItem->setRect(QRectF(QPointF(memberFromX, memberFromY), QPointF(memberToX, memberToY)));            
-                memberRectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
-                QBrush brush(Qt::black);
-                brush.setStyle(Qt::BDiagPattern);
-                memberRectItem->setBrush(brush);
-                scene->addItem(memberRectItem);
+            int IndicatorOffset = 0;
+            auto rankRef = member->getLocation()->location_group().ref().get();
+            auto threadRef = std::to_string(member->getLocation()->ref().get());
+            /*
+            QString lowerRank;
+            for (int i = member->getLocation()->location_group().ref().get()-1; i >= 0; i--) {
+                lowerRank = rankIndexMap.at(i);
+                IndicatorOffset += rankOffsetMap->at(lowerRank)*ROW_HEIGHT*toggledRankMap->at(lowerRank);
             }
-        }    
-        catch(const std::exception& e)
-        {
-            //std::cerr << e.what() << '\n';
-            collectiveExceptionSet.insert(e.what());
-            collectiveCommFailures++;
-            continue;
-        }
-        catch(...)
-        {
-            collectiveCommFailures++;
-            continue;
-        }
-    }
-    if(collectiveCommFailures){
-        std::string errString{};
-        for (auto& errType: collectiveExceptionSet){
-                errString+=" "+errType;
-        }
-        ErrLog+="\nfailed "+std::to_string(collectiveCommFailures)+" times to draw a p2p communication (arrows) of total "+std::to_string(collectiveCommCounter)+"\nexception types:"+errString;
-    }
+            */
+           
+            // We accumulate the ROW_HEIGHTs for every expanded thread
+            // Hint: lower rank <=> above our current position
+            for (int i = rankRef-1; i >= 0; i--) {
+                // Do we have the thread view expanded?
+                bool toggleStatus = rankThreadMap->at(i).first;
+                // How many Threads are there? apart from the main thread => -1
+                int threadCount = rankThreadMap->at(i).second.size()-1;
+                IndicatorOffset += toggleStatus*threadCount*ROW_HEIGHT;
+            }
 
-    if(ErrLog.length()>1){
-        // how to inform?
-        qInfo() << QString::fromStdString(ErrLog);
+            // Correction if the Indicator is *itself* situated within a thread
+            // No need to multiply with toggleStatus: main thread case => (1-1)*ROW_HEIGHT
+            IndicatorOffset += (rankThreadMap->at(rankRef).second.at(threadRef)-1)*ROW_HEIGHT;
+
+            auto memberFromX = (memberEffectiveFromTime / runtimeR) * width;
+            auto memberFromY = y*ROW_HEIGHT+20+IndicatorOffset;
+
+            auto memberToX = (memberEffectiveToTime / runtimeR) * width;
+            auto memberToY = top - (top - (y+1)*ROW_HEIGHT)+20+IndicatorOffset;
+
+            auto memberRectItem = new CollectiveCommunicationIndicator(communication);
+            memberRectItem->setOnSelected(onTimedElementSelected);
+            memberRectItem->setRect(QRectF(QPointF(memberFromX, memberFromY), QPointF(memberToX, memberToY)));            
+            memberRectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
+            QBrush brush(Qt::black);
+            brush.setStyle(Qt::BDiagPattern);
+            memberRectItem->setBrush(brush);
+            scene->addItem(memberRectItem);
+        }
     }
 
 }
