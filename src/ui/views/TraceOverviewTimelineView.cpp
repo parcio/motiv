@@ -27,6 +27,10 @@
 #include <QWheelEvent>
 #include <QRubberBand>
 
+#include <iostream>
+#include <fstream>
+#include <tuple>
+
 TraceOverviewTimelineView::TraceOverviewTimelineView(Trace *fullTrace, QWidget *parent) : QGraphicsView(parent), fullTrace(fullTrace) {
     auto scene = new QGraphicsScene(this);
     this->setAutoFillBackground(false);
@@ -44,6 +48,101 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
     auto runtime = uiTrace->getRuntime().count();
     auto begin = 0;
     auto end = begin + runtime;
+
+
+    // DEBUG INFORMATION
+        std::map<std::string, std::pair<std::pair<int, std::list<std::string>>, std::pair<int, std::vector<Slot*>>>> SlotMap_;
+        for(const auto &item: uiTrace->getSlots()){
+            auto rankNameStd = item.first->name().str();
+            std::string path_sizes = "/home/usr/debug/sizes/" + rankNameStd + ".txt";
+            std::replace(path_sizes.begin(), path_sizes.end(), ' ', '_');
+
+            std::string path_functions = "/home/usr/debug/functions/" + rankNameStd + ".txt";
+            std::replace(path_functions.begin(), path_functions.end(), ' ', '_');
+
+            //std::cout << path << std::endl;          
+            auto vector_ = *item.second.vec_;
+            std::cout << rankNameStd << ": " << vector_.size() << ", ";
+            std::list<std::string> slots_;
+            std::list<std::tuple<Slot*,Slot*>> slotAdd_;
+            for(const auto &slot: item.second){     
+                auto regionName = slot->region->name().str();               
+                slots_.push_back(regionName);
+                Slot *nextSlot = &*(std::next(slot));
+                slotAdd_.push_back(std::make_tuple(slot, nextSlot));
+            }
+            std::pair<int, std::list<std::string>> listInfo(slots_.size(), slots_);
+            std::pair<int, std::vector<Slot*>> vectorInfo(vector_.size(), vector_);
+            SlotMap_[rankNameStd] = std::make_pair(listInfo, vectorInfo);
+            std::cout << slots_.size() << std::endl;
+            
+            int size = slots_.size();
+            if(size < vector_.size()){
+                //write vector_ positions in file
+                FILE *file = std::fopen(path_sizes.c_str(), "r");
+                bool sizeFound = false;
+
+                if (file) {
+                    int existingSize;
+                    while (fscanf(file, "%d\n", &existingSize) != EOF) {
+                        if (existingSize == size) {
+                            sizeFound = true;
+                            break;
+                        }
+                    }
+                    std::fclose(file);
+                }
+
+                if (!sizeFound) {
+                    file = std::fopen(path_sizes.c_str(), "a");
+                    if (file) {
+                        std::fprintf(file, "%d\n", size);
+                        std::fclose(file);
+                    }
+                }
+
+                //write missed function name
+                FILE *functionsFile = std::fopen(path_functions.c_str(), "a");
+                if (functionsFile) {
+                    FILE *sizesFile = std::fopen(path_sizes.c_str(), "r");
+                    if (sizesFile) {
+                        int num;
+                        while (fscanf(sizesFile, "%d\n", &num) != EOF) {
+                            if (num >= 0 && num < vector_.size()) {
+                                std::string regionName = vector_[num + 1]->region->name().str();                              
+
+                                // Überprüfe, ob der Funktionsname bereits in der functionsFile enthalten ist
+                                bool shouldWrite = true;
+                                FILE *existingFunctionsFile = std::fopen(path_functions.c_str(), "r");
+                                if (existingFunctionsFile) {
+                                    char line[1024]; // Annahme: Zeilenlänge < 256
+                                    while (fgets(line, sizeof(line), existingFunctionsFile) != nullptr) {
+                                        std::string existingFunctionName = line;
+                                        existingFunctionName = existingFunctionName.substr(0, existingFunctionName.size() - 1); // Zeilenumbruch entfernen
+                                        if (existingFunctionName == regionName) {
+                                            shouldWrite = false;
+                                            break;
+                                        }
+                                    }
+                                    std::fclose(existingFunctionsFile);
+                                }
+
+                                if (shouldWrite) {
+                                    std::fprintf(functionsFile, "%s\n", regionName.c_str());
+                                }
+                            }
+                        }
+                        std::fclose(sizesFile);
+                    }
+                    
+                    std::fclose(functionsFile);
+                }
+            }
+        }
+        std::cout << "-------" << std::endl;
+    // END DEBUG INFORMATION
+    // PLEASE DELETE AFTER BUG FIX!
+
 
     qreal top = 0;
     auto ROW_HEIGHT = scene->height() / static_cast<qreal>(uiTrace->getSlots().size());
