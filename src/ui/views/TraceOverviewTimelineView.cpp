@@ -33,6 +33,7 @@ TraceOverviewTimelineView::TraceOverviewTimelineView(Trace *fullTrace, QWidget *
     this->setStyleSheet("background: transparent");
     this->setScene(scene);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     selectionFrom = types::TraceTime(0);
     selectionTo = fullTrace->getRuntime();
@@ -124,7 +125,11 @@ void TraceOverviewTimelineView::updateView() {
     this->scene()->clear();
 
     auto sceneRect = this->rect();
-    sceneRect.setHeight(size().height() - 2);
+    // Fomer calc: why -2?
+    //sceneRect.setHeight(size().height() - 2);
+    sceneRect.setHeight(size().height());
+
+    qInfo() << sceneRect.height();
 
     this->scene()->setSceneRect(sceneRect);
     this->populateScene(this->scene());

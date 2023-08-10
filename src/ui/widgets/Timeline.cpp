@@ -34,8 +34,8 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
 
     // This prevents the labelList from expanding to 50% of the width.
     // Not really a satisfactory solution.
-    layout->setColumnStretch(0, 1);
-    layout->setColumnStretch(1, 9);
+    //layout->setColumnStretch(0, 1);
+    //layout->setColumnStretch(1, 9);
 
     auto scrollSyncer = new ScrollSynchronizer(this);
     scrollSyncer->addWidget(this->labelList);

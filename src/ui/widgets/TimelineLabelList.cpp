@@ -27,8 +27,16 @@
 TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QListWidget(parent), data(data) {
     this->setFrameShape(QFrame::NoFrame);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    this->setVerticalScrollMode(ScrollPerPixel);
     this->setStyleSheet("background: transparent");
-    setViewportMargins(0, 20, 0, 0);
+    // Why top=20? <= top in TimelineView.cpp
+    //setViewportMargins(0, 20, 0, 0);
+    // Alternative with a bufferzone we can scroll into
+    auto extraSpaceTop = new QListWidgetItem(this);
+    extraSpaceTop->setSizeHint(QSize(0, 20));
+    this->addItem(extraSpaceTop);
+
 
     for (const auto &rank: this->data->getSelection()->getSlots()) {
         const QString &rankName = QString::fromStdString(rank.first->name().str());
@@ -87,6 +95,9 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         item->setBackground(backgroundPattern); 
         this->addItem(item);
     }
+    auto extraSpaceBottom = new QListWidgetItem(this);
+    extraSpaceBottom->setSizeHint(QSize(0, this->ROW_HEIGHT));
+    this->addItem(extraSpaceBottom);
 }
 
 void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
