@@ -20,6 +20,7 @@
 
 #include <QGridLayout>
 
+
 Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), data(data) {
     auto layout = new QGridLayout(this);
 
@@ -34,8 +35,14 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
 
     // This prevents the labelList from expanding to 50% of the width.
     // Not really a satisfactory solution.
-    layout->setColumnStretch(0, 1);
-    layout->setColumnStretch(1, 9);
+    //layout->setColumnStretch(0, 1);
+    //layout->setColumnStretch(1, 9);
+
+    // We don't need more space than the max width of the contents (32+16 pixel for the +/- icons)
+    this->labelList->setMaximumWidth(this->labelList->getMaxLabelLength()+48);
+    //qInfo() << "width: " << this->labelList->getMaxLabelLength();
+    // "MPI rank 5" -> "... rank 5" makes more sense than "MPI rank ..."
+    this->labelList->setTextElideMode (Qt::ElideLeft);
 
     auto scrollSyncer = new ScrollSynchronizer(this);
     scrollSyncer->addWidget(this->labelList);

@@ -27,8 +27,17 @@
 TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QListWidget(parent), data(data) {
     this->setFrameShape(QFrame::NoFrame);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    // This prevents asynchronous scrolling relative to TimelineView
+    this->setVerticalScrollMode(ScrollPerPixel);
     this->setStyleSheet("background: transparent");
-    setViewportMargins(0, 20, 0, 0);
+    // Why top=20? <= top in TimelineView.cpp
+    //setViewportMargins(0, 20, 0, 0);
+    // Alternative with a bufferzone we can scroll into
+    auto extraSpaceTop = new QListWidgetItem(this);
+    extraSpaceTop->setSizeHint(QSize(0, 20));
+    this->addItem(extraSpaceTop);
+ 
 
     for (const auto &rank: this->data->getSelection()->getSlots()) {
         const QString &rankName = QString::fromStdString(rank.first->name().str());
@@ -37,6 +46,12 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         auto plusIconGrey = ViewSettings::getInstance()->getIcon("plus_grey");
         auto minusIcon = ViewSettings::getInstance()->getIcon("minus");
         auto item = new QListWidgetItem(this);
+
+        //QFont font = item->font();
+        //font.setPointSize(12);
+        //item->setFont(font);
+        if(maxLabelLength < fontMetrics().boundingRect(rankName).width()) maxLabelLength=fontMetrics().boundingRect(rankName).width();
+        if(maxLabelLength < rankName.size())maxLabelLength=rankName.size();
 
         // Multithreading check
         // If we haven't seen this rank before...
@@ -87,6 +102,9 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         item->setBackground(backgroundPattern); 
         this->addItem(item);
     }
+    auto extraSpaceBottom = new QListWidgetItem(this);
+    extraSpaceBottom->setSizeHint(QSize(0, this->ROW_HEIGHT));
+    this->addItem(extraSpaceBottom);
 }
 
 void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
@@ -113,4 +131,8 @@ void TimelineLabelList::mouseReleaseEvent(QMouseEvent *) {
 
 void TimelineLabelList::mouseMoveEvent(QMouseEvent *) {
     return;
+}
+
+int TimelineLabelList::getMaxLabelLength() {
+    return maxLabelLength;
 }
