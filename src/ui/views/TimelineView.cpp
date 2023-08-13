@@ -310,14 +310,14 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
 void TimelineView::resizeEvent(QResizeEvent *event) {
     this->updateView();
-    qInfo() << "resize event :)";
+    //qInfo() << "resize event...";
     QGraphicsView::resizeEvent(event);
 }
 
 void TimelineView::updateView() {
     // TODO it might be more performant to keep track of items and add/remove new/leaving items and resizing them
     this->scene()->clear();
-    qInfo() << "update view :)";
+    //qInfo() << "update view...";
     auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
     auto * rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
     auto sceneHeight = this->data->getSelection()->getSlots().size() * ROW_HEIGHT;
@@ -327,7 +327,6 @@ void TimelineView::updateView() {
         // calc: is the thread view expanded? * how many extra rows do we have? * ROW_HEIGHT
         sceneHeightOffset+=threadMap.first*(threadMap.second.size()-1)*ROW_HEIGHT;
     }
-    qInfo() << "sceneHighOffset" << sceneHeightOffset;
     auto sceneRect = this->rect();
     sceneRect.setHeight(sceneHeight+sceneHeightOffset);
     this->scene()->setSceneRect(sceneRect);
@@ -342,7 +341,7 @@ void TimelineView::wheelEvent(QWheelEvent *event) {
     if (!numDegrees.isNull() && QApplication::keyboardModifiers() & (Qt::CTRL | Qt::SHIFT)) {
         // See documentation and comment above
         QPoint numSteps = numDegrees / 15;
-        qInfo() << "wheel event :)";
+        //qInfo() << "wheel event...";
         auto stepSize = data->getSelection()->getRuntime() / data->getSettings()->getZoomQuotient();
         auto deltaDuration = stepSize * numSteps.y();
         auto delta = static_cast<double>(deltaDuration.count());

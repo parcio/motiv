@@ -129,7 +129,7 @@ void TraceOverviewTimelineView::updateView() {
     //sceneRect.setHeight(size().height() - 2);
     sceneRect.setHeight(size().height());
 
-    qInfo() << sceneRect.height();
+    //qInfo() "scene height: " << sceneRect.height();
 
     this->scene()->setSceneRect(sceneRect);
     this->populateScene(this->scene());

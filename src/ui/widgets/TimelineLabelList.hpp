@@ -41,6 +41,8 @@ public:
      */
     TimelineLabelList(TraceDataProxy *data, QWidget *parent = nullptr);
 
+    int getMaxLabelLength();
+
 protected:
     /*
      * NOTE: we override this function to prevent the items from being clicked/activated.
@@ -64,6 +66,7 @@ private:
     TraceDataProxy *data = nullptr;
     QListWidget* widgetList;
     int ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
+    int maxLabelLength = 0;
 };
 
 
