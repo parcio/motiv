@@ -45,6 +45,7 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
     connect(this->data, SIGNAL(filterChanged(Filter)), this, SLOT(updateView()));
     connect(this->data, SIGNAL(colorChanged()),this, SLOT(updateView()));
     connect(this->data, SIGNAL(verticalZoomChanged()),this,SLOT(updateView()));
+    connect(this->data, SIGNAL(refreshButtonPressed()),this,SLOT(updateView()));
     // @formatter:on
 }
 

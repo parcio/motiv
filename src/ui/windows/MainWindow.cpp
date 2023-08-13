@@ -189,14 +189,6 @@ void MainWindow::createMenus() {
     viewMenu->addMenu(widgetMenuCustomColors);
     viewMenu->addMenu(widgetMenuToolWindows);
 
-    /// Window menu
-    auto minimizeAction = new QAction(tr("&Minimize"));
-    minimizeAction->setShortcut(tr("Ctrl+M"));
-    connect(minimizeAction, SIGNAL(triggered()), this, SLOT(showMinimized()));
-
-    auto windowMenu = menuBar->addMenu(tr("&Window"));
-    windowMenu->addAction(minimizeAction);
-
     /// Help menu
     auto showLicenseAction = new QAction(tr("&View license"));
     connect(showLicenseAction, &QAction::triggered, this, [this] {
@@ -239,6 +231,7 @@ void MainWindow::createToolBars() {
     auto bottomContainerWidget = new QWidget(this->bottomToolbar);
     auto containerLayout = new QHBoxLayout(bottomContainerWidget);
     bottomContainerWidget->setLayout(containerLayout);
+    this->bottomToolbar->addWidget(bottomContainerWidget);
 
     // TODO populate with initial time stamps
     this->startTimeInputField = new TimeInputField("Start", TimeUnit::Second, data->getFullTrace()->getStartTime(),
@@ -254,17 +247,43 @@ void MainWindow::createToolBars() {
     connect(data, SIGNAL(beginChanged(types::TraceTime)), this->startTimeInputField, SLOT(setTime(types::TraceTime)));
     connect(data, SIGNAL(endChanged(types::TraceTime)), this->endTimeInputField, SLOT(setTime(types::TraceTime)));
 
-    this->bottomToolbar->addWidget(bottomContainerWidget);
+    QFrame *line = new QFrame;
+    line->setFrameShape(QFrame::VLine);
+    line->setFrameShadow(QFrame::Sunken);
+    line->setContentsMargins(0,-3,0,-3);
+    containerLayout->addWidget(line);
+    containerLayout->addSpacing(5);
 
-    auto zoomInButton = new QPushButton(tr("+"));
-    auto zoomOutButton = new QPushButton(tr("-"));
+    // Zoom Buttons
+    auto zoomInButton = new QPushButton(tr(""));
+    zoomInButton->setIcon(*(this->settings->getInstance()->getIcon("zoom_in")));
+    zoomInButton->setIconSize(QSize(32, 32));
+    
+    auto zoomOutButton = new QPushButton(tr(""));
+    zoomOutButton->setIcon(*(this->settings->getInstance()->getIcon("zoom_out")));
+    zoomOutButton->setIconSize(QSize(32, 32));
+
+    auto resetZoomButton = new QPushButton(tr(""));
+    resetZoomButton->setIcon(*(this->settings->getInstance()->getIcon("zoom_fit")));
+    resetZoomButton->setIconSize(QSize(32, 32));
+    resetZoomButton->setToolTip("Reset Zoom\nCtrl+R");
+    
     containerLayout->addWidget(zoomInButton);
     containerLayout->addWidget(zoomOutButton);
+    containerLayout->addWidget(resetZoomButton);
 
     connect(zoomInButton, &QPushButton::clicked, this, &MainWindow::verticalZoomIn);
     connect(zoomOutButton, &QPushButton::clicked, this, &MainWindow::verticalZoomOut);
+    connect(resetZoomButton, &QPushButton::clicked, this, &MainWindow::resetZoom);
 
-    //connect(data, SIGNAL(expansionEventHappend()), this, &MainWindow::expansionEvent);
+    // Refresh Button
+    auto refreshButton = new QPushButton(tr(""));
+    refreshButton->setIcon(*(this->settings->getInstance()->getIcon("refresh")));
+    containerLayout->addWidget(refreshButton);
+    refreshButton->setIconSize(QSize(32, 32));
+
+    connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshView);
+
     connect(data, SIGNAL(expansionEventHappend()), this, SLOT(expansionEvent()));
 }
 
@@ -417,5 +436,9 @@ void MainWindow::expansionEvent(){
     auto currentRowHeight=this->settings->getRowHeight();
     this->settings->setRowHeight(currentRowHeight);
     auto timeline = new Timeline(data, this);
-    this->setCentralWidget(timeline);  
+    this->setCentralWidget(timeline);
+}
+
+void MainWindow::refreshView(){
+   Q_EMIT this->data->refreshButtonPressed();
 }

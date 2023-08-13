@@ -119,6 +119,8 @@ public: Q_SIGNALS:
 
     void expansionEventHappend();
 
+    void refreshButtonPressed();
+
 public Q_SLOTS:
     /**
      * Change the start time of the selection

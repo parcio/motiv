@@ -106,6 +106,11 @@ public Q_SLOTS:
      */
     void expansionEvent();
 
+    /**
+     * @brief todo
+     */
+    void refreshView();
+
 private: // methods
     void createMenus();
     void createToolBars();

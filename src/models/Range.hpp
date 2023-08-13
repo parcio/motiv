@@ -58,18 +58,6 @@ public:
      *
      * @param rhs The Range object to copy from.
      */
-    // Range(const Range &rhs) {
-    //     if (rhs.vec_) {
-    //         vec_ = new std::vector<T>(*rhs.vec_);
-    //         begin_ = std::find(vec_->begin(), vec_->end(), *rhs.begin_);
-    //         end_ = std::find(vec_->begin(), vec_->end(), *rhs.end_);
-    //     } else {
-    //         begin_ = rhs.begin_;
-    //         end_ = rhs.end_;
-    //     }
-    // };
-
-
     Range(const Range &rhs) {
     if (rhs.vec_) {
         vec_ = new std::vector<T>(*rhs.vec_);
@@ -145,7 +133,7 @@ public:
         delete vec_;
     };
 
-public:
+private:
     std::vector<T> *vec_ = nullptr;
     It begin_;
     It end_;
