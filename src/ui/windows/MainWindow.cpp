@@ -49,7 +49,6 @@
 
 extern bool testRun;
 
-
 ColorSynchronizer* colorsynchronizer = ColorSynchronizer::getInstance();
 
 
