@@ -27,4 +27,6 @@ TraceOverviewDock::TraceOverviewDock(TraceDataProxy *data, QWidget *parent) : QD
 
     connect(data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), timelineView, SLOT(setSelectionWindow(types::TraceTime,types::TraceTime)));
     connect(timelineView, SIGNAL(windowSelectionChanged(types::TraceTime,types::TraceTime)), data, SLOT(setSelection(types::TraceTime,types::TraceTime)));
+    connect(data, SIGNAL(colorChanged()), timelineView, SLOT(updateView()));
+    connect(data, SIGNAL(colorChanged()), timelineView, SLOT(updateUITrace()));
 }

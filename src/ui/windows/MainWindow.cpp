@@ -29,6 +29,10 @@
 #include <utility>
 
 #include "src/models/AppSettings.hpp"
+#include "src/models/ColorMap.hpp"
+#include "src/ui/ColorGenerator.hpp"
+#include "src/ui/ColorSynchronizer.hpp"
+#include "src/ui/Constants.hpp"
 #include "src/ui/widgets/License.hpp"
 #include "src/ui/widgets/Help.hpp"
 #include "src/ui/widgets/TimeInputField.hpp"
@@ -45,17 +49,25 @@
 
 extern bool testRun;
 
+ColorSynchronizer* colorsynchronizer = ColorSynchronizer::getInstance();
+
+
 MainWindow::MainWindow(QString filepath) : QMainWindow(nullptr), filepath(std::move(filepath)) {
     if (this->filepath.isEmpty()) {
         this->promptFile();
     }
-    this->loadSettings();
+    this->loadSettings();   
+    AppSettings::getInstance().setColorConfigName(this->filepath);
+    AppSettings::getInstance().loadColorConfigs();
+ 
     this->loadTrace();
 
     this->createToolBars();
     this->createDockWidgets();
     this->createCentralWidget();
     this->createMenus();
+
+    colorsynchronizer->setData(this->data);
 }
 
 MainWindow::~MainWindow() {
@@ -96,9 +108,18 @@ void MainWindow::createMenus() {
 
         auto clearRecentMenuAction = new QAction(tr("&Clear history"));
         openRecentMenu->addAction(clearRecentMenuAction);
-        connect(clearRecentMenuAction, &QAction::triggered, [&] {
-            AppSettings::getInstance().recentlyOpenedFilesClear();
-            openRecentMenu->clear();
+        connect(clearRecentMenuAction, &QAction::triggered, [&, openRecentMenu] {
+        AppSettings::getInstance().recentlyOpenedFilesClear(this->filepath);
+            
+        // Make a copy of the list of actions
+        QList<QAction*> actions = openRecentMenu->actions();
+
+        for (auto action : actions) {                
+            if (action != clearRecentMenuAction && action->text()!= this->filepath) {
+                openRecentMenu->removeAction(action);                    
+                action->deleteLater();
+            }
+        }
         });
     }
 
@@ -125,7 +146,26 @@ void MainWindow::createMenus() {
     connect(resetZoomAction, SIGNAL(triggered()), this, SLOT(resetZoom()));
     resetZoomAction->setShortcut(tr("Ctrl+R"));
 
-    auto widgetMenu = new QMenu(tr("Tool Windows"));
+    auto widgetMenuCustomColors = new QMenu(tr("Custom Colors"));
+
+    auto loadGlobalColorsAction = new QAction(tr("&Load gobal colors"));
+    connect(loadGlobalColorsAction, SIGNAL(triggered()),this,SLOT(loadGlobalColors()));
+
+    auto saveAsGlobalColorsAction = new QAction(tr("&Save as gobal colors"));
+    connect(saveAsGlobalColorsAction, SIGNAL(triggered()),this,SLOT(saveAsGlobalColors()));
+
+    auto grayFilterAction = new QAction (tr("Grayfilter"));
+    connect(grayFilterAction, SIGNAL(triggered()),this,SLOT(grayFilter()));
+ 
+    auto deleteCustomColorsAction = new QAction (tr("&Delete custom colors"));
+    connect(deleteCustomColorsAction, SIGNAL(triggered()),this,SLOT(deleteCustomColors()));
+
+    widgetMenuCustomColors->addAction(loadGlobalColorsAction);
+    widgetMenuCustomColors->addAction(saveAsGlobalColorsAction);
+    widgetMenuCustomColors->addAction(grayFilterAction);
+    widgetMenuCustomColors->addAction(deleteCustomColorsAction);
+
+    auto widgetMenuToolWindows = new QMenu(tr("Tool Windows"));
 
     auto showOverviewAction = new QAction(tr("Show &trace overview"));
     showOverviewAction->setCheckable(true);
@@ -137,14 +177,15 @@ void MainWindow::createMenus() {
     connect(showDetailsAction, SIGNAL(toggled(bool)), this->information, SLOT(setVisible(bool)));
     connect(this->information, SIGNAL(visibilityChanged(bool)), showDetailsAction, SLOT(setChecked(bool)));
 
-    widgetMenu->addAction(showOverviewAction);
-    widgetMenu->addAction(showDetailsAction);
+    widgetMenuToolWindows->addAction(showOverviewAction);
+    widgetMenuToolWindows->addAction(showDetailsAction);
 
     auto viewMenu = menuBar->addMenu(tr("&View"));
     viewMenu->addAction(filterAction);
     viewMenu->addAction(searchAction);
-    viewMenu->addAction(resetZoomAction);
-    viewMenu->addMenu(widgetMenu);
+    viewMenu->addAction(resetZoomAction);   
+    viewMenu->addMenu(widgetMenuCustomColors);
+    viewMenu->addMenu(widgetMenuToolWindows);
 
     /// Window menu
     auto minimizeAction = new QAction(tr("&Minimize"));
@@ -285,6 +326,42 @@ void MainWindow::loadSettings() {
 
 void MainWindow::resetZoom() {
     data->setSelection(types::TraceTime(0), data->getTotalRuntime());
+}
+
+void MainWindow::grayFilter(){
+    // Shows a warning message if save as global color is checked
+    if(AppSettings::getInstance().getuseGlobalColorConfig()){
+        QMessageBox warningBox;
+        warningBox.setIcon(QMessageBox::Warning);
+        warningBox.setWindowTitle("Saving gray filter globally");
+        warningBox.setText("You are about to save the color changes globally. This will affect all traces in the application. \n\nAre you sure you want to continue?");
+        warningBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        warningBox.setDefaultButton(QMessageBox::No);
+        int choice = warningBox.exec();
+        if(choice == QMessageBox::No) return;
+    }
+    colorsynchronizer->synchronizeColors(colors::COLOR_SLOT_PLAIN);
+}
+
+void MainWindow::deleteCustomColors(){
+    AppSettings::getInstance().clearColorConfig();
+    ColorMap::getInstance()->clearColorMap();
+    ColorGenerator::getInstance()->setDefault();
+    ColorSynchronizer::getInstance()->reCalculateColors();
+}
+
+void MainWindow::loadGlobalColors(){
+    AppSettings::getInstance().loadGlobalColors();
+    colorsynchronizer->synchronizeColors();
+}
+
+void MainWindow::saveAsGlobalColors(){
+    AppSettings::getInstance().saveAsGlobalColors();
+    QMessageBox infoBox;
+    infoBox.setIcon(QMessageBox::Information);
+    infoBox.setWindowTitle("Global Color Option");
+    infoBox.setText("Current colors saved as global");
+    infoBox.exec();
 }
 
 void MainWindow::openFilterPopup() {

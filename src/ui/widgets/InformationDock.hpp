@@ -21,10 +21,13 @@
 
 #include "TimeUnitLabel.hpp"
 #include "src/ui/TraceDataProxy.hpp"
+#include "src/ui/widgets/ColorPicker.hpp"
 #include "src/ui/widgets/infostrategies/InformationDockElementStrategy.hpp"
+
 #include <QLabel>
 #include <QFormLayout>
 #include <QDockWidget>
+#include <string>
 
 /**
  * @brief A UI component that shows additional information
@@ -62,12 +65,33 @@ Q_SIGNALS:
      */
     void zoomToWindow(types::TraceTime from, types::TraceTime to);
 
+    /**
+     * @brief Signal indicating that the global color option has been changed
+     *
+     * @param checked True if the global checkbox is checked, false otherwise
+     * @note This signal is used to control whether the color changes are saved in the global config 
+     */
+    void globalColorChanged(bool);
+
+    /**
+     * @brief Signal indicating that a slot has been selected or deselected
+     *
+     * @param selected True if a slot is selected, false otherwise
+     * @note This signal is used to control the interaction with a button that requires a slot selection.
+     */
+    void slotSelected(bool selected);
+
 private Q_SLOTS:
 
     /**
      * @brief Handler for clicked event of the zoom into view button
      */
     void zoomIntoViewPressed();
+
+     /**
+     * @brief Handler for clicked event of the set custom color button
+     */ 
+    void setCustomColorPressed();
 
 public Q_SLOTS:
 
