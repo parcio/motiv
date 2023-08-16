@@ -23,8 +23,13 @@
 #include "src/ui/windows/MainWindow.hpp"
 #include "src/ui/windows/RecentFilesDialog.hpp"
 
+// Decides wether performance information will be printed
+bool testRun = false;
+
 int main(int argc, char *argv[])
 {
+    QElapsedTimer appTimer;
+    appTimer.start();
     QApplication app(argc, argv);
     QApplication::setApplicationName("Motiv");
     QApplication::setApplicationVersion(MOTIV_VERSION_STRING);
@@ -43,7 +48,10 @@ int main(int argc, char *argv[])
 
     QCommandLineOption helpOption = parser.addHelpOption();
     QCommandLineOption versionOption = parser.addVersionOption();
+	QCommandLineOption testrunOption("t", QCoreApplication::translate("main", "#todo: fitting descr?"), "file");
+	parser.addOption(testrunOption);
     parser.addPositionalArgument("file", QCoreApplication::translate("main", "filepath of the .otf2 trace file to open"), "[file]");
+
     parser.process(app);
 
     // Early return if help or version is shown
@@ -57,9 +65,19 @@ int main(int argc, char *argv[])
         filepath = positionalArguments.first();
     }
 
+    // Test run without window display
+	if (parser.isSet(testrunOption)){     
+		testRun = true;
+        auto dummyWindow = new MainWindow(parser.value(testrunOption));
+        app.quit();
+        std::cout << "%application in general%" << appTimer.elapsed() << "%ms%";
+        return EXIT_SUCCESS;
+	}
+
     RecentFilesDialog recentFilesDialog(&filepath);
     if(!filepath.isEmpty() || recentFilesDialog.exec() == QDialog::Accepted) {
         auto mainWindow = new MainWindow(filepath);
+        qInfo() << "motiv ready";
         mainWindow->show();
     } else {
         app.quit();

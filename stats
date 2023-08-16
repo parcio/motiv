@@ -1,0 +1,695 @@
+#!/bin/bash
+
+
+# *** constants ***
+CFG_LOCATION=/home/$(whoami)/.config/stats.cfg
+DATE_FORMAT="%Y-%m-%d@%H-%M-%S"
+RED=`tput setaf 1`
+GREEN=`tput setaf 2`
+YELLOW=`tput setaf 3`
+BLUE=`tput setaf 4`
+MAGENTA=`tput setaf 5`
+CYAN=`tput setaf 6`
+BG_RED=`tput setab 1`
+BG_YELLOW=`tput setab 3`
+BG_BLUE=`tput setab 4`
+BG_CYAN=`tput setab 6`
+BG_WHITE=`tput setab 7`
+UNDERLINE=`tput smul` 
+NOUNDERLINE=`tput rmul`
+BOLD=`tput bold`
+ITALIC=`tput sitm`
+NOFORMAT=`tput sgr0`
+LINEFRAMES=(" / " " ‒ " " \\ " " | ")
+DOTFRAMES=("working   " "working.  " "working.. " "working...") 
+CALIBRATION_QUESTION_1="[1/6] Do you wish to run ${CYAN}${BOLD}memory tests${NOFORMAT} via smem? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
+CALIBRATION_QUESTION_2="[2/6] How many seconds shall stats ${CYAN}${BOLD}wait${NOFORMAT} between a motiv startup and the RAM sampling via smem?"
+CALIBRATION_QUESTION_3="[3/6] How many ${CYAN}${BOLD}decimal places${NOFORMAT} after the decimal point (precision) are required?"
+CALIBRATION_QUESTION_4="[4/6] Do you want to ${CYAN}${BOLD}print debug information${NOFORMAT} (only for time tests) to the terminal? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
+CALIBRATION_QUESTION_5="[5/6] How many ${CYAN}${BOLD}data triplets${NOFORMAT} like <%h%v%u%...> does a <motiv -t [path]>-run produce?"
+CALIBRATION_QUESTION_6="[6/6] ${CYAN}${BOLD}Where${NOFORMAT} do you want to save the results?"
+
+
+# **** basic error & exit handling ***
+error_line() {
+    errorlog=$errorlog"\n${YELLOW}${BOLD}Warning${NOFORMAT}: ERR signal in stats line "$1
+}
+trap 'error_line ${LINENO}' ERR
+# we probably don't want to keep logs from situations like "ctrl+c"-ed runs
+clean_up_full() {
+    exitcode=$?
+    if [ -f "tmpfile@$file_name" ] && [ "$memory" = "1" ]; then
+        rm tmpfile@$file_name
+    fi
+    if [ -f "$file_name" ] && [ "$dbg_info" = "0" ] && [ "$exitcode" -gt 0 ]; then
+        rm $file_name
+    fi
+    if [ -f "$path_plus_file_name" ] && [ "$dbg_info" = "0" ] && [ "$exitcode" -gt 0 ]; then
+        rm $path_plus_file_name
+    fi
+    exit 1
+}
+trap 'clean_up_full' EXIT
+
+
+# *** early exit route via -h/--help ***
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    clear
+    echo "*******************************************************************************"
+    echo "*** ${CYAN}-h --help${NOFORMAT}              <=> shows legal arguments for 'stats'            ***"
+    echo "*** ${CYAN}-c --calibration${NOFORMAT}           <=> interactive calibration of 'stats'       ***"
+    echo "***                            -> Do we need debug-prints?                  ***"
+    echo "***                            -> How precise does our calc. has to be?     ***"
+    echo "***                            -> Do we need memory-tests?                  ***"
+    echo "***                               -> If so: what's the grace period?        ***"
+    echo "***                                  grace period = time duration between   ***"
+    echo "***                                  motiv launch and smem measurment.      ***"
+    echo "***                                                                         ***"
+    echo "*** the usual usecase looks like this:                                      ***"
+    echo "*** ${CYAN}<stats [positive integer] [path] [path] ...>${NOFORMAT}                            ***"
+    echo "*** e.g.                                                                    ***"
+    echo "*** stats 3 /home/usr/pde/scorep-20230124_1936_4996444716962700/traces.otf2 ***"
+    echo "*** stats 5 \$(cat file_with_paths)                                          ***"
+    echo "*** etc.                                                                    ***"
+    echo "***                                                                         ***"
+    echo "*** ${BOLD}${BG_BLUE}FAQ${NOFORMAT}                                                                     ***"
+    echo "*** (Q1) ${ITALIC}${BOLD}How does 'stats' work?${NOFORMAT}                                             ***"
+    echo "***      -> Via runs with <motiv -t [path]>, that's how we get our samples. ***"
+    echo "*** (Q2) ${ITALIC}${BOLD}Is it possible to extend 'stats'?${NOFORMAT}                                  ***"
+    echo "***      -> Yes, 'stats' will aggregate any time related output via stdout, ***"
+    echo "***         but it has to be in the format: %name%%value%unit%.             ***"
+    echo "***      -> There are some limitations though: 'stats' can only handle      ***"
+    echo "***         ms, s, m and h as time units and calculate everything in s.     ***"
+    echo "*** (Q3) ${ITALIC}${BOLD}Are there any differences between memory and time samples?${NOFORMAT}         ***"
+    echo "***      -> Definitely! we measure RAM usage in a completly different way,  ***"
+    echo "***         therefore memory testing is much less flexible for extention!   ***"
+    echo "***      -> We also use generic <motiv [path]> for memory samples, rather   ***"
+    echo "***         than <motiv -t [path]>, that is because self termination would  ***"
+    echo "***         be very unpractical for memory measurement via 'smem'.          ***"
+    echo "***      -> Obviosly we have to terminate <motiv [path]>-runs manually,     ***"
+    echo "***         that happens with a grace period (sleep) that allows for        ***"
+    echo "***         the RAM usage to differentiate (bigger traces => more usage)    ***"
+    echo "***         -> that implies a ${RED}${BOLD}potential critial problem${NOFORMAT}: traces with a      ***"
+    echo "***            sufficient size might invalidate the memory measurement      ***"
+    echo "***            if the grace period is to small!                             ***"
+    echo "***            possible solution: a smarter way to sync that we're ready    ***"
+    echo "***            to take a snapshot of the memory!                            ***"
+    echo "*******************************************************************************"
+    exit 0
+fi
+
+
+# *** arguments & parameters ***
+# these are back-up values
+# do we want to measure memory use? (0 <=> no) 
+memory=0
+# how many seconds have to pass between the start of motiv and the memory snapshot via smem?
+grace_period=2
+# how precise do we want to calculate the times?
+precision=3
+# do we want to see debug information? (0 <=> no) 
+dbg_info=1
+dbg_log=""
+# how many >>%h%v%u%<< do we have?
+triplet_count=2
+# where do we want to save the results? ("" <=> same dir as stats)
+res_path=""
+# how many arguments do we have?
+argc=$#
+# how many samples do we want? (first argument)
+readonly count=$1
+
+
+# *** functions ***
+write_nonflag_param() {
+    param_name=$1
+    param_value=$2
+    # sed pattern -> s(ubstitue)/pattern/replacement/flags
+    changed_lines=$(sed -i -e "s|^$param_name=.*$|$param_name=$param_value|w /dev/stdout" $CFG_LOCATION | wc -l)
+    if ! [ "$changed_lines" -ge 1 ]; then
+        errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: write operation regarding <${param_name}=${param_value}> into ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT} has failed (zero changed lines)"
+    fi
+}
+
+read_all_nonflag_params() {
+    if ! [ -f "$CFG_LOCATION" ]; then
+        return 1;
+    fi
+    memory_new=$(grep "^memory=" $CFG_LOCATION | cut -d '=' -f 2)
+    grace_period_new=$(grep "^grace_period=" $CFG_LOCATION | cut -d '=' -f 2)
+    precision_new=$(grep "^precision=" $CFG_LOCATION | cut -d '=' -f 2)
+    dbg_info_new=$(grep "^dbg_info=" $CFG_LOCATION | cut -d '=' -f 2)
+    triplet_count_new=$(grep "^triplet_count=" $CFG_LOCATION | cut -d '=' -f 2)
+    res_path_new=$(grep "^res_path=" $CFG_LOCATION | cut -d '=' -f 2)
+    # check wether (valid) values can be found
+    if [ -n "$memory_new" ]; then
+        memory=$memory_new
+    else
+        errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: could not read <memory=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT}, stats will use the default value: ${memory}"
+    fi
+    if [ -n "$grace_period_new" ]; then
+        if test $grace_period_new -ge 1 ; then
+            grace_period=$grace_period_new
+        else
+            errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: value for <grace_period=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT} was invalid, stats will use the default value: ${grace_period}"
+        fi
+    else
+        errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: could not find <grace_period=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT}, stats will use the default value: ${grace_period}"
+    fi
+    if [ -n "$precision_new" ]; then
+        if test $precision_new -ge 0 ; then
+            precision=$precision_new
+        else
+            errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: value for <precision=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT} was invalid, stats will use the default value: ${precision}"
+        fi
+    else
+        errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: could not find <precision=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT}, stats will use the default value: ${precision}"
+    fi
+    if [ -n "$dbg_info_new" ]; then
+        dbg_info=$dbg_info_new
+    else
+        errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: could not find <dbg_info=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT}, stats will use the default value: ${dbg_info}"
+    fi
+    if [ -n "$triplet_count_new" ]; then
+        if test $triplet_count_new -ge 0 ; then
+            triplet_count=$triplet_count_new
+        else
+            errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: value for <triplet_count=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT} was invalid, stats will use the default value: ${triplet_count}"
+        fi
+    else
+        errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: could not find <triplet_count=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT}, stats will use the default value: ${triplet_count}"
+    fi
+    if [ -n "$res_path_new" ]; then
+        if [ "$res_path_new" == "\"\"" ] ; then
+            # "" means, we want to save the results to the same directory as stats
+            res_path=""
+        else
+            if [ -d "$res_path_new" ]; then
+                res_path=$res_path_new
+            else
+                errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: path for <res_path=...> from ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT} was invalid, stats will create the results localy: $(pwd)"
+            fi
+        fi
+    else
+        errorlog=$errorlog"${RED}${BOLD}\nError${NOFORMAT}: could not find <res_path=...> in ${BG_YELLOW}${CFG_LOCATION}${NOFORMAT}, stats will create the results localy: ${BG_YELLOW}$(pwd)${NOFORMAT}"
+    fi
+}
+
+check_smem() {
+    smem_path=$(whereis -b smem | cut -d ' ' -f 2)
+    if [ -n "$smem_path" ]; then
+        # can we make a dummy run and look at the exit code?
+        smem -h &> /dev/null
+        if ! [ $? -eq 0 ]; then
+            errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: could not run <smem -h> successfully, memory sampling won't be available!"
+            memory=0
+        fi
+    else
+        errorlog=$errorlog"\n${RED}${BOLD}Error${NOFORMAT}: could not locate the binary for <smem> via <whereis smem>, memory sampling won't be available!"
+        memory=0
+    fi
+}
+
+conditional_clear() {
+    if [ "$dbg_info" == "0" ]; then
+        clear
+    fi
+}
+
+check_config() {
+    if ! [ -f "$CFG_LOCATION" ]; then
+        errorlog=$errorlog"\n${YELLOW}${BOLD}Info${NOFORMAT}: could not find the config file ${CFG_LOCATION} for stats, default values are going to be used!\n      -> Hint: <stats -c> will create a config file at the given location automatically if such a file does not already exist!"
+    fi
+}
+
+# gadgetry for progress indication
+frame_index=0
+loading() {
+    # we slide in cyclic manner through our frames
+    ((frame_index=(frame_index+1)%4))
+    # https://www.baeldung.com/linux/echo-printf-overwrite-terminal-line
+    echo -ne "$j.trace@$p.sample${LINEFRAMES[frame_index]}\033[0K\r"
+}
+
+
+# *** calibration ***
+if [ "$1" = "-c" ] || [ "$1" = "--calibration" ]; then
+    conditional_clear
+    if ! [ -f "$CFG_LOCATION" ]; then
+        echo -e "${YELLOW}${BOLD}Info${NOFORMAT}: could not find the config file ${CFG_LOCATION} for stats, will create a default config..."
+        echo -e "# do we want to measure memory use? (0 <=> no)\nmemory=0\n# how many seconds have to pass between the start of motiv and the memory snapshot via smem?\ngrace_period=2\n# amount of decimal places after the decimal point\nprecision=3\n# do we want to see debug information? (0 <=> no)\ndbg_info=0\n# how many >>%h%v%u%<< do we have?\ntriplet_count=2\n# where do we want to save the results? ("" <=> same dir as stats)\nres_path=\"\"" >> $CFG_LOCATION
+        echo -e "[-/6] Do you wish to proceed with the calibration of the newly created <stats.cfg>? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
+        echo ""
+        read -p "" -n 1 answer1
+        case $answer1 in
+            [Yy]* ) conditional_clear; break;;
+            [Nn]* ) conditional_clear; exit 0;;
+            * ) conditional_clear; echo "${RED}${BOLD}Error${NOFORMAT}: only Y,y,N or n allowed";;
+        esac
+    fi
+    read_all_nonflag_params
+    conditional_clear
+    echo ""
+    while true; do
+        echo -e "$CALIBRATION_QUESTION_1\n      -> Hint: the default value is no, the current value is "$memory" (0 <=> no)"
+        echo ""
+        read -p "Answer: " -n 1 answer1
+        case $answer1 in
+            [Yy]* ) write_nonflag_param memory 1; break;;
+            [Nn]* ) write_nonflag_param memory 0; break;;
+            * ) conditional_clear; echo "${RED}${BOLD}Error${NOFORMAT}: only Y,y,N or n allowed";;
+        esac
+    done
+    conditional_clear
+    echo ""
+    while true; do     
+        echo -e "$CALIBRATION_QUESTION_2\n      -> Hint: the default value is 2, the current value is "$grace_period
+        echo ""
+        read -p "Answer: " answer2
+        if test $answer2 -ge 1 ; then
+            write_nonflag_param grace_period $answer2
+            break
+        else
+            conditional_clear
+            echo "${RED}${BOLD}Error${NOFORMAT}: only positive integers > 0 allowed"
+        fi
+    done
+    conditional_clear
+    echo ""
+    while true; do
+        echo -e "$CALIBRATION_QUESTION_3\n      -> Hint: the default value is 3, the current value is "$precision
+        echo ""
+        read -p "Answer: " answer3
+        if test $answer3 -ge 0 ; then
+            write_nonflag_param precision $answer3
+            break
+        else
+            conditional_clear
+            echo "${RED}${BOLD}Error${NOFORMAT}: only positive integers allowed"
+        fi
+    done
+    conditional_clear
+    echo ""
+    while true; do
+        echo -e "$CALIBRATION_QUESTION_4\n      -> Hint: the default value is no, the current value is "$dbg_info" (0 <=> no)"
+        echo ""
+        read -p "Answer: " -n 1 answer4
+        case $answer4 in
+            [Yy]* ) write_nonflag_param dbg_info 1; break;;
+            [Nn]* ) write_nonflag_param dbg_info 0; break;;
+            * ) conditional_clear; echo "${RED}${BOLD}Error${NOFORMAT}: only Y,y,N or n allowed";;
+        esac
+    done
+    conditional_clear
+    echo ""
+    while true; do
+        echo -e "$CALIBRATION_QUESTION_5\n      -> Example (too small): %h1%v1%u1%%h2%v2%u2%%h3%v3%u3% with the value 2 is going to make stats to collect the data for %h1...% up until only %h2...%\n      -> Hint: stats will simply crash if the value is too big"
+        echo ""
+        read -p "Answer: " answer5
+        if test $answer5 -ge 1 ; then
+            write_nonflag_param triplet_count $answer5
+            break
+        else
+            conditional_clear
+            echo "${RED}${BOLD}Error${NOFORMAT}: only positive integers > 0 allowed"
+        fi
+    done
+    conditional_clear
+    echo ""
+    while true; do
+        echo -e "$CALIBRATION_QUESTION_6\n      -> Hint: current path is \c"
+        if ! [ -n "$res_path" ] ; then
+            echo -e "empty, that means stats will save its results localy"
+        else
+            echo -e $res_path
+        fi
+        echo ""
+        read -p "Answer: " answer6
+        # we may have to expand the path
+        answer6=$(echo ${answer6/"~"/"/home/$(whoami)"})
+        if ! [ -n "$answer6" ] ; then
+            write_nonflag_param res_path "\"\""
+            break
+        else
+            if [ -d "$answer6" ] ; then
+                write_nonflag_param res_path $answer6
+                break
+            else
+                conditional_clear
+                echo "${RED}${BOLD}Error${NOFORMAT}: this directory does not exist"
+            fi
+        fi
+    done
+    conditional_clear
+    if [ -n "$errorlog" ]; then
+        echo -e $errorlog
+        exit 1
+    else
+        exit 0
+    fi
+else
+    # we have a regular stats run
+    check_config
+    read_all_nonflag_params
+    check_smem
+fi
+
+# *** basic crital errors ***
+# FAQ: Q1
+# no sample size
+if ! [ "$count" -gt 0 ] 2> /dev/null; then
+    conditional_clear
+    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: first argument has to be a positive integer > 0 (recommendation: > 3)!"
+    echo "          -> more details via -h/--help"
+    exit 1
+fi
+# FAQ: Q2
+# no traces
+if ! [ "$argc" -gt 1 ] 2> /dev/null; then
+    conditional_clear
+    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: not enough arguments, we need a sample size and at the very least one path to a tracefile!"
+    echo "          -> more details via -h/--help"
+    exit 1
+fi
+
+
+# *** results ***
+file_name="stat_run@"$(date "+${DATE_FORMAT}")
+# if a path exists, we will use it to save the results
+if [ -n "$res_path" ]; then
+    path_plus_file_name=$res_path"/"$file_name
+else
+    path_plus_file_name=$file_name
+fi
+touch $path_plus_file_name
+# check if the results file was actualy created
+if ! [ -f "$path_plus_file_name" ]; then
+    conditional_clear
+    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: could not create a file <${BG_YELLOW}${path_plus_file_name}${NOFORMAT}> for the results!"
+    exit 1
+fi
+
+# we will accumulate the ram usage of traces in here
+ram_sum_array=()
+# autocalculated & only relevant for formating of the endresults (value for >>printf<<)
+maxsize=10
+
+# we need a path as first argument for the next while loop
+shift
+# $2 (is now $1), $3 (is now $2), etc. <=> paths to the tracefiles
+i=1
+while [ -n "$1" ]; do
+    # there might be a ~ in the arg-string, we shouldn't interprete that literally
+    expanded_path=$(echo ${1/"~"/"/home/$(whoami)"})
+    if [ -f "$expanded_path" ]; then
+        declare path$i=$expanded_path
+        shift
+        i=$((i+1))
+    else
+        conditional_clear
+        errorlog=$errorlog"\n${BG_RED}${BOLD}Error${NOFORMAT}: can't find tracefile <${BG_YELLOW}${expanded_path}${NOFORMAT}>, stats will skip this argument!"
+        argc=$((argc-1))
+        shift
+        # do we have traces left? (one argument is the sample size, so we don't compare to zero)
+        if [ "$argc" == "1" ]; then
+            conditional_clear
+            echo "${BG_RED}${BOLD}Critical${NOFORMAT}: could not find at least one usable trace file!"
+            echo "          -> more details via -h/--help"
+            exit 1
+        fi
+    fi
+
+    # we need a place for every trace, that's unrelated to the rest of the loop
+    ram_sum_array+=(0)
+done
+
+
+# *** error review ***
+if [ -n "$errorlog" ]; then
+    conditional_clear
+    echo ""
+    while true; do
+        echo -e $errorlog
+        echo -e "\nDo you wish to continue? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})\n"
+        read -p "Answer: " -n 1 answer4
+        case $answer4 in
+            [Yy]* ) conditional_clear; break;;
+            [Nn]* ) conditional_clear; exit 1;;
+            * ) conditional_clear; echo "${RED}${BOLD}Error${NOFORMAT}: only Y,y,N or n allowed";;
+        esac
+    done
+fi
+
+# *** actual work ***
+# main loop, one iteration per given path
+for j in $(seq 1 $((argc-1)))
+do
+    # FAQ: Q3
+    loc_var=path$j
+    cur_path=${!loc_var}
+    
+    # nothing important, just the calculation regarding the amount of stars that we need to append for format reasons
+    log=$log"\n\n\n***************"${cur_path//?/*}"\n*** trace: "$cur_path" ***\n***************"${cur_path//?/*}"\n\n\n"
+
+    if [ $dbg_info -ne 0 ]; then
+        echo -e $dbg_log
+        dbg_log=""
+    fi
+    
+    # we need an extra place for the accumulation
+    sum_array=()
+    for ((sum_index=0; sum_index<triplet_count; sum_index++)); do
+        sum_array+=("0")
+    done
+
+
+    # *** collecting samples ***
+    # one iteration per sample
+    for ((p=1; p<=count; p++))
+    do
+    	# we indicate some progress
+    	if [ "$dbg_info" == "0" ]; then
+    	    loading
+    	fi
+    	
+    	# we collect the raw data
+    	output_time=$(time (./build/motiv -t $cur_path 2>/dev/null) 2>&1)
+    		
+    	# that's the array pattern: e(mpty) h(int) v(value) u(unit), e h v u ... time values (user, real, sys)
+    	# FAQ: Q4
+    	ehvu_array=()
+        # FAQ: Q5
+        IFS="%"
+        read -d $'' -r -a ehvu_array <<< "$output_time"
+        IFS=" "
+               
+        # RAM usage review
+        if [ "$memory" -ne 0 ]; then
+            ./build/motiv $cur_path 2>> tmpfile@$file_name &
+            prog_pid=$!
+            sleep 2
+            while true; do
+                if grep -q "motiv ready" tmpfile@$file_name; then
+                    break
+                fi
+            done
+            ram_usage_all=$(smem -k -c "pid uss")
+            ram_usage_raw=$( echo -e "$ram_usage_all" | grep -w $prog_pid)
+            read -r m_pid m_uss <<< "$ram_usage_raw"
+            m_uss_val=${m_uss%%[^0-9.]*}
+            # we count the numericals and cut that amount of symbols
+            m_uss_unit=${m_uss:${#m_uss_val}}
+            kill $prog_pid
+            if [ ${#m_uss_val} -gt $maxsize ]; then
+                maxsize=${#m_uss_val}
+            fi
+        fi
+        
+        # a log entry for every sample
+        log=$log$p"# iteration @ "$(date)"\nresults:\n"
+        
+        # we update the duration sums
+        for ((q=1; q<=triplet_count; q++))
+        do
+            # FAQ: Q6
+            # e(mpty) h(int) v(value)[index 2] u(unit), e h v[index 6] u ... etc. -> we need the positions 2, 6, 10 etc.
+            val_pos=$((4*$q-2))
+                        
+            # individual sample stats
+            log=$log${ehvu_array[$val_pos]}${ehvu_array[$(($val_pos+1))]}" ("${ehvu_array[$(($val_pos-1))]}")\n"
+            
+            # unit conversion: we want a uniform calculation of in seconds
+            # QElapsedTimer uses only [ms]
+            if [ "${ehvu_array[$(($val_pos+1))]}" = "h" ]; then
+            	ehvu_array[$val_pos]=$(echo "scale=$precision; ${ehvu_array[$val_pos]} * 60^2" | bc)
+            	ehvu_array[$(($val_pos+1))]="s"
+            fi
+            if [ "${ehvu_array[$(($val_pos+1))]}" = "m" ]; then
+            	ehvu_array[$val_pos]=$(echo "scale=$precision; ${ehvu_array[$val_pos]} * 60" | bc)
+            	ehvu_array[$(($val_pos+1))]="s"
+            fi
+            if [ "${ehvu_array[$(($val_pos+1))]}" = "ms" ]; then
+            	ehvu_array[$val_pos]=$(echo "scale=$precision; ${ehvu_array[$val_pos]} / 1000" | bc)
+            	# bc drops the leading zero, that can cause problems
+            	[[ ${ehvu_array[$val_pos]} == .* ]] && ehvu_array[$val_pos]="0${ehvu_array[$val_pos]}"
+            	ehvu_array[$(($val_pos+1))]="s"
+            fi
+            if [ "${ehvu_array[$(($val_pos+1))]}" = "s" ]; then
+            	ehvu_array[$(($val_pos+1))]="[s]"
+            else
+                conditional_clear
+                if [ $val_pos -gt ${#ehvu_array[@]} ]; then
+                    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: out of bound regarding the value array, please check wether <triplet_count=...> in corresponds to the true amount of %h%v%u%-data triplets produced via <./motiv -t [trace]>-runs"
+                else
+                    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: unkown time unit <${RED}${ehvu_array[$(($val_pos+1))]}${NOFORMAT}>, that happend for the ${j}. trace in the ${p}. iteration for the ${q}. sum/metric <${BG_YELLOW}${BOLD}${ehvu_array[$(($val_pos-1))]}${NOFORMAT}>"
+                fi
+                exit 1            	
+            fi
+            
+            # we have to add the measured value to the acumulated sum
+            if [ "$dbg_info" -ne 0 ]; then
+            	dbg_log=$dbg_log"\n"$j".trace | "$p". sample | "$q". sum-operation ""${sum_array[*]}"" + "${ehvu_array[$val_pos]}${ehvu_array[$(($val_pos+1))]}
+            fi
+
+            # we have to add the measured value to the acumulated sum
+            sum_array[(($q-1))]=$(echo "scale=$precision; ${sum_array[(($q-1))]} + ${ehvu_array[$val_pos]}" | bc)
+            if [ ${#sum_array[(($q-1))]} -gt $maxsize ]; then
+                maxsize=${#sum_array[(($q-1))]}
+            fi
+            
+            if [ "$dbg_info" -ne 0 ]; then
+            	dbg_log=$dbg_log" -> ""${sum_array[*]}"
+            fi
+            
+        done
+        
+        if [ "$memory" -ne 0 ]; then
+            # unit conversion: we want a uniform calculation of memory in Mega <=> M or Mi
+            # we're not sure if to scale with 1000 or 1024...
+            # we assume that smem uses binary prefixes: K(i)=2^10, M(i)=2^20, G(i)=2^30, T(i)=2^40
+            if [ "$m_uss_unit" = "T" ]; then
+            	m_uss_val=$(echo "scale=$precision; $m_uss_val * 1024^2" | bc)
+            	m_uss_unit="M"
+            fi
+            if [ "$m_uss_unit" = "G" ]; then
+            	m_uss_val=$(echo "scale=$precision; $m_uss_val * 1024" | bc)
+            	m_uss_unit="M"
+            fi
+            if [ "$m_uss_unit" = "K" ]; then
+            	m_uss_val=$(echo "scale=$precision; $m_uss_val / 1024" | bc)
+            	# bc drops the leading zero, that can cause problems
+            	[[ $rm_uss_val == .* ]] && rm_uss_val="0$rm_uss_val"
+            	m_uss_unit="M"
+            fi
+            if [ "$m_uss_unit" = "M" ]; then
+            	m_uss_unit="[M]"
+            else
+            	conditional_clear
+            	echo "${BG_RED}${BOLD}Critical${NOFORMAT}: unkown memory unit <${RED}${m_uss_unit}${NOFORMAT}>, that happend for the ${j}. trace in the ${p}. iteration"
+            	exit 1
+            fi
+
+        
+            # ram usage sum update (for every sample just one)
+            ram_sum_array[$(($j-1))]=$(echo "scale=$precision; ${ram_sum_array[$(($j-1))]} + $m_uss_val" | bc)
+        
+            # the last thing is our uss-value and the time (real,user,sys) values    
+            log=$log$m_uss_val$m_uss_unit" (Unique Set Size, via smem)\n"${ehvu_array[-1]}"\n"
+        fi
+    done
+
+    log=$log"\n"
+
+    
+    # *** writing down the stats ***   
+    echo -e "\nTRACE:\n"${!loc_var} >> $path_plus_file_name
+    for ((r=1; r<=triplet_count; r++))
+    do
+        # we write three information-pieces:
+        # (1) what was the average time?,
+        print_avg_val=0
+        print_avg_val=$(echo "scale=$precision; ${sum_array[(($r-1))]} / $count" | bc)
+        print_avg_val=$(tr '.' ',' <<< "$print_avg_val")
+        # (2) what was the unit,
+        print_unit=" ø "${ehvu_array[$((4*$r-1))]} 
+        # (3) what's the name of the functionality?
+        print_func=${ehvu_array[$((4*$r-3))]}
+        # the actual print (for every time metric)
+        printf "%${maxsize}.${precision}f $print_unit $print_func\n" $print_avg_val >> $path_plus_file_name
+    done    
+    # memory results
+    if [ "$memory" -ne 0 ]; then
+        # the actual print
+        print_avg_val=$(echo "scale=$precision; ${ram_sum_array[$(($j-1))]} / $count" | bc)
+        print_avg_val=$(tr '.' ',' <<< "$print_avg_val")
+        printf "%${maxsize}.${precision}f  ø [M] Unique Set Size (via smem)\n" $print_avg_val >> $path_plus_file_name
+    fi
+done
+
+
+# *** context-information ***
+if [ -n "$(whereis -b git | cut -d ' ' -f 2)" ]; then
+    git fetch
+    git_info="\nGIT\nRepo URL:\t"$(git remote get-url origin)
+
+    # what branch do we test?
+    git_branch=$(git branch --show-current)
+    git_info=$git_info"\nBranch:\t\t"$git_branch
+
+    # documentation of the development status
+
+    # we assume that $(git rev-parse HEAD) represents the current used revision
+    git_local_commit_hash=$(git rev-parse HEAD)
+
+    # do we have any changes relative to the most recent branch commit?
+    git_info=$git_info"\n\t\t-> any difference to the latest commit?\n"$git_last_commit$(git diff --stat $git_branch | sed 's/ /\t\t/')
+
+    git_info=$git_info"\n\nHEAD (Hash):\t"$git_local_commit_hash
+    # do we have any changes relative to the used "version" of our branch?
+    git_info=$git_info"\n\t\t-> any difference to the used revision?\n"$(git diff --stat $git_local_commit_hash | sed 's/ /\t\t/')
+fi
+
+echo -e "\n\n\n" >> $path_plus_file_name
+echo -e "***************************\n*** context information ***\n***************************" >> $path_plus_file_name
+echo -e "\nOS\n"$(uname -a) >> $path_plus_file_name
+echo -e "\nCPU\n"$(lscpu | grep "Model name:" | sed -r 's/Model name:\s{1,}//g') >> $path_plus_file_name
+# this is an alternative to echo, the upside is that we can keep the format of $(free -h)
+cat <<EOF >> $path_plus_file_name 
+
+RAM
+$(free -h)
+EOF
+echo -e "\nSAMPLE SIZE\n"$count"#" >> $path_plus_file_name
+echo -e $git_info >> $path_plus_file_name
+echo -e "\nSAMPLE-LOG\n"$log >> $path_plus_file_name
+
+
+# *** final exit ***
+conditional_clear
+echo "${BOLD}stats${NOFORMAT}: ${BG_CYAN}${path_plus_file_name}${NOFORMAT}"
+# small clean up
+if [ "$memory" = "1" ]; then
+    rm tmpfile@$file_name
+fi
+exit 0
+
+
+# *** FAQ ***
+
+# Q1: Why not test against <$#> (rather than <$argc>), if we have enough traces?
+# A1: *Both* will variables will change throughout the script, but with a different meaning: <$#> will be always changed via <shift> up until zero, when we prepare the trace-paths. On the other hand <$argc> will be changed only *and if only* when we discard some paths as unusable!
+
+# Q2: Why not test against <$1> (rather than <$count>) if we have a plausible sample size?
+# A2: That's a similar situation to Q., <$1> will change it's meaning, while <$count> is a constant and really represents our sample size, <$1> is just the initial way how we get it!
+
+# Q3: How are >>loc_var<<, >>path$j<< and >>cur_path<< related? 
+# A3: -> we can't directly use >>$path$j<<, so we save the >>path$j<< as an actual string in the >>loc_var<< variable, then we use this interpretation >>${!loc_var}<< to save the actual path in >>cur_path<<.
+
+# Q4: What's the semantics of the <ehvu_array> array? 
+# A4: It means: e(mpty) h(int) v(value) u(unit), e h v u ...,  up until the last position, which represents time values (user, real, sys).
+
+# Q5: What's up with >>IFS="%"<<?
+# A5: That's our seperator, we combine it with an unspecified delimiter <-d ''> in read, this allows to seperate the <h v u> outputs by <%> as well as fetching the whole output of <time> (including the newlines!) into the last position of <ehvu_array>.
+
+# Q6: What's the purpuse of <e> positions between the <h v u> pattern?
+# A6: Please consider this output <%h%v%u%%h%v%u%...> etc., we have to somehow deal with empty seperation results, e.g. "<[empty]%h%v%u%[empty]%h%v%u%...> etc.".

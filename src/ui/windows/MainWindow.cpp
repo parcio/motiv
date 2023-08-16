@@ -43,6 +43,7 @@
 #include "src/ui/widgets/infostrategies/InformationDockCommunicationStrategy.hpp"
 #include "src/ui/widgets/infostrategies/InformationDockCollectiveCommunicationStrategy.hpp"
 
+extern bool testRun;
 
 MainWindow::MainWindow(QString filepath) : QMainWindow(nullptr), filepath(std::move(filepath)) {
     if (this->filepath.isEmpty()) {
@@ -253,6 +254,12 @@ QString MainWindow::promptFile() {
 }
 
 void MainWindow::loadTrace() {
+
+    QElapsedTimer loadTraceTimer;
+    if(testRun==true){
+        loadTraceTimer.start();
+    }
+
     this->reader = new otf2::reader::reader(this->filepath.toStdString());
     this->callbacks = new ReaderCallbacks(*reader);
 
@@ -266,6 +273,10 @@ void MainWindow::loadTrace() {
     auto trace = new FileTrace(slots, communications, collectives, this->callbacks->duration());
 
     this->data = new TraceDataProxy(trace, this->settings, this);
+
+    if(testRun==true){
+        std::cout << "%MainWindow::loadTrace()%" << loadTraceTimer.elapsed() << "%ms%";
+    }
 }
 
 void MainWindow::loadSettings() {
