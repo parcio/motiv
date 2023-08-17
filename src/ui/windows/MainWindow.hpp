@@ -104,7 +104,7 @@ public Q_SLOTS:
     /**
      * @brief todo
      */
-    void expansionEvent();
+    void labelInteractionEvent();
 
     /**
      * @brief todo

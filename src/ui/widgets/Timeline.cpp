@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Timeline.hpp"
+#include "src/ui/windows/FlamegraphPopup.hpp"
 #include "src/ui/ScrollSynchronizer.hpp"
 
 #include <QGridLayout>
@@ -29,6 +30,11 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
 
     this->labelList = new TimelineLabelList(this->data, this);
     layout->addWidget(this->labelList, 1, 0);
+    
+    connect(this->data, SIGNAL(flamegraphRequest()), this, SLOT(showFlamegraphPopup()));
+
+    // We don't want to have the context menu for layout elements in the label region
+    this->labelList->setContextMenuPolicy(Qt::PreventContextMenu);
 
     this->view = new TimelineView(this->data, this);
     layout->addWidget(this->view, 1, 1);
@@ -47,4 +53,12 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     auto scrollSyncer = new ScrollSynchronizer(this);
     scrollSyncer->addWidget(this->labelList);
     scrollSyncer->addWidget(this->view);
+}
+
+void Timeline::showFlamegraphPopup(){
+    auto settings = ViewSettings::getInstance();
+    int rankRef = settings->getFlamegraphRankRef();
+    FlamegraphPopup* flamegraph = new FlamegraphPopup(this->data, this);
+    flamegraph->openFlamegraphWindow();
+    qInfo() << "it shall be rank ... " << rankRef;
 }

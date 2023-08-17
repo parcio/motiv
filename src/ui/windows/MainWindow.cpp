@@ -284,7 +284,7 @@ void MainWindow::createToolBars() {
 
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshView);
 
-    connect(data, SIGNAL(expansionEventHappend()), this, SLOT(expansionEvent()));
+    connect(data, SIGNAL(labelInteractionTrigger()), this, SLOT(labelInteractionEvent()));
 }
 
 void MainWindow::createDockWidgets() {
@@ -432,7 +432,7 @@ void MainWindow::verticalZoomOut(){
     Q_EMIT this->data->verticalZoomChanged();    
 }
 
-void MainWindow::expansionEvent(){
+void MainWindow::labelInteractionEvent(){
     auto currentRowHeight=this->settings->getRowHeight();
     this->settings->setRowHeight(currentRowHeight);
     auto timeline = new Timeline(data, this);

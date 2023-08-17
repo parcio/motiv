@@ -44,6 +44,9 @@ public:
      */
     explicit Timeline(TraceDataProxy *data, QWidget *parent = nullptr);
 
+public Q_SLOTS:
+    void showFlamegraphPopup();
+
 private: // widgets
     TimelineHeader *header = nullptr;
     TimelineLabelList *labelList = nullptr;

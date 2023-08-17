@@ -51,10 +51,18 @@ void ViewSettings::setRowHeight(int height){
     if(height>=15) this->rowHeight = height;
 }
 
-std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>>* ViewSettings::getRankThreadMap() {
+std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* ViewSettings::getRankThreadMap() {
     return &rankThreadMap;
 }
 
 QIcon* ViewSettings::getIcon(std::string key) {
     return &Icons_.at(key);
+}
+
+int ViewSettings::getFlamegraphRankRef(){
+    return this->rankRef;
+}
+
+void ViewSettings::setFlamegraphRankRef(int newRankRef){
+    this->rankRef = newRankRef;
 }

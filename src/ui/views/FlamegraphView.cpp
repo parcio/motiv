@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "TimelineView.hpp"
+#include "FlamegraphView.hpp"
 #include "src/models/ViewSettings.hpp"
 #include "src/ui/views/CommunicationIndicator.hpp"
 #include "src/ui/views/SlotIndicator.hpp"
@@ -30,7 +30,7 @@
 #include <QWheelEvent>
 
 
-TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsView(parent), data(data) {
+FlamegraphView::FlamegraphView(TraceDataProxy *data, QWidget *parent) : QGraphicsView(parent), data(data) {
     auto scene = new QGraphicsScene();
     this->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     this->setAutoFillBackground(false);
@@ -45,10 +45,12 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
     connect(this->data, SIGNAL(verticalZoomChanged()),this,SLOT(updateView()));
     connect(this->data, SIGNAL(refreshButtonPressed()),this,SLOT(updateView()));
     // @formatter:on
+
+    qInfo() << "FlamegraphView was created ...";
 }
 
 
-void TimelineView::populateScene(QGraphicsScene *scene) {
+void FlamegraphView::populateScene(QGraphicsScene *scene) {
     auto width = scene->width();
     auto selection = this->data->getSelection();
     auto runtime = selection->getRuntime().count();
@@ -61,7 +63,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     QPen arrowPen(Qt::black, 1);
     QPen collectiveCommunicationPen(colors::COLOR_COLLECTIVE_COMMUNICATION, 2);
 
-
+    qInfo() << "FlamegraphView::populateScene is executed ...";
     auto onTimedElementSelected = [this](TimedElement *element) { this->data->setTimeElementSelection(element); };
     auto onTimedElementDoubleClicked = [this](TimedElement *element) {
         this->data->setSelection(element->getStartTime(), element->getEndTime());
@@ -309,20 +311,20 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 }
 
 
-void TimelineView::resizeEvent(QResizeEvent *event) {
+void FlamegraphView::resizeEvent(QResizeEvent *event) {
     this->updateView();
     //qInfo() << "resize event...";
     QGraphicsView::resizeEvent(event);
 }
 
-void TimelineView::updateView() {
+void FlamegraphView::updateView() {
     // TODO it might be more performant to keep track of items and add/remove new/leaving items and resizing them
     this->scene()->clear();
     //qInfo() << "update view...";
     auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
     auto * rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
     auto sceneHeight = this->data->getSelection()->getSlots().size() * ROW_HEIGHT;
-    // The base offset accounts for "top" (TimelineView) and "extraSpaceBottom" (TimelineLabelList)
+    // The base offset accounts for "top" (FlamegraphView) and "extraSpaceBottom" (TimelineLabelList)
     int sceneHeightOffset = 20 + ROW_HEIGHT;
     for (const auto& [rankRef, threadMap]: *rankThreadMap) {
         // calc: is the thread view expanded? * how many extra rows do we have? * ROW_HEIGHT
@@ -334,7 +336,7 @@ void TimelineView::updateView() {
     this->populateScene(this->scene());
 }
 
-void TimelineView::wheelEvent(QWheelEvent *event) {
+void FlamegraphView::wheelEvent(QWheelEvent *event) {
     // Calculation according to https://doc.qt.io/qt-6/qwheelevent.html#angleDelta:
     // @c angleDelta is in eights of a degree and most mouse wheels work in steps of 15 degrees.
     QPoint numDegrees = event->angleDelta() / 8;

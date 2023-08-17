@@ -71,9 +71,13 @@ public:
 
     void setRowHeight(int height);
 
-    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>>* getRankThreadMap();
+    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* getRankThreadMap();
 
     QIcon* getIcon(std::string key);
+
+    int getFlamegraphRankRef();
+
+    void setFlamegraphRankRef(int rankRef);
 
 private:
     static ViewSettings* instance;    
@@ -90,8 +94,7 @@ private:
     Filter filter_;
 
     int rowHeight = SETTINGS_DEFAULT_ROW_HEIGHT;
-
-    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>> rankThreadMap{};
+    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>> rankThreadMap{};
 
     std::map<std::string, QIcon> Icons_ {
         {std::pair<std::string, QIcon>{"plus", "../res/tango_icons_png/plus.png"}},
@@ -105,6 +108,8 @@ private:
         {std::pair<std::string, QIcon>{"refresh", "../res/tango_icons_png/refresh.png"}},
         {std::pair<std::string, QIcon>{"maximize", "../res/tango_icons_png/maximize.png"}}
     };
+
+    int rankRef;
 };
 
 
