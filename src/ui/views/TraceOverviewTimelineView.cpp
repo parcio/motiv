@@ -48,6 +48,8 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
 
     qreal top = 0;
     auto ROW_HEIGHT = scene->height() / static_cast<qreal>(uiTrace->getSlots().size());
+    std::string searchName_ = ViewSettings::getInstance()->getSearchName().toStdString();
+    
     for (const auto &item: uiTrace->getSlots()) {
         // Display slots
         for (const auto &slot: item.second) {
@@ -71,8 +73,19 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
 
             // Determine color based on name
             QColor rectColor = slot->getColor();
-            rectItem->setZValue(slot->priority);
             rectItem->setBrush(rectColor);
+
+            // Set search filter
+            if(searchName_!= ""){
+                std::string slotName_= slot->region->name().str();
+                if(searchName_ != slot->region->name().str()){ 
+                    rectItem->setBrush(colors::COLOR_SLOT_PLAIN);
+                } else rectItem->setZValue(20);
+
+            } else rectItem->setZValue(slot->priority);
+                
+                
+                
         }
 
         top += ROW_HEIGHT;

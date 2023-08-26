@@ -142,7 +142,7 @@ void MainWindow::createMenus() {
 
     auto searchAction = new QAction(tr("&Find"));
     searchAction->setShortcut(tr("Ctrl+F"));
-    connect(searchAction, SIGNAL(triggered()), this, SLOT(openFilterPopup()));
+    connect(searchAction, SIGNAL(triggered()), this, SLOT(openSearchPopup()));
 
     auto resetZoomAction = new QAction(tr("&Reset zoom"));
     connect(resetZoomAction, SIGNAL(triggered()), this, SLOT(resetZoom()));
@@ -267,14 +267,21 @@ void MainWindow::createToolBars() {
     resetZoomButton->setIcon(*(this->settings->getInstance()->getIcon("zoom_fit")));
     resetZoomButton->setIconSize(QSize(32, 32));
     resetZoomButton->setToolTip("Reset Zoom\nCtrl+R");
+
+    auto searchButton = new QPushButton(tr(""));
+    searchButton->setIcon(*(this->settings->getInstance()->getIcon("book")));
+    searchButton->setIconSize(QSize(32, 32));
+    searchButton->setToolTip("Search\nCtrl+F");
     
     containerLayout->addWidget(zoomInButton);
     containerLayout->addWidget(zoomOutButton);
     containerLayout->addWidget(resetZoomButton);
+    containerLayout->addWidget(searchButton);
 
     connect(zoomInButton, &QPushButton::clicked, this, &MainWindow::verticalZoomIn);
     connect(zoomOutButton, &QPushButton::clicked, this, &MainWindow::verticalZoomOut);
     connect(resetZoomButton, &QPushButton::clicked, this, &MainWindow::resetZoom);
+    connect(searchButton, &QPushButton::clicked,this, &MainWindow::openSearchPopup);
 
     // Refresh Button
     auto refreshButton = new QPushButton(tr(""));
@@ -441,4 +448,9 @@ void MainWindow::expansionEvent(){
 
 void MainWindow::refreshView(){
    Q_EMIT this->data->refreshButtonPressed();
+}
+
+void MainWindow::openSearchPopup(){
+    if(this->searchWindow == nullptr) this->searchWindow = new SearchPopup(this->data,this->information, this);
+    Q_EMIT this->searchWindow->searchButtonPressed();
 }

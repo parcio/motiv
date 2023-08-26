@@ -51,6 +51,14 @@ void ViewSettings::setRowHeight(int height){
     if(height>=15) this->rowHeight = height;
 }
 
+void ViewSettings::setSearchName(QString searchName){
+    this->searchName = searchName;
+}
+
+QString ViewSettings::getSearchName(){
+    return this->searchName;
+}
+
 std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>>* ViewSettings::getRankThreadMap() {
     return &rankThreadMap;
 }

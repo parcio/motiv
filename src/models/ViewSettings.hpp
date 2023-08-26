@@ -22,6 +22,7 @@
 #include "Filter.hpp"
 
 #include <QIcon>
+#include <QCoreApplication>
 
 #define SETTINGS_DEFAULT_ZOOM_QUOTIENT 25
 #define SETTINGS_DEFAULT_ROW_HEIGHT 30
@@ -71,6 +72,10 @@ public:
 
     void setRowHeight(int height);
 
+    void setSearchName(QString name);
+
+    QString getSearchName();
+
     std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>>* getRankThreadMap();
 
     QIcon* getIcon(std::string key);
@@ -93,17 +98,21 @@ private:
 
     std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>> rankThreadMap{};
 
+    QString searchName = "";
+
+    QString executablePath = QCoreApplication::applicationDirPath();
+
     std::map<std::string, QIcon> Icons_ {
-        {std::pair<std::string, QIcon>{"plus", "../res/tango_icons_png/plus.png"}},
-        {std::pair<std::string, QIcon>{"plus_grey", "../res/tango_icons_png/plus_grey.png"}},
-        {std::pair<std::string, QIcon>{"minus", "../res/tango_icons_png/minus.png"}},
-        {std::pair<std::string, QIcon>{"zoom_in", "../res/tango_icons_png/zoom_in.png"}},
-        {std::pair<std::string, QIcon>{"zoom_out", "../res/tango_icons_png/zoom_out.png"}},
-        {std::pair<std::string, QIcon>{"zoom_fit", "../res/tango_icons_png/zoom_fit.png"}},
-        {std::pair<std::string, QIcon>{"search", "../res/tango_icons_png/search.png"}},
-        {std::pair<std::string, QIcon>{"book", "../res/tango_icons_png/book.png"}},
-        {std::pair<std::string, QIcon>{"refresh", "../res/tango_icons_png/refresh.png"}},
-        {std::pair<std::string, QIcon>{"maximize", "../res/tango_icons_png/maximize.png"}}
+        {std::pair<std::string, QIcon>{"plus", executablePath.chopped(6) + "/res/tango_icons_png/plus.png"}},
+        {std::pair<std::string, QIcon>{"plus_grey", executablePath.chopped(6) + "/res/tango_icons_png/plus_grey.png"}},
+        {std::pair<std::string, QIcon>{"minus", executablePath.chopped(6) + "/res/tango_icons_png/minus.png"}},
+        {std::pair<std::string, QIcon>{"zoom_in", executablePath.chopped(6) + "/res/tango_icons_png/zoom_in.png"}},
+        {std::pair<std::string, QIcon>{"zoom_out", executablePath.chopped(6) + "/res/tango_icons_png/zoom_out.png"}},
+        {std::pair<std::string, QIcon>{"zoom_fit", executablePath.chopped(6) + "/res/tango_icons_png/zoom_fit.png"}},
+        {std::pair<std::string, QIcon>{"search", executablePath.chopped(6)+ "/res/tango_icons_png/search.png"}},
+        {std::pair<std::string, QIcon>{"book", executablePath.chopped(6) + "/res/tango_icons_png/book.png"}},
+        {std::pair<std::string, QIcon>{"refresh", executablePath.chopped(6) + "/res/tango_icons_png/refresh.png"}},
+        {std::pair<std::string, QIcon>{"maximize", executablePath.chopped(6) + "/res/tango_icons_png/maximize.png"}}
     };
 };
 

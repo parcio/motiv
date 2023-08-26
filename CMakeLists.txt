@@ -27,13 +27,14 @@ set(PROJECT_SOURCES
         src/ReaderCallbacks.cpp
         src/main.cpp
         src/models/AppSettings.cpp
+        src/models/ColorMap.cpp
         src/models/Filetrace.cpp
         src/models/Filter.cpp
+        src/models/Search.cpp
         src/models/Slot.cpp
         src/models/SubTrace.cpp
         src/models/UITrace.cpp
         src/models/ViewSettings.cpp
-        src/models/ColorMap.cpp
         src/models/communication/BlockingP2PCommunicationEvent.cpp
         src/models/communication/BlockingReceivEevent.cpp
         src/models/communication/BlockingSendEvent.cpp
@@ -72,6 +73,7 @@ set(PROJECT_SOURCES
         src/ui/windows/MainWindow.cpp
         src/ui/windows/Otf2FileDialog.cpp
         src/ui/windows/RecentFilesDialog.cpp
+        src/ui/windows/SearchPopup.cpp
         src/utils.cpp
         )
 

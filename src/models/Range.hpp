@@ -133,6 +133,14 @@ public:
         delete vec_;
     };
 
+
+    int getIndexOf(const T &item) const {              
+        auto it = std::find(vec_->begin(), vec_->end(), item);
+        if (it != vec_->end()) {
+            return std::distance(vec_->begin(), it);
+        }else return -1;
+    }
+
 private:
     std::vector<T> *vec_ = nullptr;
     It begin_;

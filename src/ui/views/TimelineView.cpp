@@ -71,6 +71,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
 
     auto * rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
+    std::string searchName_ = ViewSettings::getInstance()->getSearchName().toStdString();
 
     for (const auto &item: selection->getSlots()) {
 
@@ -119,10 +120,19 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                 //rectItem->setToolTip(regionNameStr.c_str());
 
                 // Determine color based on name
-                rectItem->setBrush(slot->getColor());
-                rectItem->setZValue(slot->priority);
-                scene->addItem(rectItem);
-            }
+                QColor rectColor = slot->getColor();
+                rectItem->setBrush(rectColor);
+                
+                // Set search filter
+                if(searchName_!= ""){
+                    if(searchName_ != slot->region->name().str()){ 
+                        rectItem->setBrush(colors::COLOR_SLOT_PLAIN);
+                    } else rectItem->setZValue(20);
+
+                } else rectItem->setZValue(slot->priority);
+                    scene->addItem(rectItem);
+                }
+                
             if(toggleStatus){
                 top += ROW_HEIGHT;
             }

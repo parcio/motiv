@@ -27,6 +27,7 @@
 #include "src/ui/widgets/TimeInputField.hpp"
 #include "src/ui/TraceDataProxy.hpp"
 #include "src/ReaderCallbacks.hpp"
+#include "src/ui/windows/SearchPopup.hpp"
 #include "src/ui/widgets/TraceOverviewDock.hpp"
 #include "src/ui/widgets/InformationDock.hpp"
 #include "src/ui/widgets/License.hpp"
@@ -111,6 +112,11 @@ public Q_SLOTS:
      */
     void refreshView();
 
+    /**
+     * @brief Opens and shows the SearchPopup
+     */
+    void openSearchPopup();
+
 private: // methods
     void createMenus();
     void createToolBars();
@@ -135,6 +141,8 @@ private: // widgets
     License *licenseWindow = nullptr;
     Help *helpWindow = nullptr;
     About *aboutWindow = nullptr;
+
+    SearchPopup *searchWindow = nullptr;
 
 private: // properties
     QString filepath;
