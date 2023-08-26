@@ -17,6 +17,10 @@
  */
 #include "ViewSettings.hpp"
 
+
+//#todo: delete later
+#include <QDebug>
+
 ViewSettings* ViewSettings::instance = nullptr_t();
 
 ViewSettings::ViewSettings(){}
@@ -65,4 +69,14 @@ int ViewSettings::getFlamegraphRankRef(){
 
 void ViewSettings::setFlamegraphRankRef(int newRankRef){
     this->rankRef = newRankRef;
+}
+
+void ViewSettings::setFullTimeTableSlots(std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots){
+    this->fullTimeTableSlots=fullTimeTableSlots;
+    //qInfo() << "vs ..." << "table size " << fullTimeTableSlots.size();
+}
+
+std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>>* ViewSettings::getFullTimeTableSlots(){
+    //qInfo() << "vs_r ..." << "table size " << this->fullTimeTableSlots.size();
+    return &fullTimeTableSlots;
 }

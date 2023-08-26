@@ -41,6 +41,9 @@ public:
      * @param parent The parent QWidget
      */
     explicit FlamegraphView(TraceDataProxy *data, QWidget *parent = nullptr);
+    QString statusInfo;
+    int requestedRank;
+    int globalMaxHeight;
 
 public: Q_SIGNALS:
     /**
@@ -50,6 +53,7 @@ public: Q_SIGNALS:
      * @param end The end time of the selected TimedElement
      */
     void elementSelected(types::TraceTime begin, types::TraceTime end);
+    void statusChanged();
 
 public Q_SLOTS:
 

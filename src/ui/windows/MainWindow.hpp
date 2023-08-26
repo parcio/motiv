@@ -125,6 +125,7 @@ private: // methods
 private: // widgets
     QToolBar *topToolbar = nullptr;
     QToolBar *bottomToolbar = nullptr;
+    QStatusBar *infoBar = nullptr;
 
     InformationDock *information = nullptr;
     TraceOverviewDock *traceOverview = nullptr;

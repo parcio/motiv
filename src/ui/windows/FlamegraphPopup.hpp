@@ -21,10 +21,11 @@
 
 #include "src/ui/views/FlamegraphView.hpp"
 #include "src/ui/TraceDataProxy.hpp"
+#include "src/ui/widgets/TimelineHeader.hpp"
 
 #include <QDialog>
 #include <QString>
-
+#include <QStatusBar>
 
 class FlamegraphPopup : public QDialog{
 Q_OBJECT
@@ -32,11 +33,14 @@ Q_OBJECT
 public:
     FlamegraphPopup(TraceDataProxy *data, QWidget *parent = nullptr);
     void openFlamegraphWindow();
+    void updateStatusbar();
 
 private:
     QDialog *flamegraphWindow = nullptr;
     TraceDataProxy *data = nullptr;
+    TimelineHeader *header = nullptr;
     FlamegraphView *view = nullptr;
+    QStatusBar *infoBar = nullptr;
 };
 
 #endif //MOTIV_FlamegraphPopup_HPP

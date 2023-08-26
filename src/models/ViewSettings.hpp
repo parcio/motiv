@@ -71,6 +71,10 @@ public:
 
     void setRowHeight(int height);
 
+    void setFullTimeTableSlots(std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots);
+
+    std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>>* getFullTimeTableSlots();
+
     std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* getRankThreadMap();
 
     QIcon* getIcon(std::string key);
@@ -94,7 +98,12 @@ private:
     Filter filter_;
 
     int rowHeight = SETTINGS_DEFAULT_ROW_HEIGHT;
+    
     std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>> rankThreadMap{};
+
+    std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots;
+
+    //std::map<> timeTable{};
 
     std::map<std::string, QIcon> Icons_ {
         {std::pair<std::string, QIcon>{"plus", "../res/tango_icons_png/plus.png"}},

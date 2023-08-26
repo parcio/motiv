@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#include "TimelineView.hpp"
 #include "FlamegraphView.hpp"
 #include "src/models/ViewSettings.hpp"
 #include "src/ui/views/CommunicationIndicator.hpp"
@@ -28,7 +30,12 @@
 #include <QGraphicsRectItem>
 #include <QApplication>
 #include <QWheelEvent>
+#include <QElapsedTimer>
 
+//test
+#include <QGraphicsTextItem>
+#include <QLabel>
+#include <QGraphicsProxyWidget>
 
 FlamegraphView::FlamegraphView(TraceDataProxy *data, QWidget *parent) : QGraphicsView(parent), data(data) {
     auto scene = new QGraphicsScene();
@@ -37,6 +44,8 @@ FlamegraphView::FlamegraphView(TraceDataProxy *data, QWidget *parent) : QGraphic
     this->setStyleSheet("background: transparent");
     this->setScene(scene);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->requestedRank = ViewSettings::getInstance()->getFlamegraphRankRef();
+    this->globalMaxHeight = 0;
     
     // @formatter:off
     connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
@@ -51,14 +60,20 @@ FlamegraphView::FlamegraphView(TraceDataProxy *data, QWidget *parent) : QGraphic
 
 
 void FlamegraphView::populateScene(QGraphicsScene *scene) {
+    QElapsedTimer populateSceneTimer;
+    populateSceneTimer.start();
     auto width = scene->width();
     auto selection = this->data->getSelection();
     auto runtime = selection->getRuntime().count();
-    auto runtimeR = static_cast<qreal>(runtime);
+    //auto runtimeR = static_cast<qreal>(runtime);
     auto begin = this->data->getBegin().count();
-    auto beginR = static_cast<qreal>(begin);
+    //auto beginR = static_cast<qreal>(begin);
     auto end = begin + runtime;
-    auto endR = static_cast<qreal>(end);
+    //auto endR = static_cast<qreal>(end);
+    int allSlotsCount=0;
+    std::multiset<std::string> allSlotsMultiset{};
+    int drawnSlotsCount=0;
+    std::multiset<std::string> drawnSlotsMultiset{};
 
     QPen arrowPen(Qt::black, 1);
     QPen collectiveCommunicationPen(colors::COLOR_COLLECTIVE_COMMUNICATION, 2);
@@ -69,40 +84,76 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
         this->data->setSelection(element->getStartTime(), element->getEndTime());
     };
     
-    auto top = 20;
-    auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
+    int top = 0;
+    int baseRowLevel = 0;
+    int localMaxHeight = 0;
+    int threadDrawOffset = 30;
+    this->globalMaxHeight=0;
 
-    auto * rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
+    auto * settings = ViewSettings::getInstance();
+    auto ROW_HEIGHT = settings->getRowHeight();
+    auto * rankThreadMap = settings->getRankThreadMap();
+    auto * fullTimeTableSlots = settings->getFullTimeTableSlots();
 
+    std::string rankNameStd;
+    QString rankName;
+
+    // To skip any other rank in order to work on the right one is quite sloppy
     for (const auto &item: selection->getSlots()) {
+        if(this->requestedRank!=item.first->ref().get()) continue;
 
-        auto rankNameStd = item.first->name().str();
-        auto rankName = QString::fromStdString(rankNameStd);
+        rankNameStd = item.first->name().str();
+        rankName = QString::fromStdString(rankNameStd);
 
-        // Do we have the thread view expanded?
-        auto toggleStatus = rankThreadMap->at(item.first->ref().get()).first;
-        int threadCount = rankThreadMap->at(item.first->ref().get()).second.size();
+        // What's the 'real' number of slots for this particular rank?
+        auto stop = this->data->getEnd().count();
+        for (auto thing : fullTimeTableSlots->at(rankNameStd)){
+            if(thing.second.first <= begin)continue;
+            if(thing.first > stop)break;
+            allSlotsCount++;
+            allSlotsMultiset.insert(thing.second.second);
+        }
 
         // Preparation
+        int threadCount = rankThreadMap->at(item.first->ref().get()).second.size();
         std::vector<std::string> threadRefVector(threadCount, std::to_string(0));
         for (const auto& [threadRef, threadInfo]: rankThreadMap->at(item.first->ref().get()).second) {
             // First threadRef has to go to index 0 etc.
             threadRefVector[threadInfo.first-1]=threadRef;
         }
 
-        // Draw slots
         for (int i = 0; i < threadCount; i++) {
+
+            std::string threadName = "";
+            int drawnSlotsCountLocal = 0;
+            bool firstSlot = true;
+
+            // We want to shift the baselevel-hight if we start to draw another thread
+            baseRowLevel=this->globalMaxHeight;
+
+            // We need to have the slots sortet by their starting time for the drawing logic
+            std::map<std::chrono::nanoseconds::rep, Slot*> sortedSlotMap{};
             for (const auto &slot: item.second) {
-                // Do we really want to draw this slot?
-                if (!(slot->getKind() & data->getSettings()->getFilter().getSlotKinds())) continue;
-                // Does it belong to the currently drawn thread?
                 auto threadRef = std::to_string(slot->location->ref().get());
                 if (!(threadRef == threadRefVector[i])) continue;
-                auto region = slot->region;
+                sortedSlotMap.insert({slot->startTime.count(), slot});
+            }
+
+            // Is there anything to do? (no visible slots => skip the drawing logic)
+            if(sortedSlotMap.size()==0) continue;
+
+            // That's where we store the information regarding our row-level
+            std::vector<std::chrono::nanoseconds::rep> endtimeVector{sortedSlotMap.begin()->second->getEndTime().count()};
+            qInfo() << "START endTimes# " << endtimeVector.size();
+            for (const auto& entry : sortedSlotMap) {
+                auto threadRef = std::to_string(entry.second->location->ref().get());
+                if (!(threadRef == threadRefVector[i])) continue;
+                if (threadName=="")threadName=entry.second->location->name().str();
+                auto region = entry.second->region;
                 auto regionName = region->name();
                 auto regionNameStr = regionName.str();
-                auto startTime = slot->startTime.count();
-                auto endTime = slot->endTime.count();
+                auto startTime = entry.second->startTime.count();
+                auto endTime = entry.second->endTime.count();
 
                 // Ensures slots starting before `begin` (like main) are considered to start at begin
                 auto effectiveStartTime = qMax(begin, startTime);
@@ -113,226 +164,117 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
                 auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
                 auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
 
-                QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
-                auto rectItem = new SlotIndicator(rect, slot);
+                // Are we within the limits of our last frame?
+                if(endTime <= endtimeVector.back()){
+                    //qInfo() << "within limit : " << endTime << "<=" << endtimeVector.back();
+                    endtimeVector.push_back(endTime);
+                }
+                // Otherwise we have to scale down until we encounter a frame beneath us, that has a bigger endTime
+                else{
+                    while(endTime > endtimeVector.back()){
+                        //qInfo() << "scaling down : " << endTime << ">" << endtimeVector.back();
+                        endtimeVector.pop_back();
+                    }
+                    if(endTime <= endtimeVector.back()){
+                        //qInfo() << "within limit : " << endTime << "<=" << endtimeVector.back();
+                        endtimeVector.push_back(endTime);
+                    }
+                }
+                top=threadDrawOffset+baseRowLevel+ROW_HEIGHT*(endtimeVector.size()-1);
+                if(top>localMaxHeight)localMaxHeight=top;
+
+                //QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
+                QRectF rect(slotBeginPos, top, rectWidth, ROW_HEIGHT);
+                auto rectItem = new SlotIndicator(rect, entry.second);
+                //qInfo() << "name: " << regionNameStr.c_str() << "base:" << baseRowLevel << "top: " << top << "endTimes# " << endtimeVector.size() << " --- maxV: " << localMaxHeight << "/" << this->globalMaxHeight;
+
                 rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
                 rectItem->setOnSelected(onTimedElementSelected);
-                rectItem->setToolTip(slot->location->name().str().c_str());
-                //rectItem->setToolTip(regionNameStr.c_str());
+                rectItem->setToolTip(entry.second->location->name().str().c_str());
+
+                QGraphicsTextItem *text = new QGraphicsTextItem();
+                QFontMetrics fm(text->font());
+                QString elidedText = fm.elidedText(regionNameStr.c_str(), Qt::ElideRight, rectItem->rect().width());
+                text->setPlainText(elidedText);
+                qreal x = rectItem->rect().center().x() - text->boundingRect().width() / 2;
+                qreal y = rectItem->rect().center().y() - text->boundingRect().height() / 2;
+                text->setPos(x,y);
+                text->setTextInteractionFlags(Qt::NoTextInteraction);
+                text->setTextWidth(rectItem->rect().width());
+                text->setParentItem(rectItem);
+
+                if(firstSlot){
+                    firstSlot=false;
+                    QGraphicsTextItem *threadDscr = new QGraphicsTextItem();
+                    QFont font;
+                    font.setPointSize(10);
+                    font.setItalic(true);
+                    threadDscr->setFont(font);
+                    threadDscr->setDefaultTextColor(Qt::darkGray);
+                    threadDscr->setPlainText(threadName.c_str());
+                    // Slightly above the Slot
+                    y = rectItem->rect().center().y() - (threadDrawOffset+6);
+                    threadDscr->setPos(slotBeginPos,y);
+                    threadDscr->setTextInteractionFlags(Qt::NoTextInteraction);
+                    threadDscr->setParentItem(rectItem);
+                }
 
                 // Determine color based on name
-                rectItem->setBrush(slot->getColor());
-                rectItem->setZValue(slot->priority);
+                rectItem->setBrush(entry.second->getColor());
+                rectItem->setZValue(entry.second->priority);
+                drawnSlotsCountLocal++;
+                drawnSlotsMultiset.insert(regionNameStr);
                 scene->addItem(rectItem);
             }
-            if(toggleStatus){
-                top += ROW_HEIGHT;
-            }
+            drawnSlotsCount+=drawnSlotsCountLocal;
+
+            // That's relevant for the scene height in updates
+            if(localMaxHeight>this->globalMaxHeight)this->globalMaxHeight=localMaxHeight;
         }
-        if(!toggleStatus){
-            top += ROW_HEIGHT;
-        }
+
     }
 
-    for (const auto &communication: selection->getCommunications()) {
-        const CommunicationEvent *startEvent = communication->getStartEvent();
-        auto startEventEnd = static_cast<qreal>(startEvent->getEndTime().count());
-        auto startEventStart = static_cast<qreal>(startEvent->getStartTime().count());
-
-
-        const CommunicationEvent *endEvent = communication->getEndEvent();
-        auto endEventEnd = static_cast<qreal>(endEvent->getEndTime().count());
-        auto endEventStart = static_cast<qreal>(endEvent->getStartTime().count());
-
-
-        auto fromTime = startEventStart + (startEventEnd - startEventStart) / 2;
-        auto effectiveFromTime = qMax(beginR, fromTime) - beginR;
-
-        auto toTime = endEventStart + (endEventEnd - endEventStart) / 2;
-        auto effectiveToTime = qMin(endR, toTime) - beginR;
-
-        // With the new support for threads we have also to consider the thread-location (fromThread, to Thread)
-        auto fromRank = startEvent->getLocation()->location_group().ref().get();
-        auto fromThreadRef = startEvent->getLocation()->ref().get();
-        auto toRank = endEvent->getLocation()->location_group().ref().get(); 
-        auto toThreadRef = endEvent->getLocation()->ref().get(); 
-        /*
-        This is the original way to get rank references:
-        auto fromRank = startEvent->getLocation()->ref().get();
-        auto toRank = endEvent->getLocation()->ref().get(); 
-
-        We changed it based on the assumption that:
-        location <=> Thread
-        location group <=> Rank
-        (Page 4, MOTIV Report)
-        */
-      
-        // Correction if we point from and/or to somthing else than a mainthread (=> -1)
-        bool fromToggleStatus = rankThreadMap->at(fromRank).first;
-        int fromThreadNumber = rankThreadMap->at(fromRank).second.at(std::to_string(fromThreadRef)).first;
-        bool toToggleStatus = rankThreadMap->at(toRank).first;
-        int toThreadNumber = rankThreadMap->at(toRank).second.at(std::to_string(toThreadRef)).first;
-        int fromThreadOffset = fromToggleStatus*(fromThreadNumber-1)*ROW_HEIGHT;
-        int toThreadOffset = toToggleStatus*(toThreadNumber-1)*ROW_HEIGHT;
-
-        int higherPos = 0;
-        int lowerPos = 0;
-        QString currentRank;
-        // the arrow points to the bottom
-        toRank > fromRank ? (higherPos=fromRank, lowerPos=toRank) : (higherPos=toRank, lowerPos=fromRank);
-
-        // How many threads were rendered above the arrow?
-        // Idea: We only accumulate the offset from positions above (<=> lower ranks) higherPos => higherPos-1
-        int higherOffset = 0;
-        for (int i = higherPos-1; i >= 0; i--) {
-            // Do we have the thread view expanded?
-            bool toggleStatus = rankThreadMap->at(i).first;
-            // How many Threads are there? apart from the main thread => -1
-            int threadCount = rankThreadMap->at(i).second.size()-1;
-            higherOffset += toggleStatus*threadCount*ROW_HEIGHT;
-        }
-
-        // How many threads were rendered extra within the arrow?
-        // Idea: The same as for higherOffset
-        int innerOffset = 0;
-        for (int i = lowerPos-1; i >= higherPos; i--) {
-            // Do we have the thread view expanded?
-            bool toggleStatus = rankThreadMap->at(i).first;
-            // How many Threads are there? apart from the main thread => -1
-            int threadCount = rankThreadMap->at(i).second.size()-1;
-            innerOffset += toggleStatus*threadCount*ROW_HEIGHT;
-        }
-
-        int fromOffset = 0;
-        int toOffset = 0;
-
-        // if the arrow points to the bottom (higher ranks are rendered lower) we have to use the toOffset as the sum of higherOffset and innerOffset
-        toRank > fromRank ? (toOffset=higherOffset+innerOffset+toThreadOffset, fromOffset=higherOffset+fromThreadOffset) : (toOffset=higherOffset+toThreadOffset, fromOffset=higherOffset+innerOffset+fromThreadOffset);
-
-        auto rankNameFrom = startEvent->getLocation()->location_group().name().str();
-        auto threadNameFrom = startEvent->getLocation()->name().str();
-        auto rankNameTo = endEvent->getLocation()->location_group().name().str();
-        auto threadNameTo = endEvent->getLocation()->name().str();
-        QString Info = QString::fromStdString("From:\t"+rankNameFrom+"\n\t"+threadNameFrom+"\nTo:\t"+rankNameTo+"\n\t"+threadNameTo);
-
-        auto fromX = effectiveFromTime / runtimeR * width;
-        auto fromY = static_cast<qreal>(fromRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + fromOffset;
-
-        auto toX = effectiveToTime / runtimeR * width;
-        auto toY = static_cast<qreal> (toRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + toOffset;
-
-        auto arrow = new CommunicationIndicator(communication, fromX, fromY, toX, toY);
-        arrow->setOnSelected(onTimedElementSelected);
-        arrow->setOnDoubleClick(onTimedElementDoubleClicked);
-        arrow->setPen(arrowPen);
-        arrow->setZValue(layers::Z_LAYER_P2P_COMMUNICATIONS);
-        arrow->setToolTip(Info);
-        // Line modification, currently not used, problem: CommunicationIndicator is a QGraphicsPolygonItem (closed polygon)
-        //QPolygonF pointPath = arrow->polygon();
-        //pointPath.insert(1, QPointF(fromX, toY));    
-        //arrow->setPolygon(pointPath);
-
-        scene->addItem(arrow);
+    // That's the infoBar (QStatusBar) logic
+    QString infoStructure =rankName+(" --- drawn items "+std::to_string(drawnSlotsCount)+"/"+std::to_string(allSlotsCount)).c_str();
+    infoStructure+=(" in "+std::to_string(populateSceneTimer.elapsed())+"[ms]").c_str();
+    std::map<std::string, int> difference{};
+    for (std::string name : allSlotsMultiset) {
+        int countDrawn = drawnSlotsMultiset.count(name);
+        int countExisting = allSlotsMultiset.count(name);
+        int diff = countExisting - countDrawn;
+        if(diff!=0)difference.insert_or_assign(name, diff);
     }
-
-    for (const auto &communication: selection->getCollectiveCommunications()) {
-        auto fromTime = static_cast<qreal>(communication->getStartTime().count());
-        auto effectiveFromTime = qMax(beginR, fromTime) - beginR;
-
-        auto toTime = static_cast<qreal>(communication->getEndTime().count());
-        auto effectiveToTime = qMin(endR, toTime) - beginR;
-
-        auto fromX = (effectiveFromTime / runtimeR) * width;
-        auto fromY = 10;
-
-        auto toX = (effectiveToTime / runtimeR) * width;
-        auto toY = top + 10;
-
-        auto rectItem = new CollectiveCommunicationIndicator(communication);
-        rectItem->setOnSelected(onTimedElementSelected);
-        rectItem->setRect(QRectF(QPointF(fromX, fromY), QPointF(toX, toY)));
-        rectItem->setPen(collectiveCommunicationPen);
-        rectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
-        scene->addItem(rectItem);
-
-        for (const auto &member: communication->getMembers()){
-            auto memberFromTime = static_cast<qreal>(member->start.count());
-            auto memberEffectiveFromTime = qMax(beginR, memberFromTime) - beginR;
-
-            auto memberToTime =  static_cast<qreal>(member->end.count());
-            auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
-
-            auto locationGroupNameStr = member->getLocation()->location_group().name().str();
-            size_t pos = locationGroupNameStr.find_last_of(' ');
-            int y = std::stoi(locationGroupNameStr.substr(pos + 1));      
-
-            int IndicatorOffset = 0;
-            auto rankRef = member->getLocation()->location_group().ref().get();
-            auto threadRef = std::to_string(member->getLocation()->ref().get());
-            /*
-            QString lowerRank;
-            for (int i = member->getLocation()->location_group().ref().get()-1; i >= 0; i--) {
-                lowerRank = rankIndexMap.at(i);
-                IndicatorOffset += rankOffsetMap->at(lowerRank)*ROW_HEIGHT*toggledRankMap->at(lowerRank);
+    QFontMetrics fm(this->font());
+    auto capacity = this->sceneRect().width() - fm.boundingRect(infoStructure).width();
+    if(difference.size()>0){
+        infoStructure+="  ---  not drawn: ";
+        for (auto diffPair : difference) {
+            QString extraInfo = (diffPair.first+" *"+std::to_string(diffPair.second)+"times  ").c_str();
+            if(capacity > 300){
+                infoStructure+=extraInfo;
+                capacity-=fm.boundingRect(extraInfo).width();
             }
-            */
-           
-            // We accumulate the ROW_HEIGHTs for every expanded thread
-            // Hint: lower rank <=> above our current position
-            for (int i = rankRef-1; i >= 0; i--) {
-                // Do we have the thread view expanded?
-                bool toggleStatus = rankThreadMap->at(i).first;
-                // How many Threads are there? apart from the main thread => -1
-                int threadCount = rankThreadMap->at(i).second.size()-1;
-                IndicatorOffset += toggleStatus*threadCount*ROW_HEIGHT;
+            else{
+                infoStructure+=", and more ...";
+                break;
             }
-
-            // Correction if the Indicator is *itself* situated within a thread
-            // No need to multiply with toggleStatus: main thread case => (1-1)*ROW_HEIGHT
-            IndicatorOffset += ((rankThreadMap->at(rankRef).second.at(threadRef).first)-1)*ROW_HEIGHT;
-
-            auto memberFromX = (memberEffectiveFromTime / runtimeR) * width;
-            auto memberFromY = y*ROW_HEIGHT+20+IndicatorOffset;
-
-            auto memberToX = (memberEffectiveToTime / runtimeR) * width;
-            auto memberToY = top - (top - (y+1)*ROW_HEIGHT)+20+IndicatorOffset;
-
-            auto memberRectItem = new CollectiveCommunicationIndicator(communication);
-            memberRectItem->setOnSelected(onTimedElementSelected);
-            memberRectItem->setRect(QRectF(QPointF(memberFromX, memberFromY), QPointF(memberToX, memberToY)));            
-            memberRectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
-            QBrush brush(Qt::black);
-            brush.setStyle(Qt::BDiagPattern);
-            memberRectItem->setBrush(brush);
-            scene->addItem(memberRectItem);
         }
     }
-
+    this->statusInfo=infoStructure;
+    statusChanged();
 }
 
-
 void FlamegraphView::resizeEvent(QResizeEvent *event) {
+    auto rectVal = this->rect();
+    // We don't want to make the scene height depandand on the window height
+    rectVal.setHeight(this->scene()->height());
+    this->scene()->setSceneRect(rectVal);
     this->updateView();
-    //qInfo() << "resize event...";
     QGraphicsView::resizeEvent(event);
 }
 
 void FlamegraphView::updateView() {
-    // TODO it might be more performant to keep track of items and add/remove new/leaving items and resizing them
     this->scene()->clear();
-    //qInfo() << "update view...";
-    auto ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
-    auto * rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
-    auto sceneHeight = this->data->getSelection()->getSlots().size() * ROW_HEIGHT;
-    // The base offset accounts for "top" (FlamegraphView) and "extraSpaceBottom" (TimelineLabelList)
-    int sceneHeightOffset = 20 + ROW_HEIGHT;
-    for (const auto& [rankRef, threadMap]: *rankThreadMap) {
-        // calc: is the thread view expanded? * how many extra rows do we have? * ROW_HEIGHT
-        sceneHeightOffset+=threadMap.first*(threadMap.second.size()-1)*ROW_HEIGHT;
-    }
-    auto sceneRect = this->rect();
-    sceneRect.setHeight(sceneHeight+sceneHeightOffset);
-    this->scene()->setSceneRect(sceneRect);
     this->populateScene(this->scene());
 }
 

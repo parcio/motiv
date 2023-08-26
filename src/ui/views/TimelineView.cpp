@@ -115,8 +115,8 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                 auto rectItem = new SlotIndicator(rect, slot);
                 rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
                 rectItem->setOnSelected(onTimedElementSelected);
-                rectItem->setToolTip(slot->location->name().str().c_str());
-                //rectItem->setToolTip(regionNameStr.c_str());
+                //rectItem->setToolTip(slot->location->name().str().c_str());
+                rectItem->setToolTip(regionNameStr.c_str());
 
                 // Determine color based on name
                 rectItem->setBrush(slot->getColor());
