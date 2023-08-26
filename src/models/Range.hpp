@@ -59,17 +59,17 @@ public:
      * @param rhs The Range object to copy from.
      */
     Range(const Range &rhs) {
-    if (rhs.vec_) {
-        vec_ = new std::vector<T>(*rhs.vec_);
-        auto dist_begin = std::distance(rhs.vec_->begin(), rhs.begin_);
-        auto dist_end = std::distance(rhs.vec_->begin(), rhs.end_);
-        begin_ = vec_->begin() + dist_begin;
-        end_ = vec_->begin() + dist_end;
-    } else {
-        begin_ = rhs.begin_;
-        end_ = rhs.end_;
-    }
-};
+        if (rhs.vec_) {
+            vec_ = new std::vector<T>(*rhs.vec_);
+            auto dist_begin = std::distance(rhs.vec_->begin(), rhs.begin_);
+            auto dist_end = std::distance(rhs.vec_->begin(), rhs.end_);
+            begin_ = vec_->begin() + dist_begin;
+            end_ = vec_->begin() + dist_end;
+        } else {
+            begin_ = rhs.begin_;
+            end_ = rhs.end_;
+        }
+    };
 
 
     /**

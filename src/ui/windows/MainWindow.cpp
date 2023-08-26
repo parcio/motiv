@@ -27,6 +27,7 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QToolBar>
+#include <QStatusBar>
 #include <utility>
 
 #include "src/models/AppSettings.hpp"
@@ -226,6 +227,7 @@ void MainWindow::createToolBars() {
     // Bottom toolbar contains control fields
     this->bottomToolbar = new QToolBar(this);
     this->bottomToolbar->setMovable(false);
+    //this->bottomToolbar
     this->addToolBar(Qt::BottomToolBarArea, this->bottomToolbar);
 
     auto bottomContainerWidget = new QWidget(this->bottomToolbar);
@@ -290,8 +292,21 @@ void MainWindow::createToolBars() {
     refreshButton->setIconSize(QSize(32, 32));
 
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshView);
+    connect(data, SIGNAL(labelInteractionTrigger()), this, SLOT(labelInteractionEvent()));
 
-    connect(data, SIGNAL(expansionEventHappend()), this, SLOT(expansionEvent()));
+    // infoBar
+    this->infoBar = new QStatusBar(this);
+    QFont font;
+    font.setPointSize(10);
+    //font.setItalic(true);
+    this->infoBar->setFont(font);
+    QPalette palette;
+    palette.setColor(QPalette::WindowText, QColorConstants::Svg::slategray);
+    this->infoBar->setPalette (palette);
+    this->infoBar->setFixedHeight(26);
+    this->infoBar->showMessage("  "+this->filepath.section("/", -3), 0);
+    //this->infoBar->showMessage(this->filepath);
+    this->setStatusBar(this->infoBar);
 }
 
 void MainWindow::createDockWidgets() {
@@ -311,6 +326,13 @@ void MainWindow::createDockWidgets() {
     this->addDockWidget(Qt::RightDockWidgetArea, this->information);
 
     this->traceOverview = new TraceOverviewDock(this->data);
+    QPalette palette;
+    palette.setColor(QPalette::WindowText, QColorConstants::Svg::slategray);
+    this->traceOverview->setPalette (palette);
+    QFont font;
+    font.setPointSize(10);
+    this->traceOverview->setFont(font);
+    this->traceOverview->setWindowTitle("  Timeline - Overview");
     this->addDockWidget(Qt::TopDockWidgetArea, this->traceOverview);
 }
 
@@ -349,6 +371,24 @@ void MainWindow::loadTrace() {
     auto slots = this->callbacks->getSlots();
     auto communications = this->callbacks->getCommunications();
     auto collectives = this->callbacks->getCollectiveCommunications();
+
+    std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots;
+    for (auto entry : slots){
+        auto rankName = entry->location->location_group().name().get()->str().c_str();
+        auto slotName = entry->region->name().get()->str().c_str();
+        auto startTime = entry->getStartTime().count();
+        auto endTime = entry->getEndTime().count();
+        //qInfo() << "mw: " << rankName << slotName << startTime;
+        if(fullTimeTableSlots.count(rankName)==0){
+            std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>> dummyMap{};
+            fullTimeTableSlots.insert(std::make_pair(rankName, dummyMap));
+        }
+        fullTimeTableSlots.at(rankName).insert(std::make_pair(startTime, std::make_pair(endTime, slotName)));
+    }
+
+    qInfo() << "mw ..." << "table size " << fullTimeTableSlots.size();
+    this->settings->setFullTimeTableSlots(fullTimeTableSlots);
+
     auto trace = new FileTrace(slots, communications, collectives, this->callbacks->duration());
 
     this->data = new TraceDataProxy(trace, this->settings, this);
@@ -439,7 +479,7 @@ void MainWindow::verticalZoomOut(){
     Q_EMIT this->data->verticalZoomChanged();    
 }
 
-void MainWindow::expansionEvent(){
+void MainWindow::labelInteractionEvent(){
     auto currentRowHeight=this->settings->getRowHeight();
     this->settings->setRowHeight(currentRowHeight);
     auto timeline = new Timeline(data, this);

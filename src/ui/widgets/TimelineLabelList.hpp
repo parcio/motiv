@@ -65,8 +65,15 @@ protected:
 private:
     TraceDataProxy *data = nullptr;
     QListWidget* widgetList;
+    QMenu *menu;
     int ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
     int maxLabelLength = 0;
+    QAction *labelAction1;
+    void highlightPreparation();
+    QAction *labelAction2;
+    void ignoreCommPreparation();
+    QAction *labelAction3;
+    void flamegraphPreparation();
 };
 
 

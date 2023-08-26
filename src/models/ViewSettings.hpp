@@ -76,9 +76,17 @@ public:
 
     QString getSearchName();
 
-    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>>* getRankThreadMap();
+    void setFullTimeTableSlots(std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots);
+
+    std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>>* getFullTimeTableSlots();
+
+    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* getRankThreadMap();
 
     QIcon* getIcon(std::string key);
+
+    int getFlamegraphRankRef();
+
+    void setFlamegraphRankRef(int rankRef);
 
 private:
     static ViewSettings* instance;    
@@ -95,8 +103,12 @@ private:
     Filter filter_;
 
     int rowHeight = SETTINGS_DEFAULT_ROW_HEIGHT;
+    
+    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>> rankThreadMap{};
 
-    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>> rankThreadMap{};
+    std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots;
+
+    //std::map<> timeTable{};
 
     QString searchName = "";
 
@@ -114,6 +126,8 @@ private:
         {std::pair<std::string, QIcon>{"refresh", executablePath.chopped(6) + "/res/tango_icons_png/refresh.png"}},
         {std::pair<std::string, QIcon>{"maximize", executablePath.chopped(6) + "/res/tango_icons_png/maximize.png"}}
     };
+
+    int rankRef;
 };
 
 

@@ -155,6 +155,7 @@ void TraceOverviewTimelineView::mousePressEvent(QMouseEvent *event)
         rubberBand = new QRubberBand(QRubberBand::Rectangle, this);
     rubberBand->setGeometry(QRect(rubberBandOrigin, QSize(0, this->height())));
     rubberBand->show();
+    qInfo() << "rubberBand...";
 }
 
 void TraceOverviewTimelineView::mouseMoveEvent(QMouseEvent *event)

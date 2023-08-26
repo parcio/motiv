@@ -105,7 +105,7 @@ public Q_SLOTS:
     /**
      * @brief todo
      */
-    void expansionEvent();
+    void labelInteractionEvent();
 
     /**
      * @brief todo
@@ -131,6 +131,7 @@ private: // methods
 private: // widgets
     QToolBar *topToolbar = nullptr;
     QToolBar *bottomToolbar = nullptr;
+    QStatusBar *infoBar = nullptr;
 
     InformationDock *information = nullptr;
     TraceOverviewDock *traceOverview = nullptr;

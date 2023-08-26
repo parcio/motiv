@@ -17,6 +17,10 @@
  */
 #include "ViewSettings.hpp"
 
+
+//#todo: delete later
+#include <QDebug>
+
 ViewSettings* ViewSettings::instance = nullptr_t();
 
 ViewSettings::ViewSettings(){}
@@ -59,10 +63,28 @@ QString ViewSettings::getSearchName(){
     return this->searchName;
 }
 
-std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, int>>>* ViewSettings::getRankThreadMap() {
+std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* ViewSettings::getRankThreadMap() {
     return &rankThreadMap;
 }
 
 QIcon* ViewSettings::getIcon(std::string key) {
     return &Icons_.at(key);
+}
+
+int ViewSettings::getFlamegraphRankRef(){
+    return this->rankRef;
+}
+
+void ViewSettings::setFlamegraphRankRef(int newRankRef){
+    this->rankRef = newRankRef;
+}
+
+void ViewSettings::setFullTimeTableSlots(std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots){
+    this->fullTimeTableSlots=fullTimeTableSlots;
+    //qInfo() << "vs ..." << "table size " << fullTimeTableSlots.size();
+}
+
+std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>>* ViewSettings::getFullTimeTableSlots(){
+    //qInfo() << "vs_r ..." << "table size " << this->fullTimeTableSlots.size();
+    return &fullTimeTableSlots;
 }

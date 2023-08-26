@@ -84,9 +84,9 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
         // Preparation
         std::vector<std::string> threadRefVector(threadCount, std::to_string(0));
-        for (const auto& [threadRef, threadNumber]: rankThreadMap->at(item.first->ref().get()).second) {
+        for (const auto& [threadRef, threadInfo]: rankThreadMap->at(item.first->ref().get()).second) {
             // First threadRef has to go to index 0 etc.
-            threadRefVector[threadNumber-1]=threadRef;
+            threadRefVector[threadInfo.first-1]=threadRef;
         }
 
         // Draw slots
@@ -116,8 +116,8 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                 auto rectItem = new SlotIndicator(rect, slot);
                 rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
                 rectItem->setOnSelected(onTimedElementSelected);
-                rectItem->setToolTip(slot->location->name().str().c_str());
-                //rectItem->setToolTip(regionNameStr.c_str());
+                //rectItem->setToolTip(slot->location->name().str().c_str());
+                rectItem->setToolTip(regionNameStr.c_str());
 
                 // Determine color based on name
                 QColor rectColor = slot->getColor();
@@ -177,9 +177,9 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
       
         // Correction if we point from and/or to somthing else than a mainthread (=> -1)
         bool fromToggleStatus = rankThreadMap->at(fromRank).first;
-        int fromThreadNumber = rankThreadMap->at(fromRank).second.at(std::to_string(fromThreadRef));
+        int fromThreadNumber = rankThreadMap->at(fromRank).second.at(std::to_string(fromThreadRef)).first;
         bool toToggleStatus = rankThreadMap->at(toRank).first;
-        int toThreadNumber = rankThreadMap->at(toRank).second.at(std::to_string(toThreadRef));
+        int toThreadNumber = rankThreadMap->at(toRank).second.at(std::to_string(toThreadRef)).first;
         int fromThreadOffset = fromToggleStatus*(fromThreadNumber-1)*ROW_HEIGHT;
         int toThreadOffset = toToggleStatus*(toThreadNumber-1)*ROW_HEIGHT;
 
@@ -297,7 +297,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
             // Correction if the Indicator is *itself* situated within a thread
             // No need to multiply with toggleStatus: main thread case => (1-1)*ROW_HEIGHT
-            IndicatorOffset += (rankThreadMap->at(rankRef).second.at(threadRef)-1)*ROW_HEIGHT;
+            IndicatorOffset += ((rankThreadMap->at(rankRef).second.at(threadRef).first)-1)*ROW_HEIGHT;
 
             auto memberFromX = (memberEffectiveFromTime / runtimeR) * width;
             auto memberFromY = y*ROW_HEIGHT+20+IndicatorOffset;

@@ -52,6 +52,7 @@ set(PROJECT_SOURCES
         src/ui/TraceDataProxy.cpp
         src/ui/views/CollectiveCommunicationIndicator.cpp     
         src/ui/views/CommunicationIndicator.cpp
+        src/ui/views/FlamegraphView.cpp
         src/ui/views/GenericIndicator.cpp
         src/ui/views/SlotIndicator.cpp
         src/ui/views/TimelineView.cpp
@@ -70,6 +71,7 @@ set(PROJECT_SOURCES
         src/ui/widgets/infostrategies/InformationDockSlotStrategy.cpp
         src/ui/widgets/infostrategies/InformationDockTraceStrategy.cpp
         src/ui/windows/FilterPopup.cpp
+        src/ui/windows/FlamegraphPopup.cpp
         src/ui/windows/MainWindow.cpp
         src/ui/windows/Otf2FileDialog.cpp
         src/ui/windows/RecentFilesDialog.cpp
