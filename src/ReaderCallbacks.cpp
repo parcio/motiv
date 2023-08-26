@@ -178,6 +178,8 @@ ReaderCallbacks::event(const otf2::definition::location &, const otf2::event::mp
 
 void
 ReaderCallbacks::event(const otf2::definition::location &, const otf2::event::mpi_ireceive_complete &complete) {
+    // Temporarily skipping this block because crashes with ireceive
+    return;
     if (!uncompletedRequests.contains(complete.request_id())) {
         throw std::logic_error("Found a mpi_ireceive_complete event with no matching mpi_ireceive_request event!");
     }
@@ -199,7 +201,8 @@ ReaderCallbacks::event(const otf2::definition::location &, const otf2::event::mp
 
 void
 ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_ireceive_request &request) {
-
+    // Temporarily skipping this block because crashes with ireceive
+    return;
     NonBlockingReceiveEvent::Builder builder;
     auto comm = new types::communicator (request.comm());
     auto loc = new otf2::definition::location(location);
