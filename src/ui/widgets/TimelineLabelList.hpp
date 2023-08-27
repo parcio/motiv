@@ -71,7 +71,7 @@ private:
     QAction *labelAction1;
     void highlightPreparation();
     QAction *labelAction2;
-    void ignoreCommPreparation();
+    void togglePointToPointPreparation();
     QAction *labelAction3;
     void flamegraphPreparation();
 };

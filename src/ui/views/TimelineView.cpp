@@ -37,6 +37,9 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
     this->setStyleSheet("background: transparent");
     this->setScene(scene);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    // Experimental***
+    this->thresholdValue=0;
+    // Experimental***
     
     // @formatter:off
     connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
@@ -152,6 +155,15 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto endEventEnd = static_cast<qreal>(endEvent->getEndTime().count());
         auto endEventStart = static_cast<qreal>(endEvent->getStartTime().count());
 
+        // With the new support for threads we have also to consider the thread-location (fromThread, to Thread)
+        auto fromRank = startEvent->getLocation()->location_group().ref().get();
+        auto fromThreadRef = startEvent->getLocation()->ref().get();
+        auto toRank = endEvent->getLocation()->location_group().ref().get(); 
+        auto toThreadRef = endEvent->getLocation()->ref().get(); 
+
+        // Is the P2P communication toggled?
+        if(rankThreadMap->at(fromRank).second.at(std::to_string(fromThreadRef)).second.at(1)) continue;
+        if(rankThreadMap->at(toRank).second.at(std::to_string(toThreadRef)).second.at(1)) continue;
 
         auto fromTime = startEventStart + (startEventEnd - startEventStart) / 2;
         auto effectiveFromTime = qMax(beginR, fromTime) - beginR;
@@ -159,11 +171,6 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto toTime = endEventStart + (endEventEnd - endEventStart) / 2;
         auto effectiveToTime = qMin(endR, toTime) - beginR;
 
-        // With the new support for threads we have also to consider the thread-location (fromThread, to Thread)
-        auto fromRank = startEvent->getLocation()->location_group().ref().get();
-        auto fromThreadRef = startEvent->getLocation()->ref().get();
-        auto toRank = endEvent->getLocation()->location_group().ref().get(); 
-        auto toThreadRef = endEvent->getLocation()->ref().get(); 
         /*
         This is the original way to get rank references:
         auto fromRank = startEvent->getLocation()->ref().get();
@@ -221,6 +228,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto threadNameFrom = startEvent->getLocation()->name().str();
         auto rankNameTo = endEvent->getLocation()->location_group().name().str();
         auto threadNameTo = endEvent->getLocation()->name().str();
+
         QString Info = QString::fromStdString("From:\t"+rankNameFrom+"\n\t"+threadNameFrom+"\nTo:\t"+rankNameTo+"\n\t"+threadNameTo);
 
         auto fromX = effectiveFromTime / runtimeR * width;
@@ -249,6 +257,16 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
         auto toTime = static_cast<qreal>(communication->getEndTime().count());
         auto effectiveToTime = qMin(endR, toTime) - beginR;
+
+        // Experimental***
+        if(this->thresholdValue){
+            long commLength = effectiveToTime - effectiveFromTime;
+            long timeFraction = (runtime/1000) * this->thresholdValue;
+            //qInfo() << toTime-fromTime << "<" << runtime/this->thresholdValue << "<=> no draw action";
+            //qInfo() << commLength << "<" << timeFraction << "<=> no draw action";
+            if(commLength<timeFraction)continue;
+        }
+        // Experimental***
 
         auto fromX = (effectiveFromTime / runtimeR) * width;
         auto fromY = 10;
@@ -333,7 +351,7 @@ void TimelineView::updateView() {
     auto * rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
     auto sceneHeight = this->data->getSelection()->getSlots().size() * ROW_HEIGHT;
     // The base offset accounts for "top" (TimelineView) and "extraSpaceBottom" (TimelineLabelList)
-    int sceneHeightOffset = 20 + ROW_HEIGHT;
+    int sceneHeightOffset = 40;
     for (const auto& [rankRef, threadMap]: *rankThreadMap) {
         // calc: is the thread view expanded? * how many extra rows do we have? * ROW_HEIGHT
         sceneHeightOffset+=threadMap.first*(threadMap.second.size()-1)*ROW_HEIGHT;

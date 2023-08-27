@@ -30,6 +30,15 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
 
     this->labelList = new TimelineLabelList(this->data, this);
     layout->addWidget(this->labelList, 1, 0);
+
+    // Experimental***
+    this->thresholdSlider = new QSlider(Qt::Horizontal, this);
+    thresholdSlider->setRange(0, 1000);
+    thresholdSlider->setValue(0);
+    thresholdSlider->setFixedWidth(this->labelList->width());
+    connect(this->thresholdSlider, &QSlider::valueChanged, this, &Timeline::thresholdChange);
+    layout->addWidget(this->thresholdSlider, 0, 0);
+    // Experimental***
     
     connect(this->data, SIGNAL(flamegraphRequest()), this, SLOT(showFlamegraphPopup()));
 
@@ -37,6 +46,8 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     this->labelList->setContextMenuPolicy(Qt::PreventContextMenu);
 
     this->view = new TimelineView(this->data, this);
+    QBrush backgroundPattern = QBrush(QColorConstants::Svg::silver, Qt::Dense7Pattern);
+    this->view->setBackgroundBrush(backgroundPattern);
     layout->addWidget(this->view, 1, 1);
 
     // This prevents the labelList from expanding to 50% of the width.
@@ -60,5 +71,12 @@ void Timeline::showFlamegraphPopup(){
     int rankRef = settings->getFlamegraphRankRef();
     FlamegraphPopup* flamegraph = new FlamegraphPopup(this->data, this);
     flamegraph->openFlamegraphWindow();
-    qInfo() << "it shall be rank ... " << rankRef;
+    //qInfo() << "it shall be rank ... " << rankRef;
 }
+
+// Experimental***
+void Timeline::thresholdChange(){
+    this->view->thresholdValue = this->thresholdSlider->value();
+    this->view->updateView();
+}
+// Experimental***

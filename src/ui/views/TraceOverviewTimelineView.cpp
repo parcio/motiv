@@ -155,7 +155,7 @@ void TraceOverviewTimelineView::mousePressEvent(QMouseEvent *event)
         rubberBand = new QRubberBand(QRubberBand::Rectangle, this);
     rubberBand->setGeometry(QRect(rubberBandOrigin, QSize(0, this->height())));
     rubberBand->show();
-    qInfo() << "rubberBand...";
+    //qInfo() << "rubberBand...";
 }
 
 void TraceOverviewTimelineView::mouseMoveEvent(QMouseEvent *event)
@@ -165,7 +165,7 @@ void TraceOverviewTimelineView::mouseMoveEvent(QMouseEvent *event)
     rubberBand->setGeometry(QRect(rubberBandOrigin, nextPoint).normalized());
 }
 
-void TraceOverviewTimelineView::mouseReleaseEvent(QMouseEvent *)
+void TraceOverviewTimelineView::mouseReleaseEvent(QMouseEvent *event)
 {
     rubberBand->hide();
 

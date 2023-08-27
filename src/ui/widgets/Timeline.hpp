@@ -46,11 +46,17 @@ public:
 
 public Q_SLOTS:
     void showFlamegraphPopup();
+    // Experimental***
+    void thresholdChange();
+    // Experimental***
 
 private: // widgets
     TimelineHeader *header = nullptr;
     TimelineLabelList *labelList = nullptr;
     TimelineView *view = nullptr;
+    // Experimental***
+    QSlider *thresholdSlider = nullptr;
+    // Experimental***
 
 private: // data
     TraceDataProxy *data = nullptr;

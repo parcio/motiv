@@ -55,7 +55,7 @@ FlamegraphView::FlamegraphView(TraceDataProxy *data, QWidget *parent) : QGraphic
     connect(this->data, SIGNAL(refreshButtonPressed()),this,SLOT(updateView()));
     // @formatter:on
 
-    qInfo() << "FlamegraphView was created ...";
+    //qInfo() << "FlamegraphView was created ...";
 }
 
 
@@ -78,7 +78,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
     QPen arrowPen(Qt::black, 1);
     QPen collectiveCommunicationPen(colors::COLOR_COLLECTIVE_COMMUNICATION, 2);
 
-    qInfo() << "FlamegraphView::populateScene is executed ...";
+    //qInfo() << "FlamegraphView::populateScene is executed ...";
     auto onTimedElementSelected = [this](TimedElement *element) { this->data->setTimeElementSelection(element); };
     auto onTimedElementDoubleClicked = [this](TimedElement *element) {
         this->data->setSelection(element->getStartTime(), element->getEndTime());
@@ -144,7 +144,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
 
             // That's where we store the information regarding our row-level
             std::vector<std::chrono::nanoseconds::rep> endtimeVector{sortedSlotMap.begin()->second->getEndTime().count()};
-            qInfo() << "START endTimes# " << endtimeVector.size();
+            //qInfo() << "START endTimes# " << endtimeVector.size();
             for (const auto& entry : sortedSlotMap) {
                 auto threadRef = std::to_string(entry.second->location->ref().get());
                 if (!(threadRef == threadRefVector[i])) continue;

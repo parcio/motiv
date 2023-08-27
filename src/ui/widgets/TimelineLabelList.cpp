@@ -34,10 +34,11 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
     this->menu = new QMenu(this);
     this->menu->setStyleSheet("QMenu { background-color: rgba(250, 250, 250, 180); border: 2px solid rgba(170, 170, 170, 120); } QMenu::item:selected { background-color: rgba(250, 250, 250, 230); color: black; } ");
     this->labelAction1 = this->menu->addAction("highlight process");
-    this->labelAction2 = this->menu->addAction("ignore communication");
+    this->labelAction1->setDisabled(true);
+    this->labelAction2 = this->menu->addAction("toggle arrows (P2P)");
     this->labelAction3 = this->menu->addAction("show flamegraph");
     connect(this->labelAction1, &QAction::triggered, this, &TimelineLabelList::highlightPreparation);
-    connect(this->labelAction2, &QAction::triggered, this, &TimelineLabelList::ignoreCommPreparation);
+    connect(this->labelAction2, &QAction::triggered, this, &TimelineLabelList::togglePointToPointPreparation);
     connect(this->labelAction3, &QAction::triggered, this, &TimelineLabelList::flamegraphPreparation);
 
     // This prevents asynchronous scrolling relative to TimelineView
@@ -64,18 +65,18 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         //font.setPointSize(12);
         //item->setFont(font);
         if(maxLabelLength < fontMetrics().boundingRect(rankName).width()) maxLabelLength=fontMetrics().boundingRect(rankName).width();
-        if(maxLabelLength < rankName.size())maxLabelLength=rankName.size();
 
         // Multithreading check
         // If we haven't seen this rank before...
         if(rankThreadMap->count(rank.first->ref().get())==0){            
             std::map<std::string, std::pair<int, std::vector<bool>>> threadMap{};
-            // We use that one to figure out the thread position <=> threadNumber
+            // We use that to figure out the thread position <=> threadNumber
             std::map<std::string, std::string> threadMap_{};
             //qInfo() << "... working on rank ..." << rank.first->ref().get();
             for (const auto &slot_: rank.second) {
                 auto threadRef = std::to_string(slot_->location->ref().get());
                 auto threadName = slot_->location->name().str();
+                //qInfo() << "keys -> [" << threadName.c_str() << "]";
                 // If we haven't seen this thread before...
                 if(!threadMap_.count(threadRef)){
                     threadMap_.insert({threadName, threadRef});
@@ -86,7 +87,8 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
             auto threadNumber = threadMap.size();
             for (auto &threadItem: threadMap_) {
                 threadNumber++;
-                std::vector<bool> boolVector {false, false, false};
+                // Settings vector for individual threads = "highlighted?" - "toggled P2P?"
+                std::vector<bool> boolVector {false, false};
                 std::pair<int, std::vector<bool>> entry {threadNumber, boolVector};
                 //qInfo() << threadItem.first.c_str() << "... is nr. ..." << threadNumber;
                 threadMap.insert({threadItem.second, entry});
@@ -119,7 +121,7 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         this->addItem(item);
     }
     auto extraSpaceBottom = new QListWidgetItem(this);
-    extraSpaceBottom->setSizeHint(QSize(0, this->ROW_HEIGHT));
+    extraSpaceBottom->setSizeHint(QSize(0, 20));
     this->addItem(extraSpaceBottom);
 }
 
@@ -142,6 +144,8 @@ void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
     else if (item != nullptr && event->button()==Qt::RightButton) {
         item->setSelected(true);
         int rankRef = item->data(Qt::UserRole).toInt();
+        // This is how we know what label we interacted with, that's relevant for ignorePreparation, flamegraphPreparation etc.
+        this->labelAction2->setData(rankRef);
         this->labelAction3->setData(rankRef);
         this->menu->exec(event->globalPos());
     }
@@ -165,13 +169,26 @@ void TimelineLabelList::highlightPreparation(){
     //Q_EMIT this->data->labelInteractionTrigger();
 }
 
-void TimelineLabelList::ignoreCommPreparation(){
+void TimelineLabelList::togglePointToPointPreparation(){
     qInfo() << "ignore ...";
-    //Q_EMIT this->data->labelInteractionTrigger();
+
+    QAction *action = qobject_cast<QAction *>(sender());
+    if (!action) return;
+
+    int rankRef = action->data().toInt();
+    auto settings = ViewSettings::getInstance();
+
+    // We flip the toggle status for all threads
+    for (auto &entry : settings->getRankThreadMap()->at(rankRef).second){
+        entry.second.second.at(1).flip();
+        qInfo() << "did that for ... " << entry.first.c_str();
+    }
+    
+    Q_EMIT this->data->labelInteractionTrigger();
 }
 
-void TimelineLabelList::flamegraphPreparation(){
-    
+void TimelineLabelList::flamegraphPreparation(){   
+
     QAction *action = qobject_cast<QAction *>(sender());
     if (!action) return;
 
