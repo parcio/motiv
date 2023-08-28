@@ -292,7 +292,8 @@ void MainWindow::createToolBars() {
     refreshButton->setIconSize(QSize(32, 32));
 
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshView);
-    connect(data, SIGNAL(labelInteractionTrigger()), this, SLOT(labelInteractionEvent()));
+    //connect(data, SIGNAL(labelInteractionTrigger()), this, SLOT(labelInteractionEvent()));
+    connect(data, &TraceDataProxy::labelInteractionTrigger, this, &MainWindow::labelInteractionEvent);
 
     // infoBar
     this->infoBar = new QStatusBar(this);

@@ -38,6 +38,8 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     thresholdSlider->setFixedWidth(this->labelList->width());
     connect(this->thresholdSlider, &QSlider::valueChanged, this, &Timeline::thresholdChange);
     layout->addWidget(this->thresholdSlider, 0, 0);
+    // For screenshots
+    thresholdSlider->setHidden(true);
     // Experimental***
     
     connect(this->data, SIGNAL(flamegraphRequest()), this, SLOT(showFlamegraphPopup()));
