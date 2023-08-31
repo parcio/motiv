@@ -23,7 +23,7 @@ NOFORMAT=`tput sgr0`
 LINEFRAMES=(" / " " ‒ " " \\ " " | ")
 DOTFRAMES=("working   " "working.  " "working.. " "working...") 
 CALIBRATION_QUESTION_1="[1/6] Do you wish to run ${CYAN}${BOLD}memory tests${NOFORMAT} via smem? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
-CALIBRATION_QUESTION_2="[2/6] How many seconds shall stats ${CYAN}${BOLD}wait${NOFORMAT} between a motiv startup and the RAM sampling via smem?"
+CALIBRATION_QUESTION_2="[2/6] How many seconds shall stats ${CYAN}${BOLD}wait${NOFORMAT} between a motiv start and the RAM sampling via smem?"
 CALIBRATION_QUESTION_3="[3/6] How many ${CYAN}${BOLD}decimal places${NOFORMAT} after the decimal point (precision) are required?"
 CALIBRATION_QUESTION_4="[4/6] Do you want to ${CYAN}${BOLD}print debug information${NOFORMAT} (only for time tests) to the terminal? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
 CALIBRATION_QUESTION_5="[5/6] How many ${CYAN}${BOLD}data triplets${NOFORMAT} like <%h%v%u%...> does a <motiv -t [path]>-run produce?"
@@ -56,7 +56,7 @@ trap 'clean_up_full' EXIT
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     clear
     echo "*******************************************************************************"
-    echo "*** ${CYAN}-h --help${NOFORMAT}              <=> shows legal arguments for 'stats'            ***"
+    echo "*** ${CYAN}-h --help${NOFORMAT}                  <=> shows legal arguments for 'stats'        ***"
     echo "*** ${CYAN}-c --calibration${NOFORMAT}           <=> interactive calibration of 'stats'       ***"
     echo "***                            -> Do we need debug-prints?                  ***"
     echo "***                            -> How precise does our calc. has to be?     ***"
@@ -677,7 +677,7 @@ exit 0
 # *** FAQ ***
 
 # Q1: Why not test against <$#> (rather than <$argc>), if we have enough traces?
-# A1: *Both* will variables will change throughout the script, but with a different meaning: <$#> will be always changed via <shift> up until zero, when we prepare the trace-paths. On the other hand <$argc> will be changed only *and if only* when we discard some paths as unusable!
+# A1: *Both* variables will change throughout the script, but with a different meaning: <$#> will be always changed via <shift> up until zero, when we prepare the trace-paths. On the other hand <$argc> will be changed only *and if only* when we discard some paths as unusable!
 
 # Q2: Why not test against <$1> (rather than <$count>) if we have a plausible sample size?
 # A2: That's a similar situation to Q., <$1> will change it's meaning, while <$count> is a constant and really represents our sample size, <$1> is just the initial way how we get it!
