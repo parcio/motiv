@@ -77,6 +77,11 @@ int main(int argc, char *argv[])
     RecentFilesDialog recentFilesDialog(&filepath);
     if(!filepath.isEmpty() || recentFilesDialog.exec() == QDialog::Accepted) {
         auto mainWindow = new MainWindow(filepath);
+        //std::string motivVersion = MOTIV_VERSION_STRING;
+        QString fullTitle;
+        QTextStream text(&fullTitle);
+        text << "Motiv " MOTIV_VERSION_STRING;
+        mainWindow->setWindowTitle(fullTitle);
         qInfo() << "motiv ready";
         mainWindow->show();
     } else {
