@@ -41,9 +41,6 @@ public:
      * @param parent The parent QWidget
      */
     explicit TimelineView(TraceDataProxy *data, QWidget *parent = nullptr);
-    // Experimental***
-    double thresholdValue;
-    // Experimental***
 
 public: Q_SIGNALS:
     /**

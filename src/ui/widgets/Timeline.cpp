@@ -30,17 +30,6 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
 
     this->labelList = new TimelineLabelList(this->data, this);
     layout->addWidget(this->labelList, 1, 0);
-
-    // Experimental***
-    this->thresholdSlider = new QSlider(Qt::Horizontal, this);
-    thresholdSlider->setRange(0, 1000);
-    thresholdSlider->setValue(0);
-    thresholdSlider->setFixedWidth(this->labelList->width());
-    connect(this->thresholdSlider, &QSlider::valueChanged, this, &Timeline::thresholdChange);
-    layout->addWidget(this->thresholdSlider, 0, 0);
-    // For screenshots
-    thresholdSlider->setHidden(true);
-    // Experimental***
     
     connect(this->data, SIGNAL(flamegraphRequest()), this, SLOT(showFlamegraphPopup()));
 
@@ -75,10 +64,3 @@ void Timeline::showFlamegraphPopup(){
     flamegraph->openFlamegraphWindow();
     //qInfo() << "it shall be rank ... " << rankRef;
 }
-
-// Experimental***
-void Timeline::thresholdChange(){
-    this->view->thresholdValue = this->thresholdSlider->value();
-    this->view->updateView();
-}
-// Experimental***

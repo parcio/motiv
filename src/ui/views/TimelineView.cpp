@@ -37,9 +37,6 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
     this->setStyleSheet("background: transparent");
     this->setScene(scene);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    // Experimental***
-    this->thresholdValue=0;
-    // Experimental***
     
     // @formatter:off
     connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
@@ -257,16 +254,6 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
         auto toTime = static_cast<qreal>(communication->getEndTime().count());
         auto effectiveToTime = qMin(endR, toTime) - beginR;
-
-        // Experimental***
-        if(this->thresholdValue){
-            long commLength = effectiveToTime - effectiveFromTime;
-            long timeFraction = (runtime/1000) * this->thresholdValue;
-            //qInfo() << toTime-fromTime << "<" << runtime/this->thresholdValue << "<=> no draw action";
-            //qInfo() << commLength << "<" << timeFraction << "<=> no draw action";
-            if(commLength<timeFraction)continue;
-        }
-        // Experimental***
 
         auto fromX = (effectiveFromTime / runtimeR) * width;
         auto fromY = 10;
