@@ -30,6 +30,7 @@
 TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QListWidget(parent), data(data) {
     this->setFrameShape(QFrame::NoFrame);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    //this->setSelectionMode(QAbstractItemView::NoSelection);
 
     this->menu = new QMenu(this);
     this->menu->setStyleSheet("QMenu { background-color: rgba(250, 250, 250, 180); border: 2px solid rgba(170, 170, 170, 120); } QMenu::item:selected { background-color: rgba(250, 250, 250, 230); color: black; } ");
@@ -48,6 +49,8 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
     //setViewportMargins(0, 20, 0, 0);
     // Alternative with a bufferzone we can scroll into
     auto extraSpaceTop = new QListWidgetItem(this);
+    // We dont want the extra space to be selectable etc.
+    extraSpaceTop->setFlags(Qt::NoItemFlags);
     extraSpaceTop->setSizeHint(QSize(0, 20));
     this->addItem(extraSpaceTop);
  
@@ -112,6 +115,7 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         //qInfo() << "rank " << rank.first->ref().get() << " has" << rankThreadMap->at(rank.first->ref().get()).second.size() << "threads";
 
         item->setText(rankName);
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
         item->setData(Qt::UserRole, rank.first->ref().get());
         item->setToolTip(QString::fromStdString("node: "+rank.first->parent().name().str()));
         //item->setSizeHint(QSize(0, this->ROW_HEIGHT+(rankOffsetMap->at(rankName)*this->ROW_HEIGHT*toggledRankMap->at(rankName))));
@@ -121,12 +125,14 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         this->addItem(item);
     }
     auto extraSpaceBottom = new QListWidgetItem(this);
+    // We dont want the extra space to be selectable etc.
+    extraSpaceBottom->setFlags(Qt::NoItemFlags);
     extraSpaceBottom->setSizeHint(QSize(0, 20));
     this->addItem(extraSpaceBottom);
 }
 
 void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
-    qInfo() << "mousePressEvent";
+    //qInfo() << "mousePressEvent";
     // First: determine where the click happend
     auto *item = this->itemAt(event->pos());  
     // Assuming we have clicked on a rank...
@@ -147,7 +153,8 @@ void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
         // This is how we know what label we interacted with, that's relevant for ignorePreparation, flamegraphPreparation etc.
         this->labelAction2->setData(rankRef);
         this->labelAction3->setData(rankRef);
-        this->menu->exec(event->globalPos());
+        //this->menu->exec(event->globalPos());
+        this->menu->exec(event->globalPosition().toPoint());
     }
     return;
 }
@@ -165,12 +172,12 @@ int TimelineLabelList::getMaxLabelLength() {
 }
 
 void TimelineLabelList::highlightPreparation(){
-    qInfo() << "highlight ...";
+    //qInfo() << "highlight ...";
     //Q_EMIT this->data->labelInteractionTrigger();
 }
 
 void TimelineLabelList::togglePointToPointPreparation(){
-    qInfo() << "ignore ...";
+    //qInfo() << "ignore ...";
 
     QAction *action = qobject_cast<QAction *>(sender());
     if (!action) return;
@@ -181,7 +188,7 @@ void TimelineLabelList::togglePointToPointPreparation(){
     // We flip the toggle status for all threads
     for (auto &entry : settings->getRankThreadMap()->at(rankRef).second){
         entry.second.second.at(1).flip();
-        qInfo() << "did that for ... " << entry.first.c_str();
+        //qInfo() << "did that for ... " << entry.first.c_str();
     }
     
     Q_EMIT this->data->labelInteractionTrigger();
@@ -197,5 +204,5 @@ void TimelineLabelList::flamegraphPreparation(){
     settings->setFlamegraphRankRef(rankRef);
 
     Q_EMIT this->data->flamegraphRequest();
-    qInfo() << "flamegraph ...";
+    //qInfo() << "flamegraph ...";
 }

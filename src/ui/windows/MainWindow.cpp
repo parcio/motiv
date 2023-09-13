@@ -387,7 +387,7 @@ void MainWindow::loadTrace() {
         fullTimeTableSlots.at(rankName).insert(std::make_pair(startTime, std::make_pair(endTime, slotName)));
     }
 
-    qInfo() << "mw ..." << "table size " << fullTimeTableSlots.size();
+    //qInfo() << "mw ..." << "table size " << fullTimeTableSlots.size();
     this->settings->setFullTimeTableSlots(fullTimeTableSlots);
 
     auto trace = new FileTrace(slots, communications, collectives, this->callbacks->duration());

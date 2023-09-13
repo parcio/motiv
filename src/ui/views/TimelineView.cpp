@@ -275,20 +275,9 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             auto memberToTime =  static_cast<qreal>(member->end.count());
             auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
 
-            auto locationGroupNameStr = member->getLocation()->location_group().name().str();
-            size_t pos = locationGroupNameStr.find_last_of(' ');
-            int y = std::stoi(locationGroupNameStr.substr(pos + 1));      
-
             int IndicatorOffset = 0;
             auto rankRef = member->getLocation()->location_group().ref().get();
             auto threadRef = std::to_string(member->getLocation()->ref().get());
-            /*
-            QString lowerRank;
-            for (int i = member->getLocation()->location_group().ref().get()-1; i >= 0; i--) {
-                lowerRank = rankIndexMap.at(i);
-                IndicatorOffset += rankOffsetMap->at(lowerRank)*ROW_HEIGHT*toggledRankMap->at(lowerRank);
-            }
-            */
            
             // We accumulate the ROW_HEIGHTs for every expanded thread
             // Hint: lower rank <=> above our current position
@@ -305,10 +294,10 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             IndicatorOffset += ((rankThreadMap->at(rankRef).second.at(threadRef).first)-1)*ROW_HEIGHT;
 
             auto memberFromX = (memberEffectiveFromTime / runtimeR) * width;
-            auto memberFromY = y*ROW_HEIGHT+20+IndicatorOffset;
+            auto memberFromY = rankRef*ROW_HEIGHT+20+IndicatorOffset;
 
             auto memberToX = (memberEffectiveToTime / runtimeR) * width;
-            auto memberToY = top - (top - (y+1)*ROW_HEIGHT)+20+IndicatorOffset;
+            auto memberToY = top - (top - (rankRef+1)*ROW_HEIGHT)+20+IndicatorOffset;
 
             auto memberRectItem = new CollectiveCommunicationIndicator(communication);
             memberRectItem->setOnSelected(onTimedElementSelected);

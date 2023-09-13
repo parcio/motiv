@@ -58,9 +58,6 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
 }
 
 void Timeline::showFlamegraphPopup(){
-    auto settings = ViewSettings::getInstance();
-    int rankRef = settings->getFlamegraphRankRef();
     FlamegraphPopup* flamegraph = new FlamegraphPopup(this->data, this);
     flamegraph->openFlamegraphWindow();
-    //qInfo() << "it shall be rank ... " << rankRef;
 }
