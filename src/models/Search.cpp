@@ -21,26 +21,18 @@
 
 #include "src/models/Search.hpp"
 
-Search::Search(TraceDataProxy *data, QWidget *parent): data(data), QListWidget(parent){
+Search::Search(TraceDataProxy *data, QListWidget *itemList, QWidget *parent): data(data), itemList(itemList), QListWidget(parent){
     if(this->data == nullptr) throw std::invalid_argument("data (TraceDataProxy) is null");
     
     for(const auto &item : data->getFullTrace()->getSlots()){
         for(const auto &slot: item.second){
             QString name = QString::fromStdString(slot->region->name().str());
-            QList<QListWidgetItem *> matches = this->slotList.findItems(name, Qt::MatchExactly);            
-            if(matches.isEmpty()) this->slotList.addItem(name);
+            QList<QListWidgetItem *> matches = this->itemList->findItems(name, Qt::MatchExactly);            
+            if(matches.isEmpty()) this->itemList->addItem(name);
         }
     }
     
-    this->slotList.sortItems(Qt::AscendingOrder);
-}
-
-void Search::fillItemList(QListWidget *itemList) {
-    for (int i = 0; i < slotList.count(); i++) {
-        QListWidgetItem *item = slotList.item(i);
-        QString name = item->text();    
-        itemList->addItem(name);
-    }
+    this->itemList->sortItems(Qt::AscendingOrder);
 }
 
 void Search::findName(QString subname, QListWidget *itemList) {

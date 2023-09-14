@@ -44,9 +44,8 @@ void SearchPopup::buildWindow(QWidget *parent){
     itemList->setSelectionMode(QAbstractItemView::NoSelection);
 
     
-    auto search_ = new Search(data, parent);
+    auto search_ = new Search(data, itemList, parent);
     layout->addWidget(itemList);
-    search_->fillItemList(itemList);
     
     searchWindow->setLayout(layout);
 
@@ -112,7 +111,7 @@ void SearchPopup::buildWindow(QWidget *parent){
             ViewSettings::getInstance()->setSearchName(itemList->currentItem()->text());
             this->firstNextUse=true;
 
-            auto search_ = new Search(data,this);
+            auto search_ = new Search(data, itemList, this);
             this->slotList = search_->createItemList(itemList->currentItem()->text());
             this->currentIterator=slotList.begin();
             this->selectSlot();            

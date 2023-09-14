@@ -31,7 +31,7 @@
 class Search : QListWidget {
 Q_OBJECT
 public:
-    Search(TraceDataProxy *data, QWidget *parent=nullptr);
+    Search(TraceDataProxy *data, QListWidget *itemList, QWidget *parent=nullptr);
 
     /**
      * @brief Fills the item list for the search popup window.
@@ -55,7 +55,7 @@ public:
 
 
 private:
-    QListWidget slotList;    
+    QListWidget *itemList = nullptr;    
     TraceDataProxy* data = nullptr;
 
 };
