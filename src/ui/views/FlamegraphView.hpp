@@ -42,8 +42,8 @@ public:
      */
     explicit FlamegraphView(TraceDataProxy *data, QWidget *parent = nullptr);
     QString statusInfo;
-    int requestedRank;
-    int globalMaxHeight;
+    auto getRequestedRank(){ return requestedRank; }
+    auto getGlobalMaxHeight(){ return globalMaxHeight; }
 
 public: Q_SIGNALS:
     /**
@@ -78,6 +78,8 @@ private:
 
 private:
     TraceDataProxy *data = nullptr;
+    unsigned int requestedRank;
+    unsigned int globalMaxHeight;
   //  ColorGenerator colorgenerator;
 };
 

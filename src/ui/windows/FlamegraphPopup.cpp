@@ -22,10 +22,11 @@
 //#include <QDebug>
 
 
-FlamegraphPopup::FlamegraphPopup(TraceDataProxy *data, QWidget *parent):data(data), QDialog(parent){
+FlamegraphPopup::FlamegraphPopup(TraceDataProxy *data, QWidget *parent):QDialog(parent), data(data){
+    qInfo() << "FlamegraphPopup ... " << this;
     this->flamegraphWindow = new QDialog(parent);
-    flamegraphWindow->setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint);
-    flamegraphWindow->setWindowTitle("Flamegraph");
+    this->flamegraphWindow->setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint);
+    this->flamegraphWindow->setWindowTitle("Flamegraph");
     this->header = new TimelineHeader(this->data, this);
     this->view = new FlamegraphView(this->data, this);
     this->infoBar = new QStatusBar(this);
@@ -36,9 +37,11 @@ FlamegraphPopup::FlamegraphPopup(TraceDataProxy *data, QWidget *parent):data(dat
     palette.setColor(QPalette::WindowText, QColorConstants::Svg::slategray);
     this->infoBar->setPalette (palette);
     this->infoBar->setFixedHeight(12);
+    this->setAttribute(Qt::WA_DeleteOnClose);
 }
 
 void FlamegraphPopup::openFlamegraphWindow(){
+    qInfo() << "FlamegraphPopup::openFlamegraphWindow is executed ... for " << this;
     auto * settings = ViewSettings::getInstance();
     auto ROW_HEIGHT = settings->getRowHeight();
     auto * rankThreadMap = settings->getRankThreadMap();
@@ -61,7 +64,7 @@ void FlamegraphPopup::openFlamegraphWindow(){
     this->flamegraphWindow->setLayout(popupLayout);
 
     // Set the Window to the right size
-    auto sceneHeight = this->view->globalMaxHeight + rankThreadMap->at(this->view->requestedRank).second.size() * ROW_HEIGHT;
+    auto sceneHeight = this->view->getGlobalMaxHeight() + rankThreadMap->at(this->view->getRequestedRank()).second.size() * ROW_HEIGHT;
     auto sceneRect = this->view->rect();
     sceneRect.setHeight(sceneHeight);
     sceneRect.setWidth(sceneHeight*1.8);
@@ -72,6 +75,7 @@ void FlamegraphPopup::openFlamegraphWindow(){
 }
 
 void FlamegraphPopup::updateStatusbar(){
+    qInfo() << "FlamegraphPopup::updateStatusbar is executed ... for " << this;
     //QFontMetrics fm(this->infoBar->font());
     //QString elidedText = fm.elidedText(this->view->statusInfo, Qt::ElideRight, this->view->width()-30);
     this->infoBar->showMessage(this->view->statusInfo,0);

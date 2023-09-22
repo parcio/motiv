@@ -49,6 +49,8 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
     qreal top = 0;
     auto ROW_HEIGHT = scene->height() / static_cast<qreal>(uiTrace->getSlots().size());
     std::string searchName_ = ViewSettings::getInstance()->getSearchName().toStdString();
+
+    qInfo() << "TraceOverviewTimelineView::populateScene is executed ... for " << this;
     
     for (const auto &item: uiTrace->getSlots()) {
         // Display slots
@@ -115,6 +117,7 @@ void TraceOverviewTimelineView::updateUITrace(){
 }
 
 void TraceOverviewTimelineView::updateView() {
+    qInfo() << "TraceOverviewTimelineView::updateView is executed ... for " << this;
     this->scene()->clear();
 
     auto sceneRect = this->rect();

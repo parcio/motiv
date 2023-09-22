@@ -31,13 +31,11 @@
 #include <QApplication>
 #include <QWheelEvent>
 #include <QElapsedTimer>
-
-//test
 #include <QGraphicsTextItem>
-#include <QLabel>
-#include <QGraphicsProxyWidget>
+
 
 FlamegraphView::FlamegraphView(TraceDataProxy *data, QWidget *parent) : QGraphicsView(parent), data(data) {
+    qInfo() << "FlamegraphView ... " << this;
     auto scene = new QGraphicsScene();
     this->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     this->setAutoFillBackground(false);
@@ -54,8 +52,6 @@ FlamegraphView::FlamegraphView(TraceDataProxy *data, QWidget *parent) : QGraphic
     connect(this->data, SIGNAL(verticalZoomChanged()),this,SLOT(updateView()));
     connect(this->data, SIGNAL(refreshButtonPressed()),this,SLOT(updateView()));
     // @formatter:on
-
-    //qInfo() << "FlamegraphView was created ...";
 }
 
 
@@ -78,15 +74,15 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
     QPen arrowPen(Qt::black, 1);
     QPen collectiveCommunicationPen(colors::COLOR_COLLECTIVE_COMMUNICATION, 2);
 
-    //qInfo() << "FlamegraphView::populateScene is executed ...";
+    qInfo() << "FlamegraphView::populateScene is executed ... for " << this;
     auto onTimedElementSelected = [this](TimedElement *element) { this->data->setTimeElementSelection(element); };
     auto onTimedElementDoubleClicked = [this](TimedElement *element) {
         this->data->setSelection(element->getStartTime(), element->getEndTime());
     };
     
     int top = 0;
-    int baseRowLevel = 0;
-    int localMaxHeight = 0;
+    unsigned int baseRowLevel = 0;
+    unsigned int localMaxHeight = 0;
     int threadDrawOffset = 30;
     this->globalMaxHeight=0;
 
@@ -265,6 +261,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
 }
 
 void FlamegraphView::resizeEvent(QResizeEvent *event) {
+    qInfo() << "FlamegraphView::resizeEvent is executed ... for " << this;
     auto rectVal = this->rect();
     // We don't want to make the scene height depandand on the window height
     rectVal.setHeight(this->scene()->height());
@@ -274,11 +271,20 @@ void FlamegraphView::resizeEvent(QResizeEvent *event) {
 }
 
 void FlamegraphView::updateView() {
-    this->scene()->clear();
-    this->populateScene(this->scene());
+    qInfo() << "FlamegraphView::updateView is executed ... for " << this;
+    // If we close the popup window for this particular view its status will be set to hidden
+    // The second check for the statusInfo legnth prevents unwanted deletion during the object construction
+    if(this->parentWidget()->isHidden() && this->statusInfo.length()>0){
+        delete this->parentWidget();
+    }
+    else{
+        this->scene()->clear();
+        this->populateScene(this->scene());
+    }
 }
 
 void FlamegraphView::wheelEvent(QWheelEvent *event) {
+    qInfo() << "FlamegraphView::wheelEvent is executed ... for " << this;
     // Calculation according to https://doc.qt.io/qt-6/qwheelevent.html#angleDelta:
     // @c angleDelta is in eights of a degree and most mouse wheels work in steps of 15 degrees.
     QPoint numDegrees = event->angleDelta() / 8;

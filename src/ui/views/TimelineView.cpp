@@ -61,7 +61,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     QPen arrowPen(Qt::black, 1);
     QPen collectiveCommunicationPen(colors::COLOR_COLLECTIVE_COMMUNICATION, 2);
 
-
+    qInfo() << "TimelineView::populateScene is executed ... for " << this;
     auto onTimedElementSelected = [this](TimedElement *element) { this->data->setTimeElementSelection(element); };
     auto onTimedElementDoubleClicked = [this](TimedElement *element) {
         this->data->setSelection(element->getStartTime(), element->getEndTime());
@@ -314,12 +314,14 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
 
 void TimelineView::resizeEvent(QResizeEvent *event) {
+    qInfo() << "TimelineView::resizeEvent is executed ... for " << this;
     this->updateView();
     //qInfo() << "resize event...";
     QGraphicsView::resizeEvent(event);
 }
 
 void TimelineView::updateView() {
+    qInfo() << "TimelineView::updateView is executed ... for " << this;
     // TODO it might be more performant to keep track of items and add/remove new/leaving items and resizing them
     this->scene()->clear();
     //qInfo() << "update view...";
@@ -339,6 +341,7 @@ void TimelineView::updateView() {
 }
 
 void TimelineView::wheelEvent(QWheelEvent *event) {
+    qInfo() << "TimelineView::wheelEvent is executed ... for " << this;
     // Calculation according to https://doc.qt.io/qt-6/qwheelevent.html#angleDelta:
     // @c angleDelta is in eights of a degree and most mouse wheels work in steps of 15 degrees.
     QPoint numDegrees = event->angleDelta() / 8;
