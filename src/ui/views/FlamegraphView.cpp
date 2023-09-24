@@ -94,6 +94,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
     std::string rankNameStd;
     QString rankName;
 
+
     // To skip any other rank in order to work on the right one is quite sloppy
     for (const auto &item: selection->getSlots()) {
         if(this->requestedRank!=item.first->ref().get()) continue;
@@ -127,29 +128,19 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
             // We want to shift the baselevel-hight if we start to draw another thread
             baseRowLevel=this->globalMaxHeight;
 
-            // We need to have the slots sortet by their starting time for the drawing logic
-            std::map<std::chrono::nanoseconds::rep, Slot*> sortedSlotMap{};
-            for (const auto &slot: item.second) {
-                auto threadRef = std::to_string(slot->location->ref().get());
-                if (!(threadRef == threadRefVector[i])) continue;
-                sortedSlotMap.insert({slot->startTime.count(), slot});
-            }
-
-            // Is there anything to do? (no visible slots => skip the drawing logic)
-            if(sortedSlotMap.size()==0) continue;
-
             // That's where we store the information regarding our row-level
-            std::vector<std::chrono::nanoseconds::rep> endtimeVector{sortedSlotMap.begin()->second->getEndTime().count()};
-            //qInfo() << "START endTimes# " << endtimeVector.size();
-            for (const auto& entry : sortedSlotMap) {
-                auto threadRef = std::to_string(entry.second->location->ref().get());
+            std::vector<std::chrono::nanoseconds::rep> endtimeVector{};
+            for (const auto &Slot: item.second) {
+                auto threadRef = std::to_string(Slot->location->ref().get());
                 if (!(threadRef == threadRefVector[i])) continue;
-                if (threadName=="")threadName=entry.second->location->name().str();
-                auto region = entry.second->region;
+                // We need some initial limit
+                //if(endtimeVector.empty())endtimeVector.push_back(Slot->getEndTime().count());
+                if (threadName=="")threadName=Slot->location->name().str();
+                auto region = Slot->region;
                 auto regionName = region->name();
                 auto regionNameStr = regionName.str();
-                auto startTime = entry.second->startTime.count();
-                auto endTime = entry.second->endTime.count();
+                auto startTime = Slot->startTime.count();
+                auto endTime = Slot->endTime.count();
 
                 // Ensures slots starting before `begin` (like main) are considered to start at begin
                 auto effectiveStartTime = qMax(begin, startTime);
@@ -161,18 +152,18 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
                 auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
 
                 // Are we within the limits of our last frame?
-                if(endTime <= endtimeVector.back()){
-                    //qInfo() << "within limit : " << endTime << "<=" << endtimeVector.back();
+                if(endtimeVector.empty() || endTime <= endtimeVector.back()){
+                    qInfo() << "within limit : " << endTime;
                     endtimeVector.push_back(endTime);
                 }
                 // Otherwise we have to scale down until we encounter a frame beneath us, that has a bigger endTime
                 else{
-                    while(endTime > endtimeVector.back()){
-                        //qInfo() << "scaling down : " << endTime << ">" << endtimeVector.back();
+                    while(!endtimeVector.empty() && endTime > endtimeVector.back()){
+                        qInfo() << "scaling down : " << endTime << ">" << endtimeVector.back() << " #" << endtimeVector.size();
                         endtimeVector.pop_back();
                     }
-                    if(endTime <= endtimeVector.back()){
-                        //qInfo() << "within limit : " << endTime << "<=" << endtimeVector.back();
+                    if(endtimeVector.empty() || endTime <= endtimeVector.back()){
+                        qInfo() << "within limit : " << endTime << "... after downscaling";
                         endtimeVector.push_back(endTime);
                     }
                 }
@@ -181,14 +172,15 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
 
                 //QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
                 QRectF rect(slotBeginPos, top, rectWidth, ROW_HEIGHT);
-                auto rectItem = new SlotIndicator(rect, entry.second);
+                auto rectItem = new SlotIndicator(rect, Slot);
                 //qInfo() << "name: " << regionNameStr.c_str() << "base:" << baseRowLevel << "top: " << top << "endTimes# " << endtimeVector.size() << " --- maxV: " << localMaxHeight << "/" << this->globalMaxHeight;
 
                 rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
                 rectItem->setOnSelected(onTimedElementSelected);
-                rectItem->setToolTip(entry.second->location->name().str().c_str());
+                rectItem->setToolTip(Slot->location->name().str().c_str());
 
-                QGraphicsTextItem *text = new QGraphicsTextItem();
+
+                QGraphicsTextItem *text = new QGraphicsTextItem(rectItem);
                 QFontMetrics fm(text->font());
                 QString elidedText = fm.elidedText(regionNameStr.c_str(), Qt::ElideRight, rectItem->rect().width());
                 text->setPlainText(elidedText);
@@ -201,7 +193,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
 
                 if(firstSlot){
                     firstSlot=false;
-                    QGraphicsTextItem *threadDscr = new QGraphicsTextItem();
+                    QGraphicsTextItem *threadDscr = new QGraphicsTextItem(rectItem);
                     QFont font;
                     font.setPointSize(10);
                     font.setItalic(true);
@@ -216,16 +208,18 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
                 }
 
                 // Determine color based on name
-                rectItem->setBrush(entry.second->getColor());
-                rectItem->setZValue(entry.second->priority);
+                rectItem->setBrush(Slot->getColor());
+                rectItem->setZValue(Slot->priority);
                 drawnSlotsCountLocal++;
                 drawnSlotsMultiset.insert(regionNameStr);
                 scene->addItem(rectItem);
+                qInfo() << endtimeVector;
             }
             drawnSlotsCount+=drawnSlotsCountLocal;
 
             // That's relevant for the scene height in updates
             if(localMaxHeight>this->globalMaxHeight)this->globalMaxHeight=localMaxHeight;
+            //endtimeVector.clear();
         }
 
     }

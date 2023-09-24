@@ -55,6 +55,12 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     auto scrollSyncer = new ScrollSynchronizer(this);
     scrollSyncer->addWidget(this->labelList);
     scrollSyncer->addWidget(this->view);
+
+    qInfo() << "-------------Timeline Info--------------";
+    this->dumpObjectInfo();
+    qInfo() << "----------------------------------------";
+    this->dumpObjectTree();
+    qInfo() << "----------------------------------------";
 }
 
 void Timeline::showFlamegraphPopup(){
