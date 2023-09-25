@@ -41,7 +41,7 @@ FlamegraphPopup::FlamegraphPopup(TraceDataProxy *data, QWidget *parent):QDialog(
 }
 
 void FlamegraphPopup::openFlamegraphWindow(){
-    qInfo() << "FlamegraphPopup::openFlamegraphWindow is executed ... for " << this;
+    qInfo() << "EXECUTING FlamegraphPopup::openFlamegraphWindow ... for " << this;
     auto * settings = ViewSettings::getInstance();
     auto ROW_HEIGHT = settings->getRowHeight();
     auto * rankThreadMap = settings->getRankThreadMap();
@@ -75,7 +75,7 @@ void FlamegraphPopup::openFlamegraphWindow(){
 }
 
 void FlamegraphPopup::updateStatusbar(){
-    qInfo() << "FlamegraphPopup::updateStatusbar is executed ... for " << this;
+    qInfo() << "EXECUTING FlamegraphPopup::updateStatusbar ... for " << this;
     //QFontMetrics fm(this->infoBar->font());
     //QString elidedText = fm.elidedText(this->view->statusInfo, Qt::ElideRight, this->view->width()-30);
     this->infoBar->showMessage(this->view->statusInfo,0);

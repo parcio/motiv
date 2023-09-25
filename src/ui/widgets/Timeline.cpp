@@ -23,6 +23,7 @@
 
 
 Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), data(data) {
+    qInfo() << "Timeline ... " << this;
     auto layout = new QGridLayout(this);
 
     this->header = new TimelineHeader(this->data, this);
@@ -57,6 +58,7 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     scrollSyncer->addWidget(this->view);
 
     qInfo() << "-------------Timeline Info--------------";
+    qInfo() << "obj: " << this;
     this->dumpObjectInfo();
     qInfo() << "----------------------------------------";
     this->dumpObjectTree();
@@ -64,6 +66,7 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
 }
 
 void Timeline::showFlamegraphPopup(){
+    qInfo() << "EXECUTING Timeline::showFlamegraphPopup ... for " << this;
     FlamegraphPopup* flamegraph = new FlamegraphPopup(this->data, this);
     flamegraph->openFlamegraphWindow();
 }

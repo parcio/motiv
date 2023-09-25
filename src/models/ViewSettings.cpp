@@ -64,6 +64,7 @@ QString ViewSettings::getSearchName(){
 }
 
 std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* ViewSettings::getRankThreadMap() {
+    qInfo() << "EXECUTING ViewSettings::getRankThreadMap [size: " << rankThreadMap.size() << "] ... for " << this;
     return &rankThreadMap;
 }
 
@@ -80,11 +81,11 @@ void ViewSettings::setFlamegraphRankRef(int newRankRef){
 }
 
 void ViewSettings::setFullTimeTableSlots(std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots){
+    qInfo() << "EXECUTING ViewSettings::setFullTimeTableSlots [size: " << fullTimeTableSlots.size() << "] ... for " << this;
     this->fullTimeTableSlots=fullTimeTableSlots;
-    //qInfo() << "vs ..." << "table size " << fullTimeTableSlots.size();
 }
 
 std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>>* ViewSettings::getFullTimeTableSlots(){
-    //qInfo() << "vs_r ..." << "table size " << this->fullTimeTableSlots.size();
+    qInfo() << "EXECUTING ViewSettings::getFullTimeTableSlots [size: " << fullTimeTableSlots.size() << "] ... for " << this;
     return &fullTimeTableSlots;
 }

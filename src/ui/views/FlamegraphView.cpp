@@ -74,7 +74,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
     QPen arrowPen(Qt::black, 1);
     QPen collectiveCommunicationPen(colors::COLOR_COLLECTIVE_COMMUNICATION, 2);
 
-    qInfo() << "FlamegraphView::populateScene is executed ... for " << this;
+    qInfo() << "EXECUTING FlamegraphView::populateScene ... for " << this;
     auto onTimedElementSelected = [this](TimedElement *element) { this->data->setTimeElementSelection(element); };
     auto onTimedElementDoubleClicked = [this](TimedElement *element) {
         this->data->setSelection(element->getStartTime(), element->getEndTime());
@@ -255,7 +255,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
 }
 
 void FlamegraphView::resizeEvent(QResizeEvent *event) {
-    qInfo() << "FlamegraphView::resizeEvent is executed ... for " << this;
+    qInfo() << "EXECUTING FlamegraphView::resizeEvent ... for " << this;
     auto rectVal = this->rect();
     // We don't want to make the scene height depandand on the window height
     rectVal.setHeight(this->scene()->height());
@@ -265,7 +265,7 @@ void FlamegraphView::resizeEvent(QResizeEvent *event) {
 }
 
 void FlamegraphView::updateView() {
-    qInfo() << "FlamegraphView::updateView is executed ... for " << this;
+    qInfo() << "EXECUTING FlamegraphView::updateView ... for " << this;
     // If we close the popup window for this particular view its status will be set to hidden
     // The second check for the statusInfo legnth prevents unwanted deletion during the object construction
     if(this->parentWidget()->isHidden() && this->statusInfo.length()>0){
@@ -278,7 +278,7 @@ void FlamegraphView::updateView() {
 }
 
 void FlamegraphView::wheelEvent(QWheelEvent *event) {
-    qInfo() << "FlamegraphView::wheelEvent is executed ... for " << this;
+    qInfo() << "EXECUTING FlamegraphView::wheelEvent ... for " << this;
     // Calculation according to https://doc.qt.io/qt-6/qwheelevent.html#angleDelta:
     // @c angleDelta is in eights of a degree and most mouse wheels work in steps of 15 degrees.
     QPoint numDegrees = event->angleDelta() / 8;

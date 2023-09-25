@@ -28,6 +28,7 @@
 #include <QMenu>
 
 TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QListWidget(parent), data(data) {
+    qInfo() << "TimelineLabelList... " << this;
     this->setFrameShape(QFrame::NoFrame);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     //this->setSelectionMode(QAbstractItemView::NoSelection);
@@ -71,7 +72,8 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
 
         // Multithreading check
         // If we haven't seen this rank before...
-        if(rankThreadMap->count(rank.first->ref().get())==0){            
+        if(rankThreadMap->count(rank.first->ref().get())==0){
+            qInfo() << "    ... Multithreadingcheck " << this;       
             std::map<std::string, std::pair<int, std::vector<bool>>> threadMap{};
             // We use that to figure out the thread position <=> threadNumber
             std::map<std::string, std::string> threadMap_{};
@@ -132,6 +134,7 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
 }
 
 void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
+    qInfo() << "EXECUTING TimelineLabelList::mousePressEvent ... for " << this;
     //qInfo() << "mousePressEvent";
     // First: determine where the click happend
     auto *item = this->itemAt(event->pos());  
