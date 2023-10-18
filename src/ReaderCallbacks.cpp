@@ -100,10 +100,14 @@ void ReaderCallbacks::communicationEvent(T* self, uint32_t matching,
 ) {
     // Check for a pending matching call
     if (matchingPending.contains(matching)) {
-        auto& matchingEvents = matchingPending[matching];
+        auto& matchingEvents = matchingPending[matching];           
         auto matchingEvent = matchingEvents->back();
-
-        auto communication = new Communication(matchingEvent, self);
+        Communication* communication = nullptr;
+        
+        // Check for the source of the start event in non-blocking communication
+        if(matchingEvent->getStartTime()<= self->getStartTime()) communication = new Communication(matchingEvent, self);
+        else communication = new Communication(self, matchingEvent);
+        
         communications_.push_back(communication);
 
         matchingEvents->pop_back();
@@ -138,7 +142,7 @@ void ReaderCallbacks::event(const otf2::definition::location &loc, const otf2::e
     auto comm = new types::communicator(receive.comm());
     auto ev = new BlockingReceiveEvent(relative(receive.timestamp()), location, comm);
 
-    this->communicationEvent(ev, receive.sender(), pendingReceives, pendingSends);
+     this->communicationEvent<BlockingReceiveEvent>(ev, receive.sender(), pendingReceives, pendingSends);
 }
 
 void ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_isend_request &request) {
@@ -152,19 +156,16 @@ void ReaderCallbacks::event(const otf2::definition::location &location, const ot
     builder.start(start);
     builder.receiver(receiver);
 
-    this->uncompletedRequests.insert({request.request_id(), builder});
+    this->uncompletedIsendRequests.insert({request.request_id(), builder});
 }
 
 void
 ReaderCallbacks::event(const otf2::definition::location &, const otf2::event::mpi_isend_complete &complete) {
-    if (!uncompletedRequests.contains(complete.request_id())) {
+    if (!uncompletedIsendRequests.contains(complete.request_id())) {
         throw std::logic_error("Found a mpi_isend_complete event with no matching mpi_isend_request event!");
     }
 
-    auto builderVariant = uncompletedRequests[complete.request_id()];
-    if(!holds_alternative<NonBlockingSendEvent::Builder>(builderVariant)) {
-        throw std::logic_error("mpi_isend_complete event completes an mpi_ireceive event!");
-    }
+    auto builderVariant = uncompletedIsendRequests[complete.request_id()];
     
     auto builder = get<NonBlockingSendEvent::Builder>(builderVariant);
 
@@ -173,47 +174,40 @@ ReaderCallbacks::event(const otf2::definition::location &, const otf2::event::mp
 
     auto ev = new NonBlockingSendEvent(builder.build());
 
-    communicationEvent(ev, builder.receiver(), pendingSends, pendingReceives);
+    this->communicationEvent<NonBlockingSendEvent>(ev, builder.receiver(), pendingSends, pendingReceives);
 }
 
 void
 ReaderCallbacks::event(const otf2::definition::location &, const otf2::event::mpi_ireceive_complete &complete) {
-    // Temporarily skipping this block because crashes with ireceive
-    return;
-    if (!uncompletedRequests.contains(complete.request_id())) {
+    if (!uncompletedIrecvRequests.contains(complete.request_id())) {
         throw std::logic_error("Found a mpi_ireceive_complete event with no matching mpi_ireceive_request event!");
     }
 
-    auto builderVariant = uncompletedRequests[complete.request_id()];
-    if(!holds_alternative<NonBlockingReceiveEvent::Builder>(builderVariant)) {
-        throw std::logic_error("mpi_ireceive_complete event completes an mpi_isend event!");
-    }
-
+    auto builderVariant = uncompletedIrecvRequests[complete.request_id()];
     auto builder = get<NonBlockingReceiveEvent::Builder>(builderVariant);
+
+    auto comm = new types::communicator (complete.comm());
+    auto sender = complete.sender();
+    builder.communicator(comm);
+    builder.sender(sender);
 
     auto end = relative(complete.timestamp());
     builder.end(end);
 
-    auto ev = new NonBlockingReceiveEvent(builder.build());
+    auto ev = new NonBlockingReceiveEvent(builder.build());   
 
-    communicationEvent(ev, builder.sender(), pendingReceives, pendingSends);
+    this->communicationEvent<NonBlockingReceiveEvent>(ev, builder.sender(), pendingReceives, pendingSends);
 }
 
-void
-ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_ireceive_request &request) {
-    // Temporarily skipping this block because crashes with ireceive
-    return;
+void    
+ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_ireceive_request &request) {        
     NonBlockingReceiveEvent::Builder builder;
-    auto comm = new types::communicator (request.comm());
     auto loc = new otf2::definition::location(location);
-    auto start = relative(request.timestamp());
-    auto sender = request.sender();
-    builder.communicator(comm);
+    auto start = relative(request.timestamp());  
     builder.location(loc);
     builder.start(start);
-    builder.sender(sender);
 
-    this->uncompletedRequests.insert({request.request_id(), builder});
+    this->uncompletedIrecvRequests.insert({request.request_id(), builder});
 }
 
 void ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_request_test &test) {
@@ -297,7 +291,8 @@ void ReaderCallbacks::events_done(const otf2::reader::reader &) {
     std::destroy(this->slotsBuilding.begin(), this->slotsBuilding.end());
     std::destroy(this->pendingSends.begin(), this->pendingSends.end());
     std::destroy(this->pendingReceives.begin(), this->pendingReceives.end());
-    std::destroy(this->uncompletedRequests.begin(), this->uncompletedRequests.end());
+    std::destroy(this->uncompletedIsendRequests.begin(), this->uncompletedIsendRequests.end());
+    std::destroy(this->uncompletedIrecvRequests.begin(), this->uncompletedIrecvRequests.end());
 }
 
 otf2::chrono::duration ReaderCallbacks::relative(otf2::chrono::time_point timepoint) const {
