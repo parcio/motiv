@@ -32,10 +32,11 @@
 #include <QWheelEvent>
 #include <QElapsedTimer>
 #include <QGraphicsTextItem>
+#include <string>
 
 
 FlamegraphView::FlamegraphView(TraceDataProxy *data, QWidget *parent) : QGraphicsView(parent), data(data) {
-    qInfo() << "FlamegraphView ... " << this;
+    //qInfo() << "FlamegraphView ... " << this;
     auto scene = new QGraphicsScene();
     this->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     this->setAutoFillBackground(false);
@@ -68,13 +69,14 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
     //auto endR = static_cast<qreal>(end);
     int allSlotsCount=0;
     std::multiset<std::string> allSlotsMultiset{};
+    //std::multiset<std::string> allSlotsMultiset2{};
     int drawnSlotsCount=0;
     std::multiset<std::string> drawnSlotsMultiset{};
 
     QPen arrowPen(Qt::black, 1);
     QPen collectiveCommunicationPen(colors::COLOR_COLLECTIVE_COMMUNICATION, 2);
 
-    qInfo() << "EXECUTING FlamegraphView::populateScene ... for " << this;
+    //qInfo() << "EXECUTING FlamegraphView::populateScene ... for " << this;
     auto onTimedElementSelected = [this](TimedElement *element) { this->data->setTimeElementSelection(element); };
     auto onTimedElementDoubleClicked = [this](TimedElement *element) {
         this->data->setSelection(element->getStartTime(), element->getEndTime());
@@ -89,28 +91,23 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
     auto * settings = ViewSettings::getInstance();
     auto ROW_HEIGHT = settings->getRowHeight();
     auto * rankThreadMap = settings->getRankThreadMap();
-    auto * fullTimeTableSlots = settings->getFullTimeTableSlots();
+    auto rank = settings->getRankAdrMap()->at(this->requestedRank);
 
-    std::string rankNameStd;
-    QString rankName;
-
+    std::string rankNameStd = rank->name().str();
+    auto rankName = QString::fromStdString(rankNameStd);
 
     // To skip any other rank in order to work on the right one is quite sloppy
+    //for (const auto &item: selection->getSlots()) {
     for (const auto &item: selection->getSlots()) {
         if(this->requestedRank!=item.first->ref().get()) continue;
 
-        rankNameStd = item.first->name().str();
-        rankName = QString::fromStdString(rankNameStd);
-
         // What's the 'real' number of slots for this particular rank?
-        auto stop = this->data->getEnd().count();
-        for (auto thing : fullTimeTableSlots->at(rankNameStd)){
-            if(thing.second.first <= begin)continue;
-            if(thing.first > stop)break;
+        auto rawSlots = this->data->getFullTrace()->subtrace(this->data->getBegin(), this->data->getEnd())->getSlots().at(item.first);
+        for(auto entry : rawSlots){
             allSlotsCount++;
-            allSlotsMultiset.insert(thing.second.second);
+            allSlotsMultiset.insert(entry->region->name().get()->str());
         }
-
+        
         // Preparation
         int threadCount = rankThreadMap->at(item.first->ref().get()).second.size();
         std::vector<std::string> threadRefVector(threadCount, std::to_string(0));
@@ -150,20 +147,23 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
                 auto slotBeginPos = (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) * width;
                 auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
                 auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
+                
+                // There has to be some minimal size for the indicators, or else we will get false hierarchies
+                if(rectWidth<1) continue;
 
                 // Are we within the limits of our last frame?
                 if(endtimeVector.empty() || endTime <= endtimeVector.back()){
-                    qInfo() << "within limit : " << endTime;
+                    //qInfo() << "within limit : " << endTime;
                     endtimeVector.push_back(endTime);
                 }
                 // Otherwise we have to scale down until we encounter a frame beneath us, that has a bigger endTime
                 else{
                     while(!endtimeVector.empty() && endTime > endtimeVector.back()){
-                        qInfo() << "scaling down : " << endTime << ">" << endtimeVector.back() << " #" << endtimeVector.size();
+                        //qInfo() << "scaling down : " << endTime << ">" << endtimeVector.back() << " #" << endtimeVector.size();
                         endtimeVector.pop_back();
                     }
                     if(endtimeVector.empty() || endTime <= endtimeVector.back()){
-                        qInfo() << "within limit : " << endTime << "... after downscaling";
+                        //qInfo() << "within limit : " << endTime << "... after downscaling";
                         endtimeVector.push_back(endTime);
                     }
                 }
@@ -213,7 +213,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
                 drawnSlotsCountLocal++;
                 drawnSlotsMultiset.insert(regionNameStr);
                 scene->addItem(rectItem);
-                qInfo() << endtimeVector;
+                //qInfo() << endtimeVector;
             }
             drawnSlotsCount+=drawnSlotsCountLocal;
 
@@ -223,6 +223,10 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
         }
 
     }
+
+    //auto test = this->data->getFullTrace()->subtrace(this->data->getBegin(), this->data->getEnd())->getSlots();
+
+    //auto test = this->data->getSelectionFullSize();
 
     // That's the infoBar (QStatusBar) logic
     QString infoStructure =rankName+(" --- drawn items "+std::to_string(drawnSlotsCount)+"/"+std::to_string(allSlotsCount)).c_str();
@@ -255,7 +259,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
 }
 
 void FlamegraphView::resizeEvent(QResizeEvent *event) {
-    qInfo() << "EXECUTING FlamegraphView::resizeEvent ... for " << this;
+    //qInfo() << "EXECUTING FlamegraphView::resizeEvent ... for " << this;
     auto rectVal = this->rect();
     // We don't want to make the scene height depandand on the window height
     rectVal.setHeight(this->scene()->height());
@@ -265,7 +269,7 @@ void FlamegraphView::resizeEvent(QResizeEvent *event) {
 }
 
 void FlamegraphView::updateView() {
-    qInfo() << "EXECUTING FlamegraphView::updateView ... for " << this;
+    //qInfo() << "EXECUTING FlamegraphView::updateView ... for " << this;
     // If we close the popup window for this particular view its status will be set to hidden
     // The second check for the statusInfo legnth prevents unwanted deletion during the object construction
     if(this->parentWidget()->isHidden() && this->statusInfo.length()>0){
@@ -278,7 +282,7 @@ void FlamegraphView::updateView() {
 }
 
 void FlamegraphView::wheelEvent(QWheelEvent *event) {
-    qInfo() << "EXECUTING FlamegraphView::wheelEvent ... for " << this;
+    //qInfo() << "EXECUTING FlamegraphView::wheelEvent ... for " << this;
     // Calculation according to https://doc.qt.io/qt-6/qwheelevent.html#angleDelta:
     // @c angleDelta is in eights of a degree and most mouse wheels work in steps of 15 degrees.
     QPoint numDegrees = event->angleDelta() / 8;

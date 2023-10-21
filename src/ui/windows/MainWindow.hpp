@@ -42,7 +42,7 @@
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-public: // constructors
+public: // constructors & timer for the UI
     /**
      * @brief Creates a new instance of the MainWindow class.
      *
@@ -50,6 +50,9 @@ public: // constructors
      */
     explicit MainWindow(QString filepath = QString());
     ~MainWindow() override;
+
+    void startUITimerIfPossible();
+    void endUITimerIfPossible();
 
 public: Q_SIGNALS:
     // TODO
@@ -127,6 +130,7 @@ private: // methods
     void loadTrace();
     void loadSettings();
     void openNewWindow(QString path);
+    void showInfo();
 
 private: // widgets
     QToolBar *topToolbar = nullptr;
@@ -153,6 +157,9 @@ private: // properties
     ReaderCallbacks *callbacks = nullptr;
 
     ViewSettings *settings = nullptr;
+
+    QElapsedTimer mainUITimer;
+    qint64 currentUITimerValue;
 };
 
 

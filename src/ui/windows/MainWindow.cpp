@@ -28,13 +28,16 @@
 #include <QPushButton>
 #include <QToolBar>
 #include <QStatusBar>
+#include <qtmetamacros.h>
 #include <utility>
 
 #include "src/models/AppSettings.hpp"
 #include "src/models/ColorMap.hpp"
+#include "src/models/ViewSettings.hpp"
 #include "src/ui/ColorGenerator.hpp"
 #include "src/ui/ColorSynchronizer.hpp"
 #include "src/ui/Constants.hpp"
+#include "src/ui/TraceDataProxy.hpp"
 #include "src/ui/widgets/License.hpp"
 #include "src/ui/widgets/Help.hpp"
 #include "src/ui/widgets/TimeInputField.hpp"
@@ -56,7 +59,7 @@ ColorSynchronizer* colorsynchronizer = ColorSynchronizer::getInstance();
 
 
 MainWindow::MainWindow(QString filepath) : QMainWindow(nullptr), filepath(std::move(filepath)) {
-    qInfo() << "MainWindow ... " << this;
+    //qInfo() << "MainWindow ... " << this;
     if (this->filepath.isEmpty()) {
         this->promptFile();
     }
@@ -89,7 +92,7 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::createMenus() {
-    qInfo() << "EXECUTING MainWindow::createMenus ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::createMenus ... for " << this;
     auto menuBar = this->menuBar();
 
     /// File menu
@@ -222,7 +225,7 @@ void MainWindow::createMenus() {
 
 void MainWindow::createToolBars() {
 
-    qInfo() << "EXECUTING MainWindow::createToolBars ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::createToolBars ... for " << this;
 
     // Top toolbar contains preview/control of whole trace
 //    this->topToolbar = new QToolBar(this);
@@ -298,7 +301,7 @@ void MainWindow::createToolBars() {
 
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshView);
     //connect(data, SIGNAL(labelInteractionTrigger()), this, SLOT(labelInteractionEvent()));
-    connect(data, &TraceDataProxy::labelInteractionTrigger, this, &MainWindow::labelInteractionEvent);
+    //connect(data, &TraceDataProxy::labelInteractionTrigger, this, &MainWindow::labelInteractionEvent);
 
     // infoBar
     this->infoBar = new QStatusBar(this);
@@ -311,13 +314,20 @@ void MainWindow::createToolBars() {
     this->infoBar->setPalette (palette);
     this->infoBar->setFixedHeight(26);
     this->infoBar->showMessage("  "+this->filepath.section("/", -3), 0);
-    //this->infoBar->showMessage(this->filepath);
     this->setStatusBar(this->infoBar);
+
+    connect(data, &TraceDataProxy::triggerUITimerStartIfPossible, this, &MainWindow::startUITimerIfPossible);
+    connect(data, &TraceDataProxy::triggerUITimerEndIfPossible, this, &MainWindow::endUITimerIfPossible);
 }
+
+void MainWindow::showInfo() {
+    this->infoBar->showMessage("  "+this->filepath.section("/", -3)+" "+std::to_string(MainWindow::currentUITimerValue).c_str()+" [ms]", 0);
+}
+
 
 void MainWindow::createDockWidgets() {
 
-    qInfo() << "EXECUTING MainWindow::createDockWidgets ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::createDockWidgets ... for " << this;
 
     this->information = new InformationDock();
     information->addElementStrategy(new InformationDockSlotStrategy());
@@ -346,13 +356,13 @@ void MainWindow::createDockWidgets() {
 }
 
 void MainWindow::createCentralWidget() {
-    qInfo() << "EXECUTING MainWindow::createCentralWidget ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::createCentralWidget ... for " << this;
     auto timeline = new Timeline(data, this);
     this->setCentralWidget(timeline);
 }
 
 QString MainWindow::promptFile() {
-    qInfo() << "EXECUTING MainWindow::promptFile ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::promptFile ... for " << this;
     auto newFilePath = QFileDialog::getOpenFileName(this, QFileDialog::tr("Open trace"), QString(),
                                                     QFileDialog::tr("OTF Traces (*.otf *.otf2)"));
 
@@ -367,7 +377,7 @@ QString MainWindow::promptFile() {
 
 void MainWindow::loadTrace() {
 
-    qInfo() << "EXECUTING MainWindow::loadTrace ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::loadTrace ... for " << this;
 
     QElapsedTimer loadTraceTimer;
     if(testRun==true){
@@ -385,34 +395,24 @@ void MainWindow::loadTrace() {
     auto communications = this->callbacks->getCommunications();
     auto collectives = this->callbacks->getCollectiveCommunications();
 
-    std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots;
-    for (auto entry : slots){
-        auto rankName = entry->location->location_group().name().get()->str().c_str();
-        auto slotName = entry->region->name().get()->str().c_str();
-        auto startTime = entry->getStartTime().count();
-        auto endTime = entry->getEndTime().count();
-        //qInfo() << "mw: " << rankName << slotName << startTime;
-        if(fullTimeTableSlots.count(rankName)==0){
-            std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>> dummyMap{};
-            fullTimeTableSlots.insert(std::make_pair(rankName, dummyMap));
-        }
-        fullTimeTableSlots.at(rankName).insert(std::make_pair(startTime, std::make_pair(endTime, slotName)));
-    }
-
-    //qInfo() << "mw ..." << "table size " << fullTimeTableSlots.size();
-    this->settings->setFullTimeTableSlots(fullTimeTableSlots);
-
     auto trace = new FileTrace(slots, communications, collectives, this->callbacks->duration());
 
     this->data = new TraceDataProxy(trace, this->settings, this);
 
-    qInfo() << "                                        ";
-    qInfo() << "--------------TraceDataProxy------------";
-    qInfo() << "obj: " << this->data;
-    this->data->dumpObjectInfo();
-    qInfo() << "----------------------------------------";
-    this->data->dumpObjectTree();
-    qInfo() << "----------------------------------------";
+    //connect(this->labelAction3, &QAction::triggered, this, &TimelineLabelList::flamegraphPreparation);
+    //connect(data, SIGNAL(colorChanged()), timelineView, SLOT(updateView()));
+    //connect(this->data, &TraceDataProxy::triggerUITimerStartIfPossible, this, &MainWindow::startUITimerIfPossible());
+    //connect(this->data, &TraceDataProxy::triggerUITimerEndIfPossible, this, &MainWindow::endUITimerIfPossible());
+    //connect(this->data, SIGNAL(triggerUITimerStartIfPossible()), this, SLOT(startUITimerIfPossible()));
+    //connect(this->data, SIGNAL(triggerUITimerEndIfPossible()), this, SLOT(endUITimerIfPossible()));
+
+    //qInfo() << "                                        ";
+    //qInfo() << "--------------TraceDataProxy------------";
+    //qInfo() << "obj: " << this->data;
+    //this->data->dumpObjectInfo();
+    //qInfo() << "----------------------------------------";
+    //this->data->dumpObjectTree();
+    //qInfo() << "----------------------------------------";
 
     if(testRun==true){
         std::cout << "%MainWindow::loadTrace()%" << loadTraceTimer.elapsed() << "%ms%";
@@ -420,18 +420,18 @@ void MainWindow::loadTrace() {
 }
 
 void MainWindow::loadSettings() {
-    qInfo() << "EXECUTING MainWindow::loadSettings ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::loadSettings ... for " << this;
     this->settings = ViewSettings::getInstance();
 }
 
 void MainWindow::resetZoom() {
-    qInfo() << "EXECUTING MainWindow::resetZoom ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::resetZoom ... for " << this;
     data->setSelection(types::TraceTime(0), data->getTotalRuntime());
 }
 
 void MainWindow::grayFilter(){
 
-    qInfo() << "EXECUTING MainWindow::grayFilter ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::grayFilter ... for " << this;
 
     // Shows a warning message if save as global color is checked
     if(AppSettings::getInstance().getuseGlobalColorConfig()){
@@ -448,7 +448,7 @@ void MainWindow::grayFilter(){
 }
 
 void MainWindow::deleteCustomColors(){
-    qInfo() << "EXECUTING MainWindow::deleteCustomColors ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::deleteCustomColors ... for " << this;
     AppSettings::getInstance().clearColorConfig();
     ColorMap::getInstance()->clearColorMap();
     ColorGenerator::getInstance()->setDefault();
@@ -456,13 +456,13 @@ void MainWindow::deleteCustomColors(){
 }
 
 void MainWindow::loadGlobalColors(){
-    qInfo() << "EXECUTING MainWindow::loadGlobalColors ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::loadGlobalColors ... for " << this;
     AppSettings::getInstance().loadGlobalColors();
     colorsynchronizer->synchronizeColors();
 }
 
 void MainWindow::saveAsGlobalColors(){
-    qInfo() << "EXECUTING MainWindow::saveAsGlobalColors ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::saveAsGlobalColors ... for " << this;
     AppSettings::getInstance().saveAsGlobalColors();
     QMessageBox infoBox;
     infoBox.setIcon(QMessageBox::Information);
@@ -472,7 +472,7 @@ void MainWindow::saveAsGlobalColors(){
 }
 
 void MainWindow::openFilterPopup() {
-    qInfo() << "EXECUTING MainWindow::openFilterPopup ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::openFilterPopup ... for " << this;
     FilterPopup filterPopup(data->getSettings()->getFilter());
 
     auto connection = connect(&filterPopup, SIGNAL(filterChanged(Filter)), this->data, SLOT(setFilter(Filter)));
@@ -483,58 +483,75 @@ void MainWindow::openFilterPopup() {
 }
 
 void MainWindow::openNewTrace() {
-    qInfo() << "EXECUTING MainWindow::openNewTrace ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::openNewTrace ... for " << this;
     auto path = this->promptFile();
     this->openNewWindow(path);
 }
 
 void MainWindow::openNewWindow(QString path) {
-    qInfo() << "EXECUTING MainWindow::openNewWindow ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::openNewWindow ... for " << this;
     QProcess::startDetached(
             QFileInfo(QCoreApplication::applicationFilePath()).absoluteFilePath(),
             QStringList(path));
 }
 
 void MainWindow::verticalZoomIn(){
-    qInfo() << "EXECUTING MainWindow::verticalZoomIn ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::verticalZoomIn ... for " << this;
     auto currentRowHeight=this->settings->getRowHeight();
     this->settings->setRowHeight(currentRowHeight+5);
-    auto timeline = new Timeline(data, this);
-    this->setCentralWidget(timeline);
-    Q_EMIT this->data->verticalZoomChanged();    
+    // Attention: this causes redundant rendering
+    //auto timeline = new Timeline(data, this);
+    //this->setCentralWidget(timeline);
+    Q_EMIT this->data->verticalZoomChanged();   
 }
 
 void MainWindow::verticalZoomOut(){
-    qInfo() << "EXECUTING MainWindow::verticalZoomOut ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::verticalZoomOut ... for " << this;
     auto currentRowHeight=this->settings->getRowHeight();
     this->settings->setRowHeight(currentRowHeight-5);
-    auto timeline = new Timeline(data, this);
-    this->setCentralWidget(timeline);
+    // Attention: this causes redundant rendering
+    //auto timeline = new Timeline(data, this);
+    //this->setCentralWidget(timeline);
     Q_EMIT this->data->verticalZoomChanged();    
 }
 
 void MainWindow::labelInteractionEvent(){
-    qInfo() << "EXECUTING MainWindow::labelInteractionEvent ... for " << this;
-    auto currentRowHeight=this->settings->getRowHeight();
-    this->settings->setRowHeight(currentRowHeight);
-    auto timeline = new Timeline(data, this);
-    this->setCentralWidget(timeline);
+    //qInfo() << "EXECUTING MainWindow::labelInteractionEvent ... for " << this;
+    //auto currentRowHeight=this->settings->getRowHeight();
+    //this->settings->setRowHeight(currentRowHeight);
+    //auto timeline = new Timeline(data, this);
+    //this->setCentralWidget(timeline);
+    this->refreshView();
 }
 
 void MainWindow::refreshView(){
-    qInfo() << "EXECUTING MainWindow::refreshView ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::refreshView ... for " << this;
     Q_EMIT this->data->refreshButtonPressed();
-    qInfo() << "                                        ";
-    qInfo() << "-------------MainWindow Info------------";
-    qInfo() << "obj: " << this;
-    this->dumpObjectInfo();
-    qInfo() << "----------------------------------------";
-    this->dumpObjectTree();
-    qInfo() << "----------------------------------------";
+    //qInfo() << "                                        ";
+    //qInfo() << "-------------MainWindow Info------------";
+    //qInfo() << "obj: " << this;
+    //this->dumpObjectInfo();
+    //qInfo() << "----------------------------------------";
+    //this->dumpObjectTree();
+    //qInfo() << "----------------------------------------";
 }
 
 void MainWindow::openSearchPopup(){
-    qInfo() << "EXECUTING MainWindow::openSearchPopup ... for " << this;
+    //qInfo() << "EXECUTING MainWindow::openSearchPopup ... for " << this;
     if(this->searchWindow == nullptr) this->searchWindow = new SearchPopup(this->data,this->information, this);
     Q_EMIT this->searchWindow->searchButtonPressed();
+}
+
+void MainWindow::startUITimerIfPossible() {
+    if(!this->mainUITimer.isValid())this->mainUITimer.start();
+}
+
+void MainWindow::endUITimerIfPossible() {
+    if(this->mainUITimer.isValid()) {
+        auto newVal = this->mainUITimer.elapsed();
+        qInfo() << newVal << "[ms]";
+        this->currentUITimerValue=newVal;
+        this->mainUITimer.invalidate();
+        this->showInfo();
+    }
 }

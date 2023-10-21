@@ -117,11 +117,14 @@ public: Q_SIGNALS:
 
     void verticalZoomChanged();
 
-    void labelInteractionTrigger();
+    //void labelInteractionTrigger();
 
     void refreshButtonPressed();
 
     void flamegraphRequest();
+
+    void triggerUITimerStartIfPossible();
+    void triggerUITimerEndIfPossible();
 
 public Q_SLOTS:
     /**

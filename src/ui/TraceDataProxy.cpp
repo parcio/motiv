@@ -21,7 +21,7 @@
 TraceDataProxy::TraceDataProxy(FileTrace *trace, ViewSettings *settings, QObject *parent)
     : QObject(parent), trace(trace), settings(settings), begin(trace->getStartTime()),
       end(trace->getStartTime() + trace->getRuntime()) {
-    qInfo() << "TraceDataProxy ... " << this;
+    //qInfo() << "TraceDataProxy ... " << this;
     updateSelection();
     connect(this, &TraceDataProxy::colorChanged, this, &TraceDataProxy::updateSelection);
 }
@@ -54,7 +54,6 @@ void TraceDataProxy::setSelectionEnd(types::TraceTime newEnd) {
 ViewSettings *TraceDataProxy::getSettings() const {
     return settings;
 }
-
 
 types::TraceTime TraceDataProxy::getTotalRuntime() const {
     return trace->getRuntime();
@@ -95,18 +94,18 @@ void TraceDataProxy::setSelection(types::TraceTime newBegin, types::TraceTime ne
 }
 
 void TraceDataProxy::setTimeElementSelection(TimedElement *newSlot) {
-    qInfo() << "EXECUTING TraceDataProxy::setTimeElementSelection ... for " << this;
+    //qInfo() << "EXECUTING TraceDataProxy::setTimeElementSelection ... for " << this;
     Q_EMIT infoElementSelected(newSlot);
 }
 
 void TraceDataProxy::setFilter(Filter filter) {
-    qInfo() << "EXECUTING TraceDataProxy::setFilter ... for " << this;
+    //qInfo() << "EXECUTING TraceDataProxy::setFilter ... for " << this;
     settings->setFilter(filter);
 
     Q_EMIT filterChanged(filter);
 }
 
 Trace *TraceDataProxy::getFullTrace() const {
-    qInfo() << "EXECUTING TraceDataProxy::getFullTrace ... for " << this;
+    //qInfo() << "EXECUTING TraceDataProxy::getFullTrace ... for " << this;
     return trace;
 }

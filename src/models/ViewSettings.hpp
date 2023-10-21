@@ -23,6 +23,7 @@
 
 #include <QIcon>
 #include <QCoreApplication>
+#include <QElapsedTimer>
 
 #define SETTINGS_DEFAULT_ZOOM_QUOTIENT 25
 #define SETTINGS_DEFAULT_ROW_HEIGHT 30
@@ -76,11 +77,9 @@ public:
 
     QString getSearchName();
 
-    void setFullTimeTableSlots(std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots);
-
-    std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>>* getFullTimeTableSlots();
-
     std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* getRankThreadMap();
+
+    std::map< OTF2_StringRef, otf2::definition::location_group*>* getRankAdrMap();
 
     QIcon* getIcon(std::string key);
 
@@ -106,9 +105,7 @@ private:
     
     std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>> rankThreadMap{};
 
-    std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots;
-
-    //std::map<> timeTable{};
+    std::map< OTF2_StringRef, otf2::definition::location_group *> rankAdrMap{};
 
     QString searchName = "";
 
@@ -128,6 +125,7 @@ private:
     };
 
     int rankRef;
+
 };
 
 

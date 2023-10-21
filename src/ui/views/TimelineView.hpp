@@ -74,7 +74,7 @@ private:
 
 private:
     TraceDataProxy *data = nullptr;
-  //  ColorGenerator colorgenerator;
+    //  ColorGenerator colorgenerator;
 };
 
 

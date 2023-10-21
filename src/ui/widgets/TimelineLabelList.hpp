@@ -65,8 +65,8 @@ protected:
 private:
     TraceDataProxy *data = nullptr;
     QListWidget* widgetList;
+    QList<QListWidgetItem *> widgetPointerList;
     QMenu *menu;
-    int ROW_HEIGHT = ViewSettings::getInstance()->getRowHeight();
     int maxLabelLength = 0;
     QAction *labelAction1;
     void highlightPreparation();
@@ -74,6 +74,8 @@ private:
     void togglePointToPointPreparation();
     QAction *labelAction3;
     void flamegraphPreparation();
+    void resizeLabels();
+    void adjustIcon(QListWidgetItem * rankLabel, int rankKey);
 };
 
 

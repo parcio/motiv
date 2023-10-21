@@ -26,11 +26,11 @@
 #include <QAbstractItemView>
 
 ScrollSynchronizer::ScrollSynchronizer(QObject *parent) : QObject(parent) {
-    qInfo() << "ScrollSynchronizer ... " << this;
+    //qInfo() << "ScrollSynchronizer ... " << this;
 }
 
 void ScrollSynchronizer::addWidget(QAbstractScrollArea *newWidget) {
-    qInfo() << "EXECUTING ScrollSynchronizer::addWidget ... for " << this;
+    //qInfo() << "EXECUTING ScrollSynchronizer::addWidget ... for " << this;
     if (this->widgets.contains(newWidget)) {
         return;
     }
@@ -38,11 +38,6 @@ void ScrollSynchronizer::addWidget(QAbstractScrollArea *newWidget) {
         // Classic
         connect(widget->verticalScrollBar(), &QScrollBar::valueChanged, newWidget->verticalScrollBar(), &QScrollBar::setValue);
         connect(newWidget->verticalScrollBar(), &QScrollBar::valueChanged, widget->verticalScrollBar(), &QScrollBar::setValue);
-
-        // Variant 2
-        //connect(widget->verticalScrollBar(), SIGNAL(valueChanged(int)), newWidget->verticalScrollBar(), SLOT(setValue(int))); 
-        //connect(newWidget->verticalScrollBar(), SIGNAL(valueChanged(int)), widget->verticalScrollBar(), SLOT(setValue(int)));
-        //qInfo() << "scroll areas connected...";
     }
     this->widgets.push_back(newWidget);
 }

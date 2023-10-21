@@ -19,7 +19,7 @@
 
 
 //#todo: delete later
-#include <QDebug>
+//#include <QDebug>
 
 ViewSettings* ViewSettings::instance = nullptr_t();
 
@@ -47,45 +47,40 @@ void ViewSettings::setFilter(Filter filter) {
     filter_ = filter;
 }
 
-int ViewSettings::getRowHeight(){
+int ViewSettings::getRowHeight() {
     return this->rowHeight;
 }
 
-void ViewSettings::setRowHeight(int height){
+void ViewSettings::setRowHeight(int height) {
     if(height>=15) this->rowHeight = height;
 }
 
-void ViewSettings::setSearchName(QString searchName){
+void ViewSettings::setSearchName(QString searchName) {
     this->searchName = searchName;
 }
 
-QString ViewSettings::getSearchName(){
+QString ViewSettings::getSearchName() {
     return this->searchName;
 }
 
 std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* ViewSettings::getRankThreadMap() {
-    qInfo() << "EXECUTING ViewSettings::getRankThreadMap [size: " << rankThreadMap.size() << "] ... for " << this;
+    //qInfo() << "EXECUTING ViewSettings::getRankThreadMap [size: " << rankThreadMap.size() << "] ... for " << this;
     return &rankThreadMap;
+}
+
+std::map< OTF2_StringRef, otf2::definition::location_group *>* ViewSettings::getRankAdrMap() {
+    //qInfo() << "EXECUTING ViewSettings::getRankRefMap [size: " << rankAdrMap.size() << "] ... for " << this;
+    return &rankAdrMap;
 }
 
 QIcon* ViewSettings::getIcon(std::string key) {
     return &Icons_.at(key);
 }
 
-int ViewSettings::getFlamegraphRankRef(){
+int ViewSettings::getFlamegraphRankRef() {
     return this->rankRef;
 }
 
-void ViewSettings::setFlamegraphRankRef(int newRankRef){
+void ViewSettings::setFlamegraphRankRef(int newRankRef) {
     this->rankRef = newRankRef;
-}
-
-void ViewSettings::setFullTimeTableSlots(std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>> fullTimeTableSlots){
-    qInfo() << "EXECUTING ViewSettings::setFullTimeTableSlots [size: " << fullTimeTableSlots.size() << "] ... for " << this;
-    this->fullTimeTableSlots=fullTimeTableSlots;
-}
-
-std::map<std::string, std::map<otf2::chrono::clock::rep, std::pair<otf2::chrono::clock::rep, std::string>>>* ViewSettings::getFullTimeTableSlots(){
-    qInfo() << "EXECUTING ViewSettings::getFullTimeTableSlots [size: " << fullTimeTableSlots.size() << "] ... for " << this;
-    return &fullTimeTableSlots;
 }

@@ -24,6 +24,7 @@
 #include "src/ui/ColorGenerator.hpp"
 
 #include <map>
+#include <qtmetamacros.h>
 #include <set>
 #include <QGraphicsRectItem>
 #include <QApplication>
@@ -31,7 +32,7 @@
 
 
 TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsView(parent), data(data) {
-    qInfo() << "TimelineView ... " << this;
+    //qInfo() << "TimelineView ... " << this;
     auto scene = new QGraphicsScene();
     this->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     this->setAutoFillBackground(false);
@@ -50,6 +51,7 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
 
 
 void TimelineView::populateScene(QGraphicsScene *scene) {
+    this->data->triggerUITimerStartIfPossible();
     auto width = scene->width();
     auto selection = this->data->getSelection();
     auto runtime = selection->getRuntime().count();
@@ -63,10 +65,10 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     QPen collectiveCommunicationPen(colors::COLOR_COLLECTIVE_COMMUNICATION, 2);
 
     qInfo() << "EXECUTING TimelineView::populateScene ... for " << this;
-    qInfo() << "      ... width: "  << width << this;
-    qInfo() << "      ... begin: "  << begin << this;
-    qInfo() << "      ... end: "  << end << this;
-    qInfo() << "      ... runtime: "  << runtime << this;
+    //qInfo() << "      ... width: "  << width << this;
+    //qInfo() << "      ... begin: "  << begin << this;
+    //qInfo() << "      ... end: "  << end << this;
+    //qInfo() << "      ... runtime: "  << runtime << this;
 
     auto onTimedElementSelected = [this](TimedElement *element) { this->data->setTimeElementSelection(element); };
     auto onTimedElementDoubleClicked = [this](TimedElement *element) {
@@ -80,47 +82,47 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     std::string searchName_ = ViewSettings::getInstance()->getSearchName().toStdString();
 
 
-    qInfo() << "      ... selection start: "  << this->data->getSelection()->getStartTime().count() << this;
-    qInfo() << "      ... selection end: "  << this->data->getSelection()->getEndTime().count() << this;
-    qInfo() << "      ... selection adr: "  << selection << this;
-    qInfo() << "      ... selection adr: "  << this->data->getSelection() << this;
-    qInfo() << "      ... settings adr: "  << ViewSettings::getInstance() << this;
+    //qInfo() << "      ... selection start: "  << this->data->getSelection()->getStartTime().count() << this;
+    //qInfo() << "      ... selection end: "  << this->data->getSelection()->getEndTime().count() << this;
+    //qInfo() << "      ... selection adr: "  << selection << this;
+    //qInfo() << "      ... selection adr: "  << this->data->getSelection() << this;
+    //qInfo() << "      ... settings adr: "  << ViewSettings::getInstance() << this;
 
-    qInfo() << "                                        ";
-    qInfo() << "---------TimelineView Info [1/4]--------";
-    qInfo() << "obj: " << this;
-    this->dumpObjectInfo();
-    qInfo() << "----------------------------------------";
-    this->dumpObjectTree();
-    qInfo() << "----------------------------------------";
+    //qInfo() << "                                        ";
+    //qInfo() << "---------TimelineView Info [1/4]--------";
+    //qInfo() << "obj: " << this;
+    //this->dumpObjectInfo();
+    //qInfo() << "----------------------------------------";
+    //this->dumpObjectTree();
+    //qInfo() << "----------------------------------------";
 
     for (const auto &item: selection->getSlots()) {
 
         auto rankNameStd = item.first->name().str();
         auto rankName = QString::fromStdString(rankNameStd);
 
-        qInfo() << "TimelineView::populateScene ... working on rank " << rankNameStd.c_str() << "... for " << this;
+        //qInfo() << "TimelineView::populateScene ... working on rank " << rankNameStd.c_str() << "... for " << this;
 
         // Do we have the thread view expanded?
         auto toggleStatus = rankThreadMap->at(item.first->ref().get()).first;
         int threadCount = rankThreadMap->at(item.first->ref().get()).second.size();
 
-        qInfo() << "      ... toggle status "  << toggleStatus << this;
-        qInfo() << "      ... thread count: "  << threadCount << this;
+        //qInfo() << "      ... toggle status "  << toggleStatus << this;
+        //qInfo() << "      ... thread count: "  << threadCount << this;
 
         // Preparation
         std::vector<std::string> threadRefVector(threadCount, std::to_string(0));
         for (const auto& [threadRef, threadInfo]: rankThreadMap->at(item.first->ref().get()).second) {
             // First threadRef has to go to index 0 etc.
             threadRefVector[threadInfo.first-1]=threadRef;
-            qInfo() << "            ... thread ref "  << threadRef.c_str() << this;
+            //qInfo() << "            ... thread ref "  << threadRef.c_str() << this;
         }
 
-        qInfo() << "      ... thread ref vector size: "  << threadRefVector.size() << this;
+        //qInfo() << "      ... thread ref vector size: "  << threadRefVector.size() << this;
 
         // Draw slots
         for (int i = 0; i < threadCount; i++) {
-            qInfo() << "      TimelineView::populateScene ... working on thread " << i << "... for " << this;
+            //qInfo() << "      TimelineView::populateScene ... working on thread " << i << "... for " << this;
             for (const auto &slot: item.second) {
                 // Do we really want to draw this slot?
                 if (!(slot->getKind() & data->getSettings()->getFilter().getSlotKinds())) continue;
@@ -161,7 +163,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
                 } else rectItem->setZValue(slot->priority);
                     scene->addItem(rectItem);
-                    qInfo() << "      --------> drawing func" << "... for " << this;
+                    //qInfo() << "      --------> drawing func" << "... for " << this;
                 }
                 
             if(toggleStatus){
@@ -173,15 +175,15 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         }
     }
 
-    qInfo() << "                                        ";
-    qInfo() << "---------TimelineView Info [2/4]--------";
-    qInfo() << "obj: " << this;
-    this->dumpObjectInfo();
-    qInfo() << "----------------------------------------";
-    this->dumpObjectTree();
-    qInfo() << "----------------------------------------";
+    //qInfo() << "                                        ";
+    //qInfo() << "---------TimelineView Info [2/4]--------";
+    //qInfo() << "obj: " << this;
+    //this->dumpObjectInfo();
+    //qInfo() << "----------------------------------------";
+    //this->dumpObjectTree();
+    //qInfo() << "----------------------------------------";
 
-    qInfo() << "TimelineView::populateScene ... working on P2PCOM ... for " << this;
+    //qInfo() << "TimelineView::populateScene ... working on P2PCOM ... for " << this;
     for (const auto &communication: selection->getCommunications()) {
         const CommunicationEvent *startEvent = communication->getStartEvent();
         auto startEventEnd = static_cast<qreal>(startEvent->getEndTime().count());
@@ -286,18 +288,18 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         //arrow->setPolygon(pointPath);
 
         scene->addItem(arrow);
-        qInfo() << "      --------> drawing arrow" << "... for " << this;
+        //qInfo() << "      --------> drawing arrow" << "... for " << this;
     }
 
-    qInfo() << "                                        ";
-    qInfo() << "---------TimelineView Info [3/4]--------";
-    qInfo() << "obj: " << this;
-    this->dumpObjectInfo();
-    qInfo() << "----------------------------------------";
-    this->dumpObjectTree();
-    qInfo() << "----------------------------------------";
+    //qInfo() << "                                        ";
+    //qInfo() << "---------TimelineView Info [3/4]--------";
+    //qInfo() << "obj: " << this;
+    //this->dumpObjectInfo();
+    //qInfo() << "----------------------------------------";
+    //this->dumpObjectTree();
+    //qInfo() << "----------------------------------------";
 
-    qInfo() << "TimelineView::populateScene ... working on COLCOM ... for " << this;
+    //qInfo() << "TimelineView::populateScene ... working on COLCOM ... for " << this;
     for (const auto &communication: selection->getCollectiveCommunications()) {
         auto fromTime = static_cast<qreal>(communication->getStartTime().count());
         auto effectiveFromTime = qMax(beginR, fromTime) - beginR;
@@ -357,33 +359,35 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             brush.setStyle(Qt::BDiagPattern);
             memberRectItem->setBrush(brush);
             scene->addItem(memberRectItem);
-            qInfo() << "      --------> drawing box" << "... for " << this;
+            //qInfo() << "      --------> drawing box" << "... for " << this;
         }
     }
 
-    qInfo() << "                                        ";
-    qInfo() << "---------TimelineView Info [4/4]--------";
-    qInfo() << "obj: " << this;
-    this->dumpObjectInfo();
-    qInfo() << "----------------------------------------";
-    this->dumpObjectTree();
-    qInfo() << "----------------------------------------";
+    //qInfo() << "                                        ";
+    //qInfo() << "---------TimelineView Info [4/4]--------";
+    //qInfo() << "obj: " << this;
+    //this->dumpObjectInfo();
+    //qInfo() << "----------------------------------------";
+    //this->dumpObjectTree();
+    //qInfo() << "----------------------------------------";
 
-    qInfo() << "TimelineView::populateScene ... finished ... for " << this;
-    qInfo() << "                                        ";
-
+    //qInfo() << "TimelineView::populateScene ... finished ... for " << this;
+    //qInfo() << "                                        ";
+    this->data->triggerUITimerEndIfPossible();
 }
 
 
 void TimelineView::resizeEvent(QResizeEvent *event) {
-    qInfo() << "EXECUTING TimelineView::resizeEvent ... for " << this;
+    //qInfo() << "EXECUTING TimelineView::resizeEvent ... for " << this;
+    this->data->triggerUITimerStartIfPossible();
     this->updateView();
     //qInfo() << "resize event...";
     QGraphicsView::resizeEvent(event);
 }
 
 void TimelineView::updateView() {
-    qInfo() << "EXECUTING TimelineView::updateView ... for " << this;
+    //qInfo() << "EXECUTING TimelineView::updateView ... for " << this;
+    this->data->triggerUITimerStartIfPossible();
     // TODO it might be more performant to keep track of items and add/remove new/leaving items and resizing them
     this->scene()->clear();
     //qInfo() << "update view...";
@@ -403,7 +407,7 @@ void TimelineView::updateView() {
 }
 
 void TimelineView::wheelEvent(QWheelEvent *event) {
-    qInfo() << "EXECUTING TimelineView::wheelEvent ... for " << this;
+    //qInfo() << "EXECUTING TimelineView::wheelEvent ... for " << this;
     // Calculation according to https://doc.qt.io/qt-6/qwheelevent.html#angleDelta:
     // @c angleDelta is in eights of a degree and most mouse wheels work in steps of 15 degrees.
     QPoint numDegrees = event->angleDelta() / 8;
