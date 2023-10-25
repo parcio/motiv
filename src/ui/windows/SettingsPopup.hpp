@@ -15,8 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef MOTIV_PERFORMANCEPOPUP_HPP
-#define MOTIV_PERFORMANCEPOPUP_HPP
+#ifndef MOTIV_SETTINGSPOPUP_HPP
+#define MOTIV_SETTINGSPOPUP_HPP
 
 #include "src/ui/TraceDataProxy.hpp"
 
@@ -29,25 +29,33 @@
  *
  * In this popup, all possible performance settings can be changed. The relevant data is stored in ViewSettings, which than is considered during the render process in TimelineView or FlamegraphView.
  */
-class PerformancePopup : public QDialog {
+class SettingsPopup : public QDialog {
 Q_OBJECT
 
 public: // constructors
-    explicit PerformancePopup(TraceDataProxy *data, QWidget *parent = nullptr);
-    void checkPerformanceSettings();
+    explicit SettingsPopup(TraceDataProxy *data, QWidget *parent = nullptr);
+    void checkSettings();
 
 private: // widgets
     //QDialog *PerformancePopupWindow = nullptr;
     TraceDataProxy *data = nullptr;
 
+    // Main window performance settings
     QCheckBox *countIndicatorsREG = nullptr;
     QCheckBox *countIndicatorsP2P = nullptr;
     QCheckBox *countIndicatorsCCM = nullptr;
     QCheckBox *useThresholdTimelineView = nullptr;
 
+    // Main window general settings
+    QCheckBox *useRealWidthMainWindow = nullptr;
+
+    // Flamegraph performance settings
     QCheckBox *countIndicatorDetailsFlamegraph = nullptr;
     QCheckBox *useThresholdFlamegraph = nullptr;
+
+    // Flamegraph general settings
+    QCheckBox *useRealWidthFlamegraph = nullptr;
 };
 
 
-#endif //MOTIV_PERFORMANCEPOPUP_HPP
+#endif //MOTIV_SETTINGSPOPUP_HPP

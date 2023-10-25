@@ -109,6 +109,14 @@ void ViewSettings::setPxThresholdFlamegraph(bool newState) {
     this->pxThresholdFlamegraph = newState;
 }
 
+void ViewSettings::setUseRealWidthFlamegraph(bool newState) {
+    this->useRealWidthFlamegraph = newState;
+}
+
+void ViewSettings::setUseRealWidthMainWindow(bool newState) {
+    this->useRealWidthMainWindow = newState;
+}
+
 bool ViewSettings::getCountIndicatorsREG() {
     return this->countIndicatorsREG;
 }
@@ -131,4 +139,12 @@ bool ViewSettings::getCountIndicatorDetailsFlamegraph() {
 
 bool ViewSettings::getPxThresholdFlamegraph() {
     return this->pxThresholdFlamegraph;
+}
+
+bool ViewSettings::getUseRealWidthFlamegraph() {
+    return this->useRealWidthFlamegraph;
+}
+
+bool ViewSettings::getUseRealWidthMainWindow() {
+    return this->useRealWidthMainWindow;
 }

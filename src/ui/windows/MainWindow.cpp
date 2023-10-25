@@ -52,8 +52,7 @@
 #include "src/ui/widgets/infostrategies/InformationDockTraceStrategy.hpp"
 #include "src/ui/widgets/infostrategies/InformationDockCommunicationStrategy.hpp"
 #include "src/ui/widgets/infostrategies/InformationDockCollectiveCommunicationStrategy.hpp"
-#include "src/ui/windows/PerformancePopup.hpp"
-
+#include "src/ui/windows/SettingsPopup.hpp"
 
 extern bool testRun;
 
@@ -186,13 +185,13 @@ void MainWindow::createMenus() {
     widgetMenuToolWindows->addAction(showOverviewAction);
     widgetMenuToolWindows->addAction(showDetailsAction);
 
-    auto performanceAction = new QAction(tr("Performance settings"));
-    if(!this->performanceSettingsWindow) this->performanceSettingsWindow = new PerformancePopup(this->data, this);
-    connect(performanceAction, &QAction::triggered, this->performanceSettingsWindow, &PerformancePopup::show);
+    auto settingsWindowAction = new QAction(tr("Settings"));
+    if(!this->settingsWindow) this->settingsWindow = new SettingsPopup(this->data, this);
+    connect(settingsWindowAction, &QAction::triggered, this->settingsWindow, &SettingsPopup::show);
 
     auto viewMenu = menuBar->addMenu(tr("&View"));
     viewMenu->addAction(filterAction);
-    viewMenu->addAction(performanceAction);
+    viewMenu->addAction(settingsWindowAction);
     viewMenu->addAction(searchAction); 
     viewMenu->addAction(resetZoomAction);  
     viewMenu->addMenu(widgetMenuCustomColors);

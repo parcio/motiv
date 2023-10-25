@@ -17,18 +17,17 @@
  */
 
 
-#include "src/ui/windows/PerformancePopup.hpp"
+#include "src/ui/windows/SettingsPopup.hpp"
 
 #include <QGridLayout>
 #include <QRadioButton>
 #include <QPushButton>
 #include <qdialog.h>
 
-PerformancePopup::PerformancePopup(TraceDataProxy *data, QWidget *parent):QDialog(parent), data(data){
+SettingsPopup::SettingsPopup(TraceDataProxy *data, QWidget *parent):QDialog(parent), data(data){
 
-    //this->PerformancePopupWindow = new QDialog(parent);
     this->setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint);
-    this->setWindowTitle(tr("Performance settings"));
+    this->setWindowTitle(tr("Settings"));
     this->setModal(true);
 
     auto settings = ViewSettings::getInstance();
@@ -55,7 +54,7 @@ PerformancePopup::PerformancePopup(TraceDataProxy *data, QWidget *parent):QDialo
 
     // Show performance settings for flamegraphs (rendered via FlamegraphView)
     auto flamegraphWindowSettings = new QGroupBox(tr("Flamegraphs"));
-    countIndicatorDetailsFlamegraph = new QCheckBox(tr("Show missing region/functions-traces by name"));
+    countIndicatorDetailsFlamegraph = new QCheckBox(tr("Show missing regions/functions-traces by name"));
     countIndicatorDetailsFlamegraph->setChecked(settings->getCountIndicatorDetailsFlamegraph());
     useThresholdFlamegraph = new QCheckBox(tr("Use 1px-threshold for drawing"));
     useThresholdFlamegraph->setChecked(settings->getPxThresholdFlamegraph());
@@ -83,19 +82,21 @@ PerformancePopup::PerformancePopup(TraceDataProxy *data, QWidget *parent):QDialo
     grid->addWidget(cancelButton, 1, 0, Qt::AlignLeft);
     grid->addWidget(okButton, 1, 1, Qt::AlignRight);
 
-    connect(this, &QDialog::accepted, this, &PerformancePopup::checkPerformanceSettings);
+    connect(this, &QDialog::accepted, this, &SettingsPopup::checkSettings);
 
     this->setLayout(grid);
 }
 
-void PerformancePopup::checkPerformanceSettings() {
+void SettingsPopup::checkSettings() {
     auto settings = ViewSettings::getInstance();
 
+    // Updates for main window settings
     settings->setCountIndicatorsREG(this->countIndicatorsREG->isChecked());
     settings->setCountIndicatorsP2P(this->countIndicatorsP2P->isChecked());
     settings->setCountIndicatorsCCM(this->countIndicatorsCCM->isChecked());
     settings->setPxThresholdTimelineView(this->useThresholdTimelineView->isChecked());
 
+    // Updates for flamegraphs
     settings->setCountIndicatorDetailsFlamegraph(this->countIndicatorDetailsFlamegraph->isChecked());
     settings->setPxThresholdFlamegraph(this->useThresholdFlamegraph->isChecked());
     

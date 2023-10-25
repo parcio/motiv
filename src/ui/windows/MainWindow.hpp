@@ -33,7 +33,7 @@
 #include "src/ui/widgets/License.hpp"
 #include "src/ui/widgets/Help.hpp"
 #include "src/ui/widgets/About.hpp"
-#include "src/ui/windows/PerformancePopup.hpp"
+#include "src/ui/windows/SettingsPopup.hpp"
 
 /**
  * @brief The main window of the application.
@@ -120,7 +120,6 @@ private: // methods
     void loadSettings();
     void openNewWindow(QString path);
     void showInfo();
-    //void checkPerformanceSettings();
 
 private: // widgets
     QToolBar *topToolbar = nullptr;
@@ -138,7 +137,7 @@ private: // widgets
     About *aboutWindow = nullptr;
 
     SearchPopup *searchWindow = nullptr;
-    PerformancePopup *performanceSettingsWindow = nullptr;
+    SettingsPopup *settingsWindow = nullptr;
 
 private: // properties
     QString filepath;
@@ -151,8 +150,6 @@ private: // properties
 
     QElapsedTimer mainUITimer;
     qint64 currentUITimerValue;
-
-    QAction* performanceSettings[6];
 };
 
 

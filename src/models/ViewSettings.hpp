@@ -93,6 +93,8 @@ public:
     void setPxThresholdTimelineView(bool newState);
     void setCountIndicatorDetailsFlamegraph(bool newState);
     void setPxThresholdFlamegraph(bool newState);
+    void setUseRealWidthFlamegraph(bool newState);
+    void setUseRealWidthMainWindow(bool newState);
 
     bool getCountIndicatorsREG();
     bool getCountIndicatorsP2P();
@@ -100,6 +102,8 @@ public:
     bool getPxThresholdTimelineView();
     bool getCountIndicatorDetailsFlamegraph();
     bool getPxThresholdFlamegraph();
+    bool getUseRealWidthFlamegraph();
+    bool getUseRealWidthMainWindow();
 
     QString globalMessage;
 
@@ -148,6 +152,8 @@ private:
     bool pxThresholdTimelineView=false;
     bool countIndicatorDetailsFlamegraph=true;
     bool pxThresholdFlamegraph=true;
+    bool useRealWidthFlamegraph=true;
+    bool useRealWidthMainWindow=false;
 
 };
 
