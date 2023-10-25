@@ -163,16 +163,12 @@ void MainWindow::createMenus() {
 
     auto saveAsGlobalColorsAction = new QAction(tr("&Save as gobal colors"));
     connect(saveAsGlobalColorsAction, SIGNAL(triggered()),this,SLOT(saveAsGlobalColors()));
-
-    auto grayFilterAction = new QAction (tr("Grayfilter"));
-    connect(grayFilterAction, SIGNAL(triggered()),this,SLOT(grayFilter()));
- 
+   
     auto deleteCustomColorsAction = new QAction (tr("&Delete custom colors"));
     connect(deleteCustomColorsAction, SIGNAL(triggered()),this,SLOT(deleteCustomColors()));
 
     widgetMenuCustomColors->addAction(loadGlobalColorsAction);
     widgetMenuCustomColors->addAction(saveAsGlobalColorsAction);
-    widgetMenuCustomColors->addAction(grayFilterAction);
     widgetMenuCustomColors->addAction(deleteCustomColorsAction);
 
     auto widgetMenuToolWindows = new QMenu(tr("Tool Windows"));
@@ -412,22 +408,6 @@ void MainWindow::loadSettings() {
 
 void MainWindow::resetZoom() {
     data->setSelection(types::TraceTime(0), data->getTotalRuntime());
-}
-
-void MainWindow::grayFilter(){
-
-    // Shows a warning message if save as global color is checked
-    if(AppSettings::getInstance().getuseGlobalColorConfig()){
-        QMessageBox warningBox;
-        warningBox.setIcon(QMessageBox::Warning);
-        warningBox.setWindowTitle("Saving gray filter globally");
-        warningBox.setText("You are about to save the color changes globally. This will affect all traces in the application. \n\nAre you sure you want to continue?");
-        warningBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-        warningBox.setDefaultButton(QMessageBox::No);
-        int choice = warningBox.exec();
-        if(choice == QMessageBox::No) return;
-    }
-    colorsynchronizer->synchronizeColors(colors::COLOR_SLOT_PLAIN);
 }
 
 void MainWindow::deleteCustomColors(){

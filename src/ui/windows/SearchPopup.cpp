@@ -81,13 +81,21 @@ void SearchPopup::buildWindow(QWidget *parent){
     // Zooms into the previous found slot
     connect(prevButton, &QPushButton::clicked ,this, [this]{
         selectSlot(ButtonType::PREV);
-        Q_EMIT this->information->zoomToWindow((*currentIterator)->getStartTime(), (*currentIterator)->getEndTime());
+        auto element_= *currentIterator;
+        
+        //Q_EMIT this->information->zoomToWindow((*currentIterator)->getStartTime(), (*currentIterator)->getEndTime());
+        auto padding = element_->getDuration() / 10;
+        Q_EMIT this->information->zoomToWindow(element_->getStartTime() - padding, element_->getEndTime() + padding);
     });
 
     // Zooms into the next found slot   
     connect(nextButton,&QPushButton::clicked ,this, [this]{
         selectSlot(ButtonType::NEXT);
-        Q_EMIT this->information->zoomToWindow((*currentIterator)->getStartTime(), (*currentIterator)->getEndTime());
+        auto element_= *currentIterator;
+        
+        //Q_EMIT this->information->zoomToWindow((*currentIterator)->getStartTime(), (*currentIterator)->getEndTime());
+        auto padding = element_->getDuration() / 10;
+        Q_EMIT this->information->zoomToWindow(element_->getStartTime() - padding, element_->getEndTime() + padding);
     });  
 
 
