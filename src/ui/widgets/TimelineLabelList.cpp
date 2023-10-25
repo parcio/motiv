@@ -30,7 +30,6 @@
 #include <QMenu>
 
 TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QListWidget(parent), data(data) {
-    //qInfo() << "TimelineLabelList... " << this;
     this->setFrameShape(QFrame::NoFrame);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     //this->setSelectionMode(QAbstractItemView::NoSelection);
@@ -63,29 +62,19 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
         const QString &rankName = QString::fromStdString(rank.first->name().str());
         auto rankThreadMap = ViewSettings::getInstance()->getRankThreadMap();
         auto rankAdrMap = ViewSettings::getInstance()->getRankAdrMap();
-        //auto plusIcon = ViewSettings::getInstance()->getIcon("plus");
-        //auto plusIconGrey = ViewSettings::getInstance()->getIcon("plus_grey");
-        //auto minusIcon = ViewSettings::getInstance()->getIcon("minus");
         auto item = new QListWidgetItem(this);
         
-
-        //QFont font = item->font();
-        //font.setPointSize(12);
-        //item->setFont(font);
         if(maxLabelLength < fontMetrics().boundingRect(rankName).width()) maxLabelLength=fontMetrics().boundingRect(rankName).width();
 
         // Multithreading check
         // If we haven't seen this rank before...
-        if(rankThreadMap->count(rank.first->ref().get())==0){
-            //qInfo() << "    ... Multithreadingcheck " << this;       
+        if(rankThreadMap->count(rank.first->ref().get())==0){      
             std::map<std::string, std::pair<int, std::vector<bool>>> threadMap{};
             // We use that to figure out the thread position <=> threadNumber
             std::map<std::string, std::string> threadMap_{};
-            //qInfo() << "... working on rank ..." << rank.first->ref().get();
             for (const auto &slot_: rank.second) {
                 auto threadRef = std::to_string(slot_->location->ref().get());
                 auto threadName = slot_->location->name().str();
-                //qInfo() << "keys -> [" << threadName.c_str() << "]";
                 // If we haven't seen this thread before...
                 if(!threadMap_.count(threadRef)){
                     threadMap_.insert({threadName, threadRef});
@@ -126,8 +115,6 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
 }
 
 void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
-    //qInfo() << "EXECUTING TimelineLabelList::mousePressEvent ... for " << this;
-    //qInfo() << "mousePressEvent";
     // First: determine where the click happend
     auto *item = this->itemAt(event->pos());
 
@@ -140,38 +127,6 @@ void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
         return;
     }
 
-    /*
-    // Assuming we have clicked on a rank...
-    if (event->button()==Qt::LeftButton) {
-        auto settings = ViewSettings::getInstance();
-        QString rankName = item->text();
-
-        // Filter: e can't expand thre multithreading view for ranks without multithreading, this is how we spot them 
-        if(item->background().color()==QColorConstants::Svg::silver) return;
-
-        int rankRef = item->data(Qt::UserRole).toInt();
-        //qInfo() << "expansion ---> " << rankRef;
-        // We don't really care if the threads were expanded or not...
-        bool formerStatus = settings->getRankThreadMap()->at(rankRef).first;
-        // ... we just want to flip the bool value for every mousePressEvent 
-        settings->getRankThreadMap()->insert_or_assign(rankRef, std::pair(!formerStatus, settings->getRankThreadMap()->at(rankRef).second));
-        
-        // This handles the +/- icon, background-brush and size
-        this->adjustIcon(item, rankRef);
-        Q_EMIT this->data->refreshButtonPressed();
-        //Q_EMIT this->data->labelInteractionTrigger();
-    }
-    else if (event->button()==Qt::RightButton) {
-        item->setSelected(true);
-        int rankRef = item->data(Qt::UserRole).toInt();
-        // This is how we know what label we interacted with, that's relevant for ignorePreparation, flamegraphPreparation etc.
-        this->labelAction2->setData(rankRef);
-        this->labelAction3->setData(rankRef);
-        //this->menu->exec(event->globalPos());
-        this->menu->exec(event->globalPosition().toPoint());
-    }
-    */
-
     // We need to know the associated rank
     int rankRef = item->data(Qt::UserRole).toInt();
     auto settings = ViewSettings::getInstance();
@@ -182,9 +137,9 @@ void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
             if(item->background().color()==QColorConstants::Svg::silver) return;
             // We flip the multithreading-view bool via XOR
             settings->getRankThreadMap()->at(rankRef).first ^= true;
-            // This handles the +/- icon, background-brush and size
-            this->adjustIcon(item, rankRef);
+            // This handles the +/- icon, background-brush and size   
             Q_EMIT this->data->refreshButtonPressed();
+            this->adjustIcon(item, rankRef);
             //Q_EMIT this->data->labelInteractionTrigger();
             
         }break;
@@ -214,11 +169,9 @@ int TimelineLabelList::getMaxLabelLength() {
 
 void TimelineLabelList::highlightPreparation(){
     //qInfo() << "highlight ...";
-    //Q_EMIT this->data->labelInteractionTrigger();
 }
 
 void TimelineLabelList::togglePointToPointPreparation(){
-    //qInfo() << "ignore ...";
 
     QAction *action = qobject_cast<QAction *>(sender());
     if (!action) return;
@@ -229,11 +182,9 @@ void TimelineLabelList::togglePointToPointPreparation(){
     // We flip the toggle status for all threads
     for (auto &entry : settings->getRankThreadMap()->at(rankRef).second){
         entry.second.second.at(1).flip();
-        //qInfo() << "did that for ... " << entry.first.c_str();
     }
     
     Q_EMIT this->data->refreshButtonPressed();
-    //Q_EMIT this->data->labelInteractionTrigger();
 }
 
 void TimelineLabelList::flamegraphPreparation(){   
@@ -246,11 +197,9 @@ void TimelineLabelList::flamegraphPreparation(){
     settings->setFlamegraphRankRef(rankRef);
 
     Q_EMIT this->data->flamegraphRequest();
-    //qInfo() << "flamegraph ...";
 }
 
 void TimelineLabelList::resizeLabels() {
-    //const QSize newSize = ViewSettings::getInstance()->getRowHeight();
     const QSize newSize(0,ViewSettings::getInstance()->getRowHeight());
     for(auto labelEntry : this->widgetPointerList){
         labelEntry->setSizeHint(newSize);
@@ -262,8 +211,6 @@ void TimelineLabelList::adjustIcon(QListWidgetItem * rankLabel, int rankKey) {
     auto plusIcon = ViewSettings::getInstance()->getIcon("plus");
     auto plusIconGrey = ViewSettings::getInstance()->getIcon("plus_grey");
     auto minusIcon = ViewSettings::getInstance()->getIcon("minus");
-
-    qInfo() << plusIconGrey->name();
 
     auto iconToggleStatus = rankThreadMap->at(rankKey).first;
     auto rankSizeOffset = rankThreadMap->at(rankKey).second.size()-1;

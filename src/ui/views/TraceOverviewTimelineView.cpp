@@ -49,8 +49,6 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
     qreal top = 0;
     auto ROW_HEIGHT = scene->height() / static_cast<qreal>(uiTrace->getSlots().size());
     std::string searchName_ = ViewSettings::getInstance()->getSearchName().toStdString();
-
-    //qInfo() << "EXECUTING TraceOverviewTimelineView::populateScene ... for " << this;
     
     for (const auto &item: uiTrace->getSlots()) {
         // Display slots
@@ -105,29 +103,24 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
 
 
 void TraceOverviewTimelineView::resizeEvent(QResizeEvent *event) {
-    //qInfo() << "EXECUTING TraceOverviewTimelineView::resizeEvent ... for " << this;
     uiTrace = UITrace::forResolution(fullTrace, event->size().width());
 
     this->updateView();
     QGraphicsView::resizeEvent(event);
 }
 
-void TraceOverviewTimelineView::updateUITrace(){
-    //qInfo() << "EXECUTING TraceOverviewTimelineView::updateUITrace ... for " << this;    
+void TraceOverviewTimelineView::updateUITrace(){  
     uiTrace = UITrace::forResolution(fullTrace, window()->size().width());
      this->updateView();
 }
 
 void TraceOverviewTimelineView::updateView() {
-    //qInfo() << "EXECUTING TraceOverviewTimelineView::updateView ... for " << this;
     this->scene()->clear();
 
     auto sceneRect = this->rect();
     // Fomer calc: why -2?
     //sceneRect.setHeight(size().height() - 2);
     sceneRect.setHeight(size().height());
-
-    //qInfo() "scene height: " << sceneRect.height();
 
     this->scene()->setSceneRect(sceneRect);
     this->populateScene(this->scene());
@@ -160,7 +153,6 @@ void TraceOverviewTimelineView::mousePressEvent(QMouseEvent *event)
         rubberBand = new QRubberBand(QRubberBand::Rectangle, this);
     rubberBand->setGeometry(QRect(rubberBandOrigin, QSize(0, this->height())));
     rubberBand->show();
-    //qInfo() << "rubberBand...";
 }
 
 void TraceOverviewTimelineView::mouseMoveEvent(QMouseEvent *event)

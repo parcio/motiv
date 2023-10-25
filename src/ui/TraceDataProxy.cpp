@@ -21,7 +21,6 @@
 TraceDataProxy::TraceDataProxy(FileTrace *trace, ViewSettings *settings, QObject *parent)
     : QObject(parent), trace(trace), settings(settings), begin(trace->getStartTime()),
       end(trace->getStartTime() + trace->getRuntime()) {
-    //qInfo() << "TraceDataProxy ... " << this;
     updateSelection();
     connect(this, &TraceDataProxy::colorChanged, this, &TraceDataProxy::updateSelection);
 }
@@ -60,7 +59,6 @@ types::TraceTime TraceDataProxy::getTotalRuntime() const {
 }
 
 void TraceDataProxy::updateSelection() {
-    qInfo() << "EXECUTING TraceDataProxy::updateSelection ... for " << this;
     delete selection;
     auto subtrace = trace->subtrace(begin, end);
     selection = UITrace::forResolution(subtrace, subtrace->getRuntime() / 1920);
@@ -94,18 +92,15 @@ void TraceDataProxy::setSelection(types::TraceTime newBegin, types::TraceTime ne
 }
 
 void TraceDataProxy::setTimeElementSelection(TimedElement *newSlot) {
-    //qInfo() << "EXECUTING TraceDataProxy::setTimeElementSelection ... for " << this;
     Q_EMIT infoElementSelected(newSlot);
 }
 
 void TraceDataProxy::setFilter(Filter filter) {
-    //qInfo() << "EXECUTING TraceDataProxy::setFilter ... for " << this;
     settings->setFilter(filter);
 
     Q_EMIT filterChanged(filter);
 }
 
 Trace *TraceDataProxy::getFullTrace() const {
-    //qInfo() << "EXECUTING TraceDataProxy::getFullTrace ... for " << this;
     return trace;
 }

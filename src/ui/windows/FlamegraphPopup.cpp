@@ -23,7 +23,6 @@
 
 
 FlamegraphPopup::FlamegraphPopup(TraceDataProxy *data, QWidget *parent):QDialog(parent), data(data){
-    //qInfo() << "FlamegraphPopup ... " << this;
     this->flamegraphWindow = new QDialog(parent);
     this->flamegraphWindow->setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint);
     this->flamegraphWindow->setWindowTitle("Flamegraph");
@@ -75,7 +74,6 @@ void FlamegraphPopup::openFlamegraphWindow(){
 }
 
 void FlamegraphPopup::updateStatusbar(){
-    //qInfo() << "EXECUTING FlamegraphPopup::updateStatusbar ... for " << this;
     //QFontMetrics fm(this->infoBar->font());
     //QString elidedText = fm.elidedText(this->view->statusInfo, Qt::ElideRight, this->view->width()-30);
     this->infoBar->showMessage(this->view->statusInfo,0);

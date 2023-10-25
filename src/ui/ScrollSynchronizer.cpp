@@ -26,11 +26,9 @@
 #include <QAbstractItemView>
 
 ScrollSynchronizer::ScrollSynchronizer(QObject *parent) : QObject(parent) {
-    //qInfo() << "ScrollSynchronizer ... " << this;
 }
 
 void ScrollSynchronizer::addWidget(QAbstractScrollArea *newWidget) {
-    //qInfo() << "EXECUTING ScrollSynchronizer::addWidget ... for " << this;
     if (this->widgets.contains(newWidget)) {
         return;
     }

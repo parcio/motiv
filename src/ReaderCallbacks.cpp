@@ -33,8 +33,7 @@ ReaderCallbacks::ReaderCallbacks(otf2::reader::reader &rdr) :
     collectiveCommunications_(std::vector<CollectiveCommunicationEvent*>()),
     slotsBuilding(),
     program_start_(),
-    rdr_(rdr) {
-    qInfo() << "ReaderCallbacks ... " << this;    
+    rdr_(rdr) { 
 }
 
 

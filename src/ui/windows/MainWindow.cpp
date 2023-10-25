@@ -28,6 +28,7 @@
 #include <QPushButton>
 #include <QToolBar>
 #include <QStatusBar>
+#include <qaction.h>
 #include <qtmetamacros.h>
 #include <utility>
 
@@ -51,6 +52,8 @@
 #include "src/ui/widgets/infostrategies/InformationDockTraceStrategy.hpp"
 #include "src/ui/widgets/infostrategies/InformationDockCommunicationStrategy.hpp"
 #include "src/ui/widgets/infostrategies/InformationDockCollectiveCommunicationStrategy.hpp"
+#include "src/ui/windows/PerformancePopup.hpp"
+
 
 extern bool testRun;
 
@@ -59,10 +62,10 @@ ColorSynchronizer* colorsynchronizer = ColorSynchronizer::getInstance();
 
 
 MainWindow::MainWindow(QString filepath) : QMainWindow(nullptr), filepath(std::move(filepath)) {
-    //qInfo() << "MainWindow ... " << this;
     if (this->filepath.isEmpty()) {
         this->promptFile();
     }
+    this->startUITimerIfPossible();
     this->loadSettings();   
     AppSettings::getInstance().setColorConfigName(this->filepath);
     AppSettings::getInstance().loadColorConfigs();
@@ -92,7 +95,6 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::createMenus() {
-    //qInfo() << "EXECUTING MainWindow::createMenus ... for " << this;
     auto menuBar = this->menuBar();
 
     /// File menu
@@ -188,12 +190,18 @@ void MainWindow::createMenus() {
     widgetMenuToolWindows->addAction(showOverviewAction);
     widgetMenuToolWindows->addAction(showDetailsAction);
 
+    auto performanceAction = new QAction(tr("Performance settings"));
+    if(!this->performanceSettingsWindow) this->performanceSettingsWindow = new PerformancePopup(this->data, this);
+    connect(performanceAction, &QAction::triggered, this->performanceSettingsWindow, &PerformancePopup::show);
+
     auto viewMenu = menuBar->addMenu(tr("&View"));
     viewMenu->addAction(filterAction);
-    viewMenu->addAction(searchAction);
-    viewMenu->addAction(resetZoomAction);   
+    viewMenu->addAction(performanceAction);
+    viewMenu->addAction(searchAction); 
+    viewMenu->addAction(resetZoomAction);  
     viewMenu->addMenu(widgetMenuCustomColors);
     viewMenu->addMenu(widgetMenuToolWindows);
+    
 
     /// Help menu
     auto showLicenseAction = new QAction(tr("&View license"));
@@ -225,12 +233,10 @@ void MainWindow::createMenus() {
 
 void MainWindow::createToolBars() {
 
-    //qInfo() << "EXECUTING MainWindow::createToolBars ... for " << this;
-
     // Top toolbar contains preview/control of whole trace
-//    this->topToolbar = new QToolBar(this);
-//    this->topToolbar->setMovable(false);
-//    addToolBar(Qt::TopToolBarArea, this->topToolbar);
+    // this->topToolbar = new QToolBar(this);
+    // this->topToolbar->setMovable(false);
+    // addToolBar(Qt::TopToolBarArea, this->topToolbar);
 
     // Bottom toolbar contains control fields
     this->bottomToolbar = new QToolBar(this);
@@ -300,8 +306,6 @@ void MainWindow::createToolBars() {
     refreshButton->setIconSize(QSize(32, 32));
 
     connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshView);
-    //connect(data, SIGNAL(labelInteractionTrigger()), this, SLOT(labelInteractionEvent()));
-    //connect(data, &TraceDataProxy::labelInteractionTrigger, this, &MainWindow::labelInteractionEvent);
 
     // infoBar
     this->infoBar = new QStatusBar(this);
@@ -313,7 +317,6 @@ void MainWindow::createToolBars() {
     palette.setColor(QPalette::WindowText, QColorConstants::Svg::slategray);
     this->infoBar->setPalette (palette);
     this->infoBar->setFixedHeight(26);
-    this->infoBar->showMessage("  "+this->filepath.section("/", -3), 0);
     this->setStatusBar(this->infoBar);
 
     connect(data, &TraceDataProxy::triggerUITimerStartIfPossible, this, &MainWindow::startUITimerIfPossible);
@@ -321,7 +324,9 @@ void MainWindow::createToolBars() {
 }
 
 void MainWindow::showInfo() {
-    this->infoBar->showMessage("  "+this->filepath.section("/", -3)+" "+std::to_string(MainWindow::currentUITimerValue).c_str()+" [ms]", 0);
+    this->infoBar->setToolTip("last message: "+this->infoBar->currentMessage());
+    this->infoBar->showMessage(settings->globalMessage+" "+std::to_string(MainWindow::currentUITimerValue).c_str()+" [ms]", 0);
+    settings->globalMessage="";
 }
 
 
@@ -351,18 +356,17 @@ void MainWindow::createDockWidgets() {
     QFont font;
     font.setPointSize(10);
     this->traceOverview->setFont(font);
-    this->traceOverview->setWindowTitle("  Timeline - Overview");
+    //this->traceOverview->setWindowTitle("  Timeline - Overview");
+    this->traceOverview->setWindowTitle(this->filepath.section("/", -3));
     this->addDockWidget(Qt::TopDockWidgetArea, this->traceOverview);
 }
 
 void MainWindow::createCentralWidget() {
-    //qInfo() << "EXECUTING MainWindow::createCentralWidget ... for " << this;
     auto timeline = new Timeline(data, this);
     this->setCentralWidget(timeline);
 }
 
 QString MainWindow::promptFile() {
-    //qInfo() << "EXECUTING MainWindow::promptFile ... for " << this;
     auto newFilePath = QFileDialog::getOpenFileName(this, QFileDialog::tr("Open trace"), QString(),
                                                     QFileDialog::tr("OTF Traces (*.otf *.otf2)"));
 
@@ -376,8 +380,6 @@ QString MainWindow::promptFile() {
 }
 
 void MainWindow::loadTrace() {
-
-    //qInfo() << "EXECUTING MainWindow::loadTrace ... for " << this;
 
     QElapsedTimer loadTraceTimer;
     if(testRun==true){
@@ -399,39 +401,20 @@ void MainWindow::loadTrace() {
 
     this->data = new TraceDataProxy(trace, this->settings, this);
 
-    //connect(this->labelAction3, &QAction::triggered, this, &TimelineLabelList::flamegraphPreparation);
-    //connect(data, SIGNAL(colorChanged()), timelineView, SLOT(updateView()));
-    //connect(this->data, &TraceDataProxy::triggerUITimerStartIfPossible, this, &MainWindow::startUITimerIfPossible());
-    //connect(this->data, &TraceDataProxy::triggerUITimerEndIfPossible, this, &MainWindow::endUITimerIfPossible());
-    //connect(this->data, SIGNAL(triggerUITimerStartIfPossible()), this, SLOT(startUITimerIfPossible()));
-    //connect(this->data, SIGNAL(triggerUITimerEndIfPossible()), this, SLOT(endUITimerIfPossible()));
-
-    //qInfo() << "                                        ";
-    //qInfo() << "--------------TraceDataProxy------------";
-    //qInfo() << "obj: " << this->data;
-    //this->data->dumpObjectInfo();
-    //qInfo() << "----------------------------------------";
-    //this->data->dumpObjectTree();
-    //qInfo() << "----------------------------------------";
-
     if(testRun==true){
         std::cout << "%MainWindow::loadTrace()%" << loadTraceTimer.elapsed() << "%ms%";
     }
 }
 
 void MainWindow::loadSettings() {
-    //qInfo() << "EXECUTING MainWindow::loadSettings ... for " << this;
     this->settings = ViewSettings::getInstance();
 }
 
 void MainWindow::resetZoom() {
-    //qInfo() << "EXECUTING MainWindow::resetZoom ... for " << this;
     data->setSelection(types::TraceTime(0), data->getTotalRuntime());
 }
 
 void MainWindow::grayFilter(){
-
-    //qInfo() << "EXECUTING MainWindow::grayFilter ... for " << this;
 
     // Shows a warning message if save as global color is checked
     if(AppSettings::getInstance().getuseGlobalColorConfig()){
@@ -448,7 +431,6 @@ void MainWindow::grayFilter(){
 }
 
 void MainWindow::deleteCustomColors(){
-    //qInfo() << "EXECUTING MainWindow::deleteCustomColors ... for " << this;
     AppSettings::getInstance().clearColorConfig();
     ColorMap::getInstance()->clearColorMap();
     ColorGenerator::getInstance()->setDefault();
@@ -456,13 +438,11 @@ void MainWindow::deleteCustomColors(){
 }
 
 void MainWindow::loadGlobalColors(){
-    //qInfo() << "EXECUTING MainWindow::loadGlobalColors ... for " << this;
     AppSettings::getInstance().loadGlobalColors();
     colorsynchronizer->synchronizeColors();
 }
 
 void MainWindow::saveAsGlobalColors(){
-    //qInfo() << "EXECUTING MainWindow::saveAsGlobalColors ... for " << this;
     AppSettings::getInstance().saveAsGlobalColors();
     QMessageBox infoBox;
     infoBox.setIcon(QMessageBox::Information);
@@ -472,7 +452,6 @@ void MainWindow::saveAsGlobalColors(){
 }
 
 void MainWindow::openFilterPopup() {
-    //qInfo() << "EXECUTING MainWindow::openFilterPopup ... for " << this;
     FilterPopup filterPopup(data->getSettings()->getFilter());
 
     auto connection = connect(&filterPopup, SIGNAL(filterChanged(Filter)), this->data, SLOT(setFilter(Filter)));
@@ -483,49 +462,29 @@ void MainWindow::openFilterPopup() {
 }
 
 void MainWindow::openNewTrace() {
-    //qInfo() << "EXECUTING MainWindow::openNewTrace ... for " << this;
     auto path = this->promptFile();
     this->openNewWindow(path);
 }
 
 void MainWindow::openNewWindow(QString path) {
-    //qInfo() << "EXECUTING MainWindow::openNewWindow ... for " << this;
     QProcess::startDetached(
             QFileInfo(QCoreApplication::applicationFilePath()).absoluteFilePath(),
             QStringList(path));
 }
 
 void MainWindow::verticalZoomIn(){
-    //qInfo() << "EXECUTING MainWindow::verticalZoomIn ... for " << this;
     auto currentRowHeight=this->settings->getRowHeight();
     this->settings->setRowHeight(currentRowHeight+5);
-    // Attention: this causes redundant rendering
-    //auto timeline = new Timeline(data, this);
-    //this->setCentralWidget(timeline);
     Q_EMIT this->data->verticalZoomChanged();   
 }
 
 void MainWindow::verticalZoomOut(){
-    //qInfo() << "EXECUTING MainWindow::verticalZoomOut ... for " << this;
     auto currentRowHeight=this->settings->getRowHeight();
     this->settings->setRowHeight(currentRowHeight-5);
-    // Attention: this causes redundant rendering
-    //auto timeline = new Timeline(data, this);
-    //this->setCentralWidget(timeline);
     Q_EMIT this->data->verticalZoomChanged();    
 }
 
-void MainWindow::labelInteractionEvent(){
-    //qInfo() << "EXECUTING MainWindow::labelInteractionEvent ... for " << this;
-    //auto currentRowHeight=this->settings->getRowHeight();
-    //this->settings->setRowHeight(currentRowHeight);
-    //auto timeline = new Timeline(data, this);
-    //this->setCentralWidget(timeline);
-    this->refreshView();
-}
-
 void MainWindow::refreshView(){
-    //qInfo() << "EXECUTING MainWindow::refreshView ... for " << this;
     Q_EMIT this->data->refreshButtonPressed();
     //qInfo() << "                                        ";
     //qInfo() << "-------------MainWindow Info------------";
@@ -537,7 +496,6 @@ void MainWindow::refreshView(){
 }
 
 void MainWindow::openSearchPopup(){
-    //qInfo() << "EXECUTING MainWindow::openSearchPopup ... for " << this;
     if(this->searchWindow == nullptr) this->searchWindow = new SearchPopup(this->data,this->information, this);
     Q_EMIT this->searchWindow->searchButtonPressed();
 }

@@ -76,6 +76,7 @@ set(PROJECT_SOURCES
         src/ui/windows/Otf2FileDialog.cpp
         src/ui/windows/RecentFilesDialog.cpp
         src/ui/windows/SearchPopup.cpp
+        src/ui/windows/PerformancePopup.cpp
         src/utils.cpp
         )
 

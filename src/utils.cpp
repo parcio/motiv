@@ -18,7 +18,6 @@
 #include "utils.hpp"
 
 void resetLayout(QLayout *apLayout) {
-    //qInfo() << "Layout";
     if(!apLayout) return;
     QLayoutItem *vpItem;
     while ((vpItem = apLayout->takeAt(0)) != 0) {

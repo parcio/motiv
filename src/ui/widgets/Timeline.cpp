@@ -23,7 +23,6 @@
 
 
 Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), data(data) {
-    //qInfo() << "Timeline ... " << this;
     this->data->triggerUITimerStartIfPossible();
     auto layout = new QGridLayout(this);
 
@@ -43,14 +42,8 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     this->view->setBackgroundBrush(backgroundPattern);
     layout->addWidget(this->view, 1, 1);
 
-    // This prevents the labelList from expanding to 50% of the width.
-    // Not really a satisfactory solution.
-    //layout->setColumnStretch(0, 1);
-    //layout->setColumnStretch(1, 9);
-
     // We don't need more space than the max width of the contents (32+16 pixel for the +/- icons)
     this->labelList->setMaximumWidth(this->labelList->getMaxLabelLength()+48);
-    //qInfo() << "width: " << this->labelList->getMaxLabelLength();
     // "MPI rank 5" -> "... rank 5" makes more sense than "MPI rank ..."
     this->labelList->setTextElideMode (Qt::ElideLeft);
 
@@ -58,16 +51,9 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     scrollSyncer->addWidget(this->labelList);
     scrollSyncer->addWidget(this->view);
 
-    //qInfo() << "-------------Timeline Info--------------";
-    //qInfo() << "obj: " << this;
-    //this->dumpObjectInfo();
-    //qInfo() << "----------------------------------------";
-    //this->dumpObjectTree();
-    //qInfo() << "----------------------------------------";
 }
 
 void Timeline::showFlamegraphPopup(){
-    //qInfo() << "EXECUTING Timeline::showFlamegraphPopup ... for " << this;
     FlamegraphPopup* flamegraph = new FlamegraphPopup(this->data, this);
     flamegraph->openFlamegraphWindow();
 }

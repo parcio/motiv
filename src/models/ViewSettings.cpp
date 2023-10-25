@@ -64,7 +64,6 @@ QString ViewSettings::getSearchName() {
 }
 
 std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* ViewSettings::getRankThreadMap() {
-    //qInfo() << "EXECUTING ViewSettings::getRankThreadMap [size: " << rankThreadMap.size() << "] ... for " << this;
     return &rankThreadMap;
 }
 
@@ -83,4 +82,53 @@ int ViewSettings::getFlamegraphRankRef() {
 
 void ViewSettings::setFlamegraphRankRef(int newRankRef) {
     this->rankRef = newRankRef;
+}
+
+
+void ViewSettings::setCountIndicatorsREG(bool newState) {
+    this->countIndicatorsREG = newState;
+}
+
+void ViewSettings::setCountIndicatorsP2P(bool newState) {
+    this->countIndicatorsP2P = newState;
+}
+
+void ViewSettings::setCountIndicatorsCCM(bool newState) {
+    this->countIndicatorsCCM = newState;
+}
+
+void ViewSettings::setPxThresholdTimelineView(bool newState) {
+    this->pxThresholdTimelineView = newState;
+}
+
+void ViewSettings::setCountIndicatorDetailsFlamegraph(bool newState) {
+    this->countIndicatorDetailsFlamegraph = newState;
+}
+
+void ViewSettings::setPxThresholdFlamegraph(bool newState) {
+    this->pxThresholdFlamegraph = newState;
+}
+
+bool ViewSettings::getCountIndicatorsREG() {
+    return this->countIndicatorsREG;
+}
+
+bool ViewSettings::getCountIndicatorsP2P() {
+    return this->countIndicatorsP2P;
+}
+
+bool ViewSettings::getCountIndicatorsCCM() {
+    return this->countIndicatorsCCM;
+}
+
+bool ViewSettings::getPxThresholdTimelineView() {
+    return this->pxThresholdTimelineView;
+}
+
+bool ViewSettings::getCountIndicatorDetailsFlamegraph() {
+    return this->countIndicatorDetailsFlamegraph;
+}
+
+bool ViewSettings::getPxThresholdFlamegraph() {
+    return this->pxThresholdFlamegraph;
 }

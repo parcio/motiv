@@ -87,6 +87,22 @@ public:
 
     void setFlamegraphRankRef(int rankRef);
 
+    void setCountIndicatorsREG(bool newState);
+    void setCountIndicatorsP2P(bool newState);
+    void setCountIndicatorsCCM(bool newState);
+    void setPxThresholdTimelineView(bool newState);
+    void setCountIndicatorDetailsFlamegraph(bool newState);
+    void setPxThresholdFlamegraph(bool newState);
+
+    bool getCountIndicatorsREG();
+    bool getCountIndicatorsP2P();
+    bool getCountIndicatorsCCM();
+    bool getPxThresholdTimelineView();
+    bool getCountIndicatorDetailsFlamegraph();
+    bool getPxThresholdFlamegraph();
+
+    QString globalMessage;
+
 private:
     static ViewSettings* instance;    
     ViewSettings();
@@ -125,6 +141,13 @@ private:
     };
 
     int rankRef;
+
+    bool countIndicatorsREG=false;
+    bool countIndicatorsP2P=false;
+    bool countIndicatorsCCM=false;
+    bool pxThresholdTimelineView=false;
+    bool countIndicatorDetailsFlamegraph=true;
+    bool pxThresholdFlamegraph=true;
 
 };
 
