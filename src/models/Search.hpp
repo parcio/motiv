@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Jessica Lafontaine
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 #ifndef MOTIV_Search_HPP
 #define MOTIV_Search_HPP
 
-#include <iostream>
 #include <QListWidget>
 
 #include "src/ui/TraceDataProxy.hpp"
@@ -32,12 +31,6 @@ class Search : QListWidget {
 Q_OBJECT
 public:
     Search(TraceDataProxy *data, QListWidget *itemList, QWidget *parent=nullptr);
-
-    /**
-     * @brief Fills the item list for the search popup window.
-     * @param itemList Pointer to the QListWidget for filling
-     */
-    void fillItemList(QListWidget *itemList); 
     
     /**
      * @brief Shortens the item list based on the provided string (hides all other items).
@@ -55,7 +48,7 @@ public:
 
 
 private:
-    QListWidget *itemList = nullptr;    
+    QListWidget *itemList = nullptr;
     TraceDataProxy* data = nullptr;
 
 };
