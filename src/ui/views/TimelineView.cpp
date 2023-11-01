@@ -45,7 +45,7 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
     // @formatter:off
     connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
     connect(this->data, SIGNAL(filterChanged(Filter)), this, SLOT(updateView()));
-    connect(this->data, SIGNAL(colorChanged()),this, SLOT(updateView()));
+    //connect(this->data, SIGNAL(colorChanged()),this, SLOT(updateView()));
     connect(this->data, SIGNAL(verticalZoomChanged()),this,SLOT(updateView()));
     connect(this->data, SIGNAL(refreshButtonPressed()),this,SLOT(updateView()));
     // @formatter:on
@@ -167,8 +167,9 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         globalDrawCount[0]+=localDrawCount;
     }
 
-    for (const auto &communication: selection->getCommunications()) {
+    for (const auto &communication: selection->getCommunications()) {       
         const CommunicationEvent *startEvent = communication->getStartEvent();
+        if (!((startEvent->getKind() & data->getSettings()->getFilter().getCommunicationKinds())==startEvent->getKind())) continue;
         auto startEventEnd = static_cast<qreal>(startEvent->getEndTime().count());
         auto startEventStart = static_cast<qreal>(startEvent->getStartTime().count());
 
@@ -275,6 +276,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     }
 
     for (const auto &communication: selection->getCollectiveCommunications()) {
+        if (!((communication->getKind() & data->getSettings()->getFilter().getCommunicationKinds())==communication->getKind())) continue;
         auto fromTime = static_cast<qreal>(communication->getStartTime().count());
         auto effectiveFromTime = qMax(beginR, fromTime) - beginR;
 
