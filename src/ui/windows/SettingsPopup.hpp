@@ -44,7 +44,6 @@ private: // widgets
     QCheckBox *countIndicatorsREG = nullptr;
     QCheckBox *countIndicatorsP2P = nullptr;
     QCheckBox *countIndicatorsCCM = nullptr;
-    QCheckBox *useThresholdTimelineView = nullptr;
 
     // Main window general settings
     QCheckBox *useRealWidthMainWindow = nullptr;
@@ -55,6 +54,13 @@ private: // widgets
 
     // Flamegraph general settings
     QCheckBox *useRealWidthFlamegraph = nullptr;
+
+    // Overview
+    QCheckBox *useBorderOverview = nullptr;
+    QCheckBox *usePriorityOverview = nullptr;
+
+    // Misc
+    QCheckBox *colorCodingTimeRecords = nullptr;
 };
 
 

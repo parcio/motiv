@@ -90,20 +90,34 @@ public:
     void setCountIndicatorsREG(bool newState);
     void setCountIndicatorsP2P(bool newState);
     void setCountIndicatorsCCM(bool newState);
-    void setPxThresholdTimelineView(bool newState);
     void setCountIndicatorDetailsFlamegraph(bool newState);
     void setPxThresholdFlamegraph(bool newState);
     void setUseRealWidthFlamegraph(bool newState);
     void setUseRealWidthMainWindow(bool newState);
+    void setUseBorderOverview(bool newState);
+    void setUsePriorityOverview(bool newState);
+    void setColorCodingTimeRecords(bool newState);
+
+    void setActiveThresholdOV(double newVal);
+    void setActiveThresholdREG(double newVal);
+    void setActiveThresholdP2P(double newVal);
+    void setActiveThresholdCCM(double newVal);
 
     bool getCountIndicatorsREG();
     bool getCountIndicatorsP2P();
     bool getCountIndicatorsCCM();
-    bool getPxThresholdTimelineView();
     bool getCountIndicatorDetailsFlamegraph();
     bool getPxThresholdFlamegraph();
     bool getUseRealWidthFlamegraph();
     bool getUseRealWidthMainWindow();
+    bool getUseBorderOverview();
+    bool getUsePriorityOverview();
+    bool getColorCodingTimeRecords();
+
+    double getActiveThresholdOV();
+    double getActiveThresholdREG();
+    double getActiveThresholdP2P();
+    double getActiveThresholdCCM();
 
     QString globalMessage;
 
@@ -149,12 +163,19 @@ private:
     bool countIndicatorsREG=false;
     bool countIndicatorsP2P=false;
     bool countIndicatorsCCM=false;
-    bool pxThresholdTimelineView=false;
     bool countIndicatorDetailsFlamegraph=true;
     bool pxThresholdFlamegraph=true;
     bool useRealWidthFlamegraph=true;
     bool useRealWidthMainWindow=false;
 
+    bool useBorderOverview=true;
+    bool usePriorityOverview=true;
+    bool colorCodingTimeRecords=true;
+
+    double activeThresholdOV=0;
+    double activeThresholdREG=0;
+    double activeThresholdP2P=0;
+    double activeThresholdCCM=0;
 };
 
 

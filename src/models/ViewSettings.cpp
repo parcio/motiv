@@ -97,10 +97,6 @@ void ViewSettings::setCountIndicatorsCCM(bool newState) {
     this->countIndicatorsCCM = newState;
 }
 
-void ViewSettings::setPxThresholdTimelineView(bool newState) {
-    this->pxThresholdTimelineView = newState;
-}
-
 void ViewSettings::setCountIndicatorDetailsFlamegraph(bool newState) {
     this->countIndicatorDetailsFlamegraph = newState;
 }
@@ -117,6 +113,34 @@ void ViewSettings::setUseRealWidthMainWindow(bool newState) {
     this->useRealWidthMainWindow = newState;
 }
 
+void ViewSettings::setUseBorderOverview(bool newState) {
+    this->useBorderOverview = newState;
+}
+
+void ViewSettings::setUsePriorityOverview(bool newState) {
+    this->usePriorityOverview = newState;
+}
+
+void ViewSettings::setColorCodingTimeRecords(bool newState) {
+    this->colorCodingTimeRecords = newState;
+}
+
+void ViewSettings::setActiveThresholdOV(double newVal) {
+    this->activeThresholdOV = newVal;
+}
+
+void ViewSettings::setActiveThresholdREG(double newVal) {
+    this->activeThresholdREG = newVal;
+}
+
+void ViewSettings::setActiveThresholdP2P(double newVal) {
+    this->activeThresholdP2P = newVal;
+}
+
+void ViewSettings::setActiveThresholdCCM(double newVal) {
+    this->activeThresholdCCM = newVal;
+}
+
 bool ViewSettings::getCountIndicatorsREG() {
     return this->countIndicatorsREG;
 }
@@ -127,10 +151,6 @@ bool ViewSettings::getCountIndicatorsP2P() {
 
 bool ViewSettings::getCountIndicatorsCCM() {
     return this->countIndicatorsCCM;
-}
-
-bool ViewSettings::getPxThresholdTimelineView() {
-    return this->pxThresholdTimelineView;
 }
 
 bool ViewSettings::getCountIndicatorDetailsFlamegraph() {
@@ -147,4 +167,32 @@ bool ViewSettings::getUseRealWidthFlamegraph() {
 
 bool ViewSettings::getUseRealWidthMainWindow() {
     return this->useRealWidthMainWindow;
+}
+
+bool ViewSettings::getUseBorderOverview() {
+    return this->useBorderOverview;
+}
+
+bool ViewSettings::getUsePriorityOverview() {
+    return this->usePriorityOverview;
+}
+
+bool ViewSettings::getColorCodingTimeRecords() {
+    return this->colorCodingTimeRecords;
+}
+
+double ViewSettings::getActiveThresholdOV() {
+    return this->activeThresholdOV;
+}
+
+double ViewSettings::getActiveThresholdREG() {
+    return this->activeThresholdREG;
+}
+
+double ViewSettings::getActiveThresholdP2P() {
+    return this->activeThresholdP2P;
+}
+
+double ViewSettings::getActiveThresholdCCM() {
+    return this->activeThresholdCCM;
 }

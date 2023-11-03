@@ -179,9 +179,14 @@ void TimelineLabelList::togglePointToPointPreparation(){
     int rankRef = action->data().toInt();
     auto settings = ViewSettings::getInstance();
 
-    // We flip the toggle status for all threads
+    // We flip the toggle status for all threads that are associated with this rank
     for (auto &entry : settings->getRankThreadMap()->at(rankRef).second){
         entry.second.second.at(1).flip();
+    }
+
+    for (auto labelItem : this->widgetPointerList){
+        // We should switch the textcolor from grey to black or vice versa in order to indicate the change
+        if(labelItem->data(Qt::UserRole).toInt()==rankRef) labelItem->foreground()==Qt::gray ? labelItem->setForeground(Qt::black) : labelItem->setForeground(Qt::gray);
     }
     
     Q_EMIT this->data->refreshButtonPressed();

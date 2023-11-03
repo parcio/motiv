@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "TraceOverviewTimelineView.hpp"
+#include "src/models/ViewSettings.hpp"
 #include "src/ui/views/CommunicationIndicator.hpp"
 #include "src/ui/ColorGenerator.hpp"
 #include "src/ui/Constants.hpp"
@@ -26,6 +27,7 @@
 #include <QApplication>
 #include <QWheelEvent>
 #include <QRubberBand>
+#include <qnamespace.h>
 
 TraceOverviewTimelineView::TraceOverviewTimelineView(Trace *fullTrace, QWidget *parent) : QGraphicsView(parent), fullTrace(fullTrace) {
     auto scene = new QGraphicsScene(this);
@@ -49,6 +51,11 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
     qreal top = 0;
     auto ROW_HEIGHT = scene->height() / static_cast<qreal>(uiTrace->getSlots().size());
     std::string searchName_ = ViewSettings::getInstance()->getSearchName().toStdString();
+
+    auto settings = ViewSettings::getInstance();
+    auto useBorder = settings->getUseBorderOverview();
+    auto usePriority = settings->getUsePriorityOverview();
+    auto activeThresholdOV = settings->getActiveThresholdOV();
     
     for (const auto &item: uiTrace->getSlots()) {
         // Display slots
@@ -62,18 +69,29 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
             // Ensures slots ending after `end` (like main) are considered to end at end
             auto effectiveEndTime = qMin(end, endTime);
 
+            // Experimental***
+            if(activeThresholdOV){
+                long regLength = effectiveEndTime - effectiveStartTime;
+                long timeFraction = (runtime/1000) * activeThresholdOV;
+                if(regLength<timeFraction)continue;
+            }
+            // Experimental***
+
             auto slotBeginPos = qMax(0.0,
                                      (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) *
                                      width);
             auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
             auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
 
-            QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
+            //QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
+            QRectF rect(slotBeginPos, top, rectWidth, ROW_HEIGHT);
             auto rectItem = scene->addRect(rect);
 
             // Determine color based on name
             QColor rectColor = slot->getColor();
             rectItem->setBrush(rectColor);
+
+            if(!useBorder) rectItem->setPen(Qt::NoPen);
 
             // Set search filter
             if(searchName_!= ""){
@@ -82,9 +100,7 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
                     rectItem->setBrush(colors::COLOR_SLOT_PLAIN);
                 } else rectItem->setZValue(20);
 
-            } else rectItem->setZValue(slot->priority);
-                
-                
+            } else rectItem->setZValue(usePriority ? slot->priority : 1/rectWidth);
                 
         }
 

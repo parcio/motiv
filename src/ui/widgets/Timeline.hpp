@@ -20,6 +20,10 @@
 
 
 #include <QWidget>
+#include <QGroupBox>
+#include <QHBoxLayout>
+#include <QLabel>
+
 
 #include "TimelineHeader.hpp"
 #include "TimelineLabelList.hpp"
@@ -46,11 +50,36 @@ public:
 
 public Q_SLOTS:
     void showFlamegraphPopup();
+    // Experimental***
+    void changeOverviewEvent();
+    void changeMainviewEvent();
+    // Experimental***
 
 private: // widgets
     TimelineHeader *header = nullptr;
     TimelineLabelList *labelList = nullptr;
     TimelineView *view = nullptr;
+
+    // Experimental***
+    enum Mode { proc, slow, fast };
+    QLabel *modeLabel = nullptr;
+    QSlider *modeSlider = nullptr;
+    QSlider *modeIntensitySlider = nullptr;
+    QSlider *thresholdSliderOV = nullptr;
+    QSlider *thresholdSliderREG = nullptr;
+    QSlider *thresholdSliderP2P = nullptr;
+    QSlider *thresholdSliderCCM = nullptr;
+    QGroupBox *slidersBox = nullptr;
+    // Experimental***  
+
+// Experimental***
+private: // methods
+    QHBoxLayout* prepareSlider(QSlider* thresholdSlider, QString Name);
+    void prepareSlidersBoxLayouts();
+    void addSliderTicks();
+    void changeModeEvent();
+    double scaleSliderValue(int trueVal);
+// Experimental***
 
 private: // data
     TraceDataProxy *data = nullptr;

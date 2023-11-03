@@ -29,7 +29,7 @@ TimelineHeader::TimelineHeader(TraceDataProxy *data, QWidget *parent) : QWidget(
 
     // @formatter:off
     // Attention: this connect causes redundant rendering of the scenery for TimelineView
-    //connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
+    connect(this->data, SIGNAL(selectionChanged(types::TraceTime,types::TraceTime)), this, SLOT(updateView()));
     // @formatter:on
 }
 

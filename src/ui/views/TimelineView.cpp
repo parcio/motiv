@@ -84,7 +84,13 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     bool countIndicatorsREG = settings->getCountIndicatorsREG();
     bool countIndicatorsP2P = settings->getCountIndicatorsP2P();
     bool countIndicatorsCCM = settings->getCountIndicatorsCCM();
-    bool pxThresholdTimelineView = settings->getPxThresholdTimelineView();
+    bool useRealWidth = settings->getUseRealWidthMainWindow();
+
+    // Experimental***
+    auto activeThresholdREG = settings->getActiveThresholdREG();
+    auto activeThresholdP2P = settings->getActiveThresholdP2P();
+    auto activeThresholdCCM = settings->getActiveThresholdCCM();
+    // Experimental***
 
     for (const auto &item: selection->getSlots()) {
 
@@ -129,13 +135,21 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                 // Ensures slots ending after `end` (like main) are considered to end at end
                 auto effectiveEndTime = qMin(end, endTime);
 
+                // Experimental***
+                if(activeThresholdREG){
+                    long regLength = effectiveEndTime - effectiveStartTime;
+                    long timeFraction = (runtime/1000) * activeThresholdREG;
+                    if(regLength<timeFraction)continue;
+                }
+                // Experimental***
+
                 auto slotBeginPos = (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) * width;
                 auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
                 auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
 
-                if(pxThresholdTimelineView && rectWidth<1) continue;
+                if(!useRealWidth) rectWidth = qMax(rectWidth, 5.0);
 
-                QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
+                QRectF rect(slotBeginPos, top, rectWidth, ROW_HEIGHT);
                 auto rectItem = new SlotIndicator(rect, slot);
                 rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
                 rectItem->setOnSelected(onTimedElementSelected);
@@ -177,6 +191,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto endEventEnd = static_cast<qreal>(endEvent->getEndTime().count());
         auto endEventStart = static_cast<qreal>(endEvent->getStartTime().count());
 
+
         // With the new support for threads we have also to consider the thread-location (fromThread, to Thread)
         auto fromRank = startEvent->getLocation()->location_group().ref().get();
         auto fromThreadRef = startEvent->getLocation()->ref().get();
@@ -192,6 +207,14 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
 
         auto toTime = endEventStart + (endEventEnd - endEventStart) / 2;
         auto effectiveToTime = qMin(endR, toTime) - beginR;
+
+        // Experimental***
+        if(activeThresholdP2P){
+            long commLength = effectiveToTime - effectiveFromTime;
+            long timeFraction = (runtime/1000) * activeThresholdP2P;
+            if(commLength<timeFraction)continue;
+        }
+        // Experimental***
 
         /*
         This is the original way to get rank references:
@@ -281,6 +304,14 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto toTime = static_cast<qreal>(communication->getEndTime().count());
         auto effectiveToTime = qMin(endR, toTime) - beginR;
 
+        // Experimental***
+        if(activeThresholdCCM){
+            long commLength = effectiveToTime - effectiveFromTime;
+            long timeFraction = (runtime/1000) * activeThresholdCCM;
+            if(commLength<timeFraction)continue;
+        }
+        // Experimental***
+
         auto fromX = (effectiveFromTime / runtimeR) * width;
         auto fromY = 10;
 
@@ -293,6 +324,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         rectItem->setPen(collectiveCommunicationPen);
         rectItem->setZValue(layers::Z_LAYER_COLLECTIVE_COMMUNICATIONS);
         scene->addItem(rectItem);
+        globalDrawCount[2]++;
 
         for (const auto &member: communication->getMembers()){
             auto memberFromTime = static_cast<qreal>(member->start.count());
@@ -333,7 +365,6 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             brush.setStyle(Qt::BDiagPattern);
             memberRectItem->setBrush(brush);
             scene->addItem(memberRectItem);
-            globalDrawCount[2]++;
         }
     }
 

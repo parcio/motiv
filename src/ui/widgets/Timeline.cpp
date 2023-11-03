@@ -16,10 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Timeline.hpp"
+#include "src/models/ViewSettings.hpp"
+#include "src/ui/views/TimelineView.hpp"
+#include "src/ui/widgets/TimelineHeader.hpp"
 #include "src/ui/windows/FlamegraphPopup.hpp"
 #include "src/ui/ScrollSynchronizer.hpp"
 
 #include <QGridLayout>
+#include <QVBoxLayout>
+#include <qnamespace.h>
+#include <qtmetamacros.h>
+#include <cmath>
+#include <string>
+
 
 
 Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), data(data) {
@@ -36,6 +45,12 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
 
     // We don't want to have the context menu for layout elements in the label region
     this->labelList->setContextMenuPolicy(Qt::PreventContextMenu);
+
+    // Experimental***
+    this->prepareSlidersBoxLayouts();
+    this->addSliderTicks();
+    layout->addWidget(this->slidersBox, 2, 0, 1, 2);  
+    // Experimental***
 
     this->view = new TimelineView(this->data, this);
     QBrush backgroundPattern = QBrush(QColorConstants::Svg::silver, Qt::Dense7Pattern);
@@ -57,3 +72,156 @@ void Timeline::showFlamegraphPopup(){
     FlamegraphPopup* flamegraph = new FlamegraphPopup(this->data, this);
     flamegraph->openFlamegraphWindow();
 }
+
+// Experimental***
+QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
+
+    QHBoxLayout* sliderLabelBox = new QHBoxLayout();
+
+    if(Name!=""){
+        QLabel* sliderLabel = new QLabel(Name, this);
+        QFont font;
+        font.setPointSize(8);
+        sliderLabel->setFont(font);
+        sliderLabel->setFixedWidth(24);
+        sliderObj->setRange(0, 1000);
+        sliderObj->setValue(0);
+        sliderObj->setFixedHeight(this->header->height()/2 + 6);
+
+        sliderLabelBox->addWidget(sliderLabel);
+        sliderLabelBox->addWidget(sliderObj);
+    } else {
+        if(this->modeLabel==nullptr)this->modeLabel = new QLabel("Mode:\nlinear", this);
+        if(this->modeIntensitySlider==nullptr) this->modeIntensitySlider = new QSlider(Qt::Vertical, this);
+        QFont font;
+        font.setPointSize(8);
+        this->modeLabel->setFont(font);
+        sliderObj->setRange(0, 2);
+        sliderObj->setValue(0);
+        sliderObj->setFixedHeight(this->header->height()+8);
+        this->modeIntensitySlider->setRange(0, 3);
+        this->modeIntensitySlider->setFixedHeight(this->header->height()+8);
+        this->modeLabel->setFixedHeight(this->header->height()+8);
+        this->modeLabel->setFixedWidth(this->labelList->width()-32);
+
+
+        sliderLabelBox->addWidget(sliderObj);
+        sliderLabelBox->addSpacing(4);
+        sliderLabelBox->addWidget(this->modeIntensitySlider);
+        sliderLabelBox->addSpacing(4);
+        sliderLabelBox->addWidget(this->modeLabel);
+    }
+
+    return sliderLabelBox;
+}
+
+void Timeline::addSliderTicks(){
+    this->thresholdSliderOV->setTickPosition(QSlider::TicksAbove);
+    this->thresholdSliderOV->setTickInterval(100);
+
+    this->thresholdSliderP2P->setTickPosition(QSlider::TicksAbove);
+    this->thresholdSliderP2P->setTickInterval(100);
+
+    this->thresholdSliderREG->setTickPosition(QSlider::TicksBelow);
+    this->thresholdSliderREG->setTickInterval(100);
+
+    this->thresholdSliderCCM->setTickPosition(QSlider::TicksBelow);
+    this->thresholdSliderCCM->setTickInterval(100);
+}
+
+void Timeline::changeModeEvent(){
+    switch(this->modeSlider->value()){
+        case Mode::proc: 
+            this->modeLabel->setText("Mode:\nproc");
+            this->modeLabel->setToolTip("f(x) = x");
+            break;
+        case Mode::slow:
+            this->modeLabel->setText("Mode:\nslow");
+            this->modeLabel->setToolTip(QString("f(x) = 1.006931669^x * (1/10^%1)").arg(this->modeIntensitySlider->value()));
+            break;
+        case Mode::fast:
+            this->modeLabel->setText("Mode:\nfast");
+            this->modeLabel->setToolTip(QString("f(x) = 1000 * (x^(c+1))/(x^(c+1)+10)").arg(this->modeIntensitySlider->value()));
+            break;
+    }
+    this->changeOverviewEvent();
+    this->changeMainviewEvent();
+}
+
+double Timeline::scaleSliderValue(int trueVal){
+    int intensityValue = this->modeIntensitySlider->value();
+    double scaledVal;
+    switch(this->modeSlider->value()){
+        case Mode::proc: 
+            return (double) trueVal;
+        case Mode::slow:
+            // This growth-factor was chosen because of 1.0069...^1000 approx 1000
+            scaledVal = (pow(1.006931669, trueVal) - 1)  * 1/pow(10, intensityValue);
+            return scaledVal;
+        case Mode::fast:
+            scaledVal = 1000.0 * std::pow(trueVal, intensityValue+1) / (std::pow(trueVal, intensityValue+1) + 10);
+            return scaledVal;
+    }
+}
+
+void Timeline::changeOverviewEvent(){
+    auto settings = ViewSettings::getInstance();
+    settings->setActiveThresholdOV(this->scaleSliderValue(this->thresholdSliderOV->value()));
+    Q_EMIT data->refreshOverviewRequest();
+}
+
+void Timeline::changeMainviewEvent(){
+    auto settings = ViewSettings::getInstance();
+    settings->setActiveThresholdREG(this->scaleSliderValue(this->thresholdSliderREG->value()));
+    settings->setActiveThresholdP2P(this->scaleSliderValue(this->thresholdSliderP2P->value()));
+    settings->setActiveThresholdCCM(this->scaleSliderValue(this->thresholdSliderCCM->value()));
+    this->view->updateView();
+}
+
+void Timeline::prepareSlidersBoxLayouts(){
+    this->modeSlider = new QSlider(Qt::Vertical, this);
+    this->modeSlider->setObjectName("");
+    connect(this->modeSlider, &QSlider::valueChanged, this, [this]() {
+        this->changeModeEvent();
+    });
+
+
+    this->thresholdSliderOV = new QSlider(Qt::Horizontal, this);
+    this->thresholdSliderOV->setObjectName("OV");
+    connect(this->thresholdSliderOV, &QSlider::valueChanged, this, [this]() {
+        this->changeOverviewEvent();
+    });
+
+    this->thresholdSliderREG = new QSlider(Qt::Horizontal, this);
+    this->thresholdSliderREG->setObjectName("REG");
+        connect(this->thresholdSliderREG, &QSlider::valueChanged, this, [this]() {
+        this->changeMainviewEvent();
+    });
+
+    this->thresholdSliderP2P = new QSlider(Qt::Horizontal, this);
+    this->thresholdSliderP2P->setObjectName("P2P");
+        connect(this->thresholdSliderP2P, &QSlider::valueChanged, this, [this]() {
+        this->changeMainviewEvent();
+    });
+    this->thresholdSliderCCM = new QSlider(Qt::Horizontal, this);
+    this->thresholdSliderCCM->setObjectName("CCM");
+        connect(this->thresholdSliderCCM, &QSlider::valueChanged, this, [this]() {
+        this->changeMainviewEvent();
+    });
+    
+    this->slidersBox = new QGroupBox();
+    auto slidersLayoutREG = new QVBoxLayout();
+    slidersLayoutREG->addLayout(this->prepareSlider(this->thresholdSliderOV, this->thresholdSliderOV->objectName()));
+    slidersLayoutREG->addLayout(this->prepareSlider(this->thresholdSliderREG, this->thresholdSliderREG->objectName()));
+    auto slidersLayoutCOM = new QVBoxLayout();
+    slidersLayoutCOM->addLayout(this->prepareSlider(this->thresholdSliderP2P, this->thresholdSliderP2P->objectName()));
+    slidersLayoutCOM->addLayout(this->prepareSlider(this->thresholdSliderCCM, this->thresholdSliderCCM->objectName()));
+    QHBoxLayout* slidersLayout = new QHBoxLayout();
+    slidersLayout->addLayout(this->prepareSlider(this->modeSlider, this->modeSlider->objectName()));
+    slidersLayout->addLayout(slidersLayoutREG);
+    slidersLayout->addLayout(slidersLayoutCOM);
+    this->slidersBox->setLayout(slidersLayout);
+    this->slidersBox->setMaximumHeight(80);
+}
+
+// Experimental***

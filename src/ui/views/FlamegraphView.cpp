@@ -90,6 +90,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
 
     bool countIndicatorDetailsFlamegraph = settings->getCountIndicatorDetailsFlamegraph();
     bool pxThresholdFlamegraph = settings->getPxThresholdFlamegraph();
+    bool useRealWidth = settings->getUseRealWidthFlamegraph();
 
     std::string rankNameStd = rank->name().str();
     auto rankName = QString::fromStdString(rankNameStd);
@@ -149,6 +150,8 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
             // There has to be some minimal size for the indicators, or else we will get false hierarchies
             if(pxThresholdFlamegraph && rectWidth<1) continue;
 
+            if(!useRealWidth) rectWidth = qMax(rectWidth, 5.0);
+
             // Are we within the limits of our last frame?
             if(endtimeVector.empty() || endTime <= endtimeVector.back()){
                 endtimeVector.push_back(endTime);
@@ -165,7 +168,6 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
             top=threadDrawOffset+baseRowLevel+ROW_HEIGHT*(endtimeVector.size()-1);
             if(top>localMaxHeight)localMaxHeight=top;
 
-            //QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
             QRectF rect(slotBeginPos, top, rectWidth, ROW_HEIGHT);
             auto rectItem = new SlotIndicator(rect, Slot);
             //qInfo() << "name: " << regionNameStr.c_str() << "base:" << baseRowLevel << "top: " << top << "endTimes# " << endtimeVector.size() << " --- maxV: " << localMaxHeight << "/" << this->globalMaxHeight;

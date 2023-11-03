@@ -117,7 +117,7 @@ public: Q_SIGNALS:
 
     void verticalZoomChanged();
 
-    //void labelInteractionTrigger();
+    void refreshOverviewRequest();
 
     void refreshButtonPressed();
 

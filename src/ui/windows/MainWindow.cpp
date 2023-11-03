@@ -30,6 +30,7 @@
 #include <QStatusBar>
 #include <qaction.h>
 #include <qtmetamacros.h>
+#include <string>
 #include <utility>
 
 #include "src/models/AppSettings.hpp"
@@ -144,16 +145,14 @@ void MainWindow::createMenus() {
 
     /// View Menu
     auto filterAction = new QAction(tr("&Filter"));
-    filterAction->setShortcut(tr("Ctrl+S"));
+    filterAction->setShortcut(tr("F1"));
     connect(filterAction, SIGNAL(triggered()), this, SLOT(openFilterPopup()));
 
-    auto searchAction = new QAction(tr("&Find"));
-    searchAction->setShortcut(tr("Ctrl+F"));
-    connect(searchAction, SIGNAL(triggered()), this, SLOT(openSearchPopup()));
+    auto settingsWindowAction = new QAction(tr("Settings"));
+    settingsWindowAction->setShortcut(tr("F2"));
+    if(!this->settingsWindow) this->settingsWindow = new SettingsPopup(this->data, this);
+    connect(settingsWindowAction, &QAction::triggered, this->settingsWindow, &SettingsPopup::show);
 
-    auto resetZoomAction = new QAction(tr("&Reset zoom"));
-    connect(resetZoomAction, SIGNAL(triggered()), this, SLOT(resetZoom()));
-    resetZoomAction->setShortcut(tr("Ctrl+R"));
 
     auto widgetMenuCustomColors = new QMenu(tr("Custom Colors"));
 
@@ -185,15 +184,9 @@ void MainWindow::createMenus() {
     widgetMenuToolWindows->addAction(showOverviewAction);
     widgetMenuToolWindows->addAction(showDetailsAction);
 
-    auto settingsWindowAction = new QAction(tr("Settings"));
-    if(!this->settingsWindow) this->settingsWindow = new SettingsPopup(this->data, this);
-    connect(settingsWindowAction, &QAction::triggered, this->settingsWindow, &SettingsPopup::show);
-
     auto viewMenu = menuBar->addMenu(tr("&View"));
     viewMenu->addAction(filterAction);
-    viewMenu->addAction(settingsWindowAction);
-    viewMenu->addAction(searchAction); 
-    viewMenu->addAction(resetZoomAction);  
+    viewMenu->addAction(settingsWindowAction); 
     viewMenu->addMenu(widgetMenuCustomColors);
     viewMenu->addMenu(widgetMenuToolWindows);
     
@@ -205,7 +198,7 @@ void MainWindow::createMenus() {
         this->licenseWindow->show();
     });
     auto showHelpAction = new QAction(tr("&Show help"));
-    showHelpAction->setShortcut(tr("F1"));
+    showHelpAction->setShortcut(tr("Ctrl+H"));
     connect(showHelpAction, &QAction::triggered, this, [this] {
         if(!this->helpWindow) this->helpWindow = new Help;
         this->helpWindow->show();
@@ -213,7 +206,6 @@ void MainWindow::createMenus() {
     auto showAboutQtAction = new QAction(tr("&About Qt"));
     connect(showAboutQtAction, &QAction::triggered, qApp, &QApplication::aboutQt);
     auto showAboutAction = new QAction(tr("&About"));
-    showAboutAction->setShortcut(tr("Shift+F1"));
     connect(showAboutAction, &QAction::triggered, this, [this] {
         if(!this->aboutWindow) this->aboutWindow= new About;
         this->aboutWindow->show();
@@ -227,11 +219,6 @@ void MainWindow::createMenus() {
 }
 
 void MainWindow::createToolBars() {
-
-    // Top toolbar contains preview/control of whole trace
-    // this->topToolbar = new QToolBar(this);
-    // this->topToolbar->setMovable(false);
-    // addToolBar(Qt::TopToolBarArea, this->topToolbar);
 
     // Bottom toolbar contains control fields
     this->bottomToolbar = new QToolBar(this);
@@ -277,12 +264,14 @@ void MainWindow::createToolBars() {
     auto resetZoomButton = new QPushButton(tr(""));
     resetZoomButton->setIcon(*(this->settings->getInstance()->getIcon("zoom_fit")));
     resetZoomButton->setIconSize(QSize(32, 32));
-    resetZoomButton->setToolTip("Reset Zoom\nCtrl+R");
+    resetZoomButton->setToolTip("Reset Zoom\nSpace");
+    resetZoomButton->setShortcut(tr("Space"));
 
     auto searchButton = new QPushButton(tr(""));
     searchButton->setIcon(*(this->settings->getInstance()->getIcon("book")));
     searchButton->setIconSize(QSize(32, 32));
     searchButton->setToolTip("Search\nCtrl+F");
+    searchButton->setShortcut(tr("Ctrl+F"));
     
     containerLayout->addWidget(zoomInButton);
     containerLayout->addWidget(zoomOutButton);
@@ -304,10 +293,13 @@ void MainWindow::createToolBars() {
 
     // infoBar
     this->infoBar = new QStatusBar(this);
+    this->infoLabel = new QLabel(this->infoBar);
+    //this->infoLabel->setAlignment(Qt::AlignLeft);
+    this->infoBar->addPermanentWidget(infoLabel, 1);
     QFont font;
     font.setPointSize(10);
-    //font.setItalic(true);
     this->infoBar->setFont(font);
+    this->infoLabel->setFont(font);
     QPalette palette;
     palette.setColor(QPalette::WindowText, QColorConstants::Svg::slategray);
     this->infoBar->setPalette (palette);
@@ -319,8 +311,39 @@ void MainWindow::createToolBars() {
 }
 
 void MainWindow::showInfo() {
+
+    // old mode
+    /*
     this->infoBar->setToolTip("last message: "+this->infoBar->currentMessage());
-    this->infoBar->showMessage(settings->globalMessage+" "+std::to_string(MainWindow::currentUITimerValue).c_str()+" [ms]", 0);
+    if (MainWindow::currentUITimerValue < 0) {
+        this->infoLabel->setText(settings->globalMessage+" "+"error: negative drawing time");
+    } else if (MainWindow::currentUITimerValue == 0) {
+        this->infoBar->showMessage(settings->globalMessage+" "+"<1"+" [ms]", 0);
+    } else {
+        this->infoBar->showMessage(settings->globalMessage+" "+std::to_string(MainWindow::currentUITimerValue).c_str()+" [ms]", 0);
+    }
+    */
+
+    // new mode
+    std::string timeValue;
+    MainWindow::currentUITimerValue==0 ? timeValue = "&lt;1" : timeValue = std::to_string(MainWindow::currentUITimerValue);
+    this->infoBar->setToolTip("last message: "+this->infoLabel->text());
+    if (MainWindow::currentUITimerValue < 0) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#FF0000'> error: negative drawing time </font>");
+    } else if (!this->settings->getColorCodingTimeRecords()) {
+        this->infoLabel->setText("<font color='#708090'>"+settings->globalMessage+" "+timeValue.c_str()+" [ms]"+"</font>");
+    } else if (MainWindow::currentUITimerValue <= 25) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#0BBF01'>"+timeValue.c_str()+"</font>"+"[ms]");
+    } else if (MainWindow::currentUITimerValue <= 50) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#86AC1D'>"+timeValue.c_str()+"</font>"+"[ms]");
+    } else if (MainWindow::currentUITimerValue <= 100) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#B3B538'>"+timeValue.c_str()+"</font>"+"[ms]");
+    } else if (MainWindow::currentUITimerValue <= 250) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#B57D4B'>"+timeValue.c_str()+"</font>"+"[ms]");
+    } else if (MainWindow::currentUITimerValue > 250) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#FF0000'>"+timeValue.c_str()+"</font>"+"[ms]");
+    }
+
     settings->globalMessage="";
 }
 
@@ -465,13 +488,6 @@ void MainWindow::verticalZoomOut(){
 
 void MainWindow::refreshView(){
     Q_EMIT this->data->refreshButtonPressed();
-    //qInfo() << "                                        ";
-    //qInfo() << "-------------MainWindow Info------------";
-    //qInfo() << "obj: " << this;
-    //this->dumpObjectInfo();
-    //qInfo() << "----------------------------------------";
-    //this->dumpObjectTree();
-    //qInfo() << "----------------------------------------";
 }
 
 void MainWindow::openSearchPopup(){
