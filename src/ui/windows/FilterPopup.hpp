@@ -62,6 +62,12 @@ private: // widgets
     QCheckBox *mpiSlotKindCheckBox = nullptr;
     QCheckBox *openMpSlotKindCheckBox = nullptr;
     QCheckBox *plainSlotKindCheckBox = nullptr;
+
+    QCheckBox *pointToPointCheckBox = nullptr;
+    QCheckBox *blockingPointToPointCheckBox = nullptr;
+    QCheckBox *nonBlockingPointToPointCheckBox = nullptr;
+    QCheckBox *collectiveCheckBox = nullptr;
+    QCheckBox *synchoCheckBox = nullptr;
 };
 
 

@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Jessica Lafontaine
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,8 +122,8 @@ void SearchPopup::buildWindow(QWidget *parent){
             auto search_ = new Search(data, itemList, this);
             this->slotList = search_->createItemList(itemList->currentItem()->text());
             this->currentIterator=slotList.begin();
-            this->selectSlot();            
-            Q_EMIT this->data->refreshButtonPressed();            
+            this->selectSlot();
+            Q_EMIT this->data->refreshButtonPressed();
         }
         else{
             this->selectedItem_->setForeground(Qt::black);     

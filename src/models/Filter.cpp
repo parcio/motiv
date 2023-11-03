@@ -24,3 +24,12 @@ SlotKind Filter::getSlotKinds() const {
 void Filter::setSlotKinds(SlotKind slotKinds) {
     slotKinds_ = slotKinds;
 }
+
+
+CommunicationKind Filter::getCommunicationKinds() const{
+    return communicationKinds_;
+}
+
+void Filter::setCommunicationKind(CommunicationKind communicationKind){
+    communicationKinds_ = communicationKind;
+}

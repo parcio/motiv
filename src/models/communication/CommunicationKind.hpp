@@ -29,31 +29,45 @@ enum CommunicationKind {
     /**
      * The communication event was a blocking send operation (e.g. MPI_SSEND)
      */
-    BlockingSend,
+    BlockingSend = 1 << 0,
 
     /**
      * The communication event was a blocking receive operation (e.g. MPI_SRECEIVE)
      */
-    BlockingReceive,
+    BlockingReceive = 1 << 1,
 
     /**
      * The communication event was a non blocking send operation (e.g. MPI_ISEND)
      */
-    NonBlockingSend,
+    NonBlockingSend = 1 << 2,
 
     /**
      * The communication event was a non blocking receive operation (e.g. MPI_IRECEIVE)
      */
-    NonBlockingReceive,
+    NonBlockingReceive = 1 << 3,
+
+    /**
+     * The communication event was a synchronizing and collective operation (e.g. MPI_BARRIER)
+     */
+    Synchronizing = 1 << 4,
 
     /**
      * The communication event was a collective operation (e.g. MPI_REDUCE)
      */
-    Collective,
+    Collective = (1 << 5 | Synchronizing),
 
     /**
      * The communication event was a cancellation event (e.g. MPI_REQUEST_CANCEL)
      */
-    RequestCancelled
+    RequestCancelled = 1 << 6,
+
+    /**
+     * The communication event was a Point to Point operation
+     */
+    PointToPoint = (BlockingSend | BlockingReceive | NonBlockingReceive | NonBlockingSend),
+
+    BlockingPointToPoint = (BlockingSend | BlockingReceive),
+
+    NonBlockingPointToPoint = (NonBlockingReceive | NonBlockingSend)
 };
 #endif //MOTIV_COMMUNICATIONKIND_HPP
