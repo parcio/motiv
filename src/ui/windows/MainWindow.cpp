@@ -500,7 +500,7 @@ void MainWindow::startUITimerIfPossible() {
 void MainWindow::endUITimerIfPossible() {
     if(this->mainUITimer.isValid()) {
         auto newVal = this->mainUITimer.elapsed();
-        qInfo() << newVal << "[ms]";
+        //qInfo() << newVal << "[ms]";
         this->currentUITimerValue=newVal;
         this->mainUITimer.invalidate();
         this->showInfo();

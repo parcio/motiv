@@ -149,8 +149,10 @@ void TimelineLabelList::mousePressEvent(QMouseEvent *event) {
             //this->menu->exec(event->globalPos());
             this->menu->exec(event->globalPosition().toPoint());
         }break;
+        default: {
+            return;
+        }
     }
-
     return;
 }
 

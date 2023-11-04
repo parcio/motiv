@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 
     QCommandLineOption helpOption = parser.addHelpOption();
     QCommandLineOption versionOption = parser.addVersionOption();
-	QCommandLineOption testrunOption("t", QCoreApplication::translate("main", "#todo: fitting descr?"), "file");
+	QCommandLineOption testrunOption("t", QCoreApplication::translate("main", "Runs motiv in test mode, i.e. pure trace-loading without GUI representation for benchmark purposes."), "file");
 	parser.addOption(testrunOption);
     parser.addPositionalArgument("file", QCoreApplication::translate("main", "filepath of the .otf2 trace file to open"), "[file]");
 

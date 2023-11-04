@@ -91,7 +91,7 @@ QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
         sliderLabelBox->addWidget(sliderLabel);
         sliderLabelBox->addWidget(sliderObj);
     } else {
-        if(this->modeLabel==nullptr)this->modeLabel = new QLabel("Mode:\nlinear", this);
+        if(this->modeLabel==nullptr)this->modeLabel = new QLabel("Mode:\nproc", this);
         if(this->modeIntensitySlider==nullptr) this->modeIntensitySlider = new QSlider(Qt::Vertical, this);
         QFont font;
         font.setPointSize(8);
