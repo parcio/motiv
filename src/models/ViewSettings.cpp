@@ -68,7 +68,6 @@ std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, s
 }
 
 std::map< OTF2_StringRef, otf2::definition::location_group *>* ViewSettings::getRankAdrMap() {
-    //qInfo() << "EXECUTING ViewSettings::getRankRefMap [size: " << rankAdrMap.size() << "] ... for " << this;
     return &rankAdrMap;
 }
 

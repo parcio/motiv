@@ -170,8 +170,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
 
             QRectF rect(slotBeginPos, top, rectWidth, ROW_HEIGHT);
             auto rectItem = new SlotIndicator(rect, Slot);
-            //qInfo() << "name: " << regionNameStr.c_str() << "base:" << baseRowLevel << "top: " << top << "endTimes# " << endtimeVector.size() << " --- maxV: " << localMaxHeight << "/" << this->globalMaxHeight;
-
+            
             rectItem->setOnDoubleClick(onTimedElementDoubleClicked);
             rectItem->setOnSelected(onTimedElementSelected);
             rectItem->setToolTip(Slot->location->name().str().c_str());

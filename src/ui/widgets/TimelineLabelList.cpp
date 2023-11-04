@@ -88,7 +88,6 @@ TimelineLabelList::TimelineLabelList(TraceDataProxy *data, QWidget *parent) : QL
                 // Settings vector for individual threads = "highlighted?" - "toggled P2P?"
                 std::vector<bool> boolVector {false, false};
                 std::pair<int, std::vector<bool>> entry {threadNumber, boolVector};
-                //qInfo() << threadItem.first.c_str() << "... is nr. ..." << threadNumber;
                 threadMap.insert({threadItem.second, entry});
             }
             rankThreadMap->insert({rank.first->ref().get(), std::make_pair(false, threadMap)});

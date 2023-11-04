@@ -350,8 +350,6 @@ void MainWindow::showInfo() {
 
 void MainWindow::createDockWidgets() {
 
-    //qInfo() << "EXECUTING MainWindow::createDockWidgets ... for " << this;
-
     this->information = new InformationDock();
     information->addElementStrategy(new InformationDockSlotStrategy());
     information->addElementStrategy(new InformationDockTraceStrategy());

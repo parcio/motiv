@@ -62,6 +62,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     auto beginR = static_cast<qreal>(begin);
     auto end = begin + runtime;
     auto endR = static_cast<qreal>(end);
+    qInfo() << "draw";
 
     std::array<int, 3> globalDrawCount{};
     std::array<int, 3> globalFullCount{};

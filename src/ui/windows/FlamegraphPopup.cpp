@@ -40,7 +40,6 @@ FlamegraphPopup::FlamegraphPopup(TraceDataProxy *data, QWidget *parent):QDialog(
 }
 
 void FlamegraphPopup::openFlamegraphWindow(){
-    //qInfo() << "EXECUTING FlamegraphPopup::openFlamegraphWindow ... for " << this;
     auto * settings = ViewSettings::getInstance();
     auto ROW_HEIGHT = settings->getRowHeight();
     auto * rankThreadMap = settings->getRankThreadMap();
