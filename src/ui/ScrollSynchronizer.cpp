@@ -19,12 +19,6 @@
 
 #include <QScrollBar>
 
-// Debug #todo: remove when no longer needed
-#include <QDebug>
-#include <QVBoxLayout>
-#include <QScrollArea>
-#include <QAbstractItemView>
-
 ScrollSynchronizer::ScrollSynchronizer(QObject *parent) : QObject(parent) {
 }
 

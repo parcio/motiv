@@ -16,7 +16,7 @@ The code documentation is generated and available at [parcio.github.io/motiv](ht
 
 ## Build
 
-1. Clone this repository: `git clone https://github.com/Azera5/motiv.git`
+1. Clone this repository: `git clone https://github.com/parcio/motiv`
 2. Change to cloned repository: `cd motiv`
 3. Initialise the submodules: `git submodule update --init --recursive`
 4. Generate build system with CMake: `cmake -S . -B build`
@@ -26,3 +26,5 @@ The code documentation is generated and available at [parcio.github.io/motiv](ht
 MOTIV is licensed under GPL v3 or later. The license is available [here](COPYING).
 
 [Jellyfish icon](https://www.flaticon.com/free-icons/jellyfish) created by [Freepik](https://www.flaticon.com/authors/freepik) from [Flaticon](https://www.flaticon.com/).
+
+[Buttons](https://commons.wikimedia.org/wiki/Tango_icons).

@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Florian Gallrein, Björn Gehrke, Tomas Cirkov
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     this->data->triggerUITimerStartIfPossible();
     auto layout = new QGridLayout(this);
 
-    this->header = new TimelineHeader(this->data, this);
-    layout->addWidget(this->header, 0, 1);
+    // this->header = new TimelineHeader(this->data, this);
+    // layout->addWidget(this->header, 0, 1);
 
     this->labelList = new TimelineLabelList(this->data, this);
     layout->addWidget(this->labelList, 1, 0);
@@ -84,9 +84,10 @@ QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
         font.setPointSize(8);
         sliderLabel->setFont(font);
         sliderLabel->setFixedWidth(24);
+        sliderLabel->setFixedHeight(32);
         sliderObj->setRange(0, 1000);
         sliderObj->setValue(0);
-        sliderObj->setFixedHeight(this->header->height()/2 + 6);
+        sliderObj->setFixedHeight(32);
 
         sliderLabelBox->addWidget(sliderLabel);
         sliderLabelBox->addWidget(sliderObj);
@@ -98,10 +99,10 @@ QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
         this->modeLabel->setFont(font);
         sliderObj->setRange(0, 2);
         sliderObj->setValue(0);
-        sliderObj->setFixedHeight(this->header->height()+8);
+        // sliderObj->setFixedHeight(this->header->height()+8);
         this->modeIntensitySlider->setRange(0, 3);
-        this->modeIntensitySlider->setFixedHeight(this->header->height()+8);
-        this->modeLabel->setFixedHeight(this->header->height()+8);
+        // this->modeIntensitySlider->setFixedHeight(this->header->height()+8);
+        // this->modeLabel->setFixedHeight(this->header->height()+8);
         this->modeLabel->setFixedWidth(this->labelList->width()-32);
 
 
@@ -137,11 +138,11 @@ void Timeline::changeModeEvent(){
             break;
         case Mode::slow:
             this->modeLabel->setText("Mode:\nslow");
-            this->modeLabel->setToolTip(QString("f(x) = 1.006931669^x * (1/10^%1)").arg(this->modeIntensitySlider->value()));
+            this->modeLabel->setToolTip(QString("f(x) = (1.006931669^x - 1) * (1/10^%1)").arg(this->modeIntensitySlider->value()));
             break;
         case Mode::fast:
             this->modeLabel->setText("Mode:\nfast");
-            this->modeLabel->setToolTip(QString("f(x) = 1000 * (x^(c+1))/(x^(c+1)+10)").arg(this->modeIntensitySlider->value()));
+            this->modeLabel->setToolTip(QString("f(x) = 1000 * (x^(%1+1))/(x^(%1+1)+10)").arg(this->modeIntensitySlider->value()));
             break;
     }
     this->changeOverviewEvent();
@@ -221,7 +222,7 @@ void Timeline::prepareSlidersBoxLayouts(){
     slidersLayout->addLayout(slidersLayoutREG);
     slidersLayout->addLayout(slidersLayoutCOM);
     this->slidersBox->setLayout(slidersLayout);
-    this->slidersBox->setMaximumHeight(80);
+    this->slidersBox->setMaximumHeight(86);
 }
 
 // Experimental***
