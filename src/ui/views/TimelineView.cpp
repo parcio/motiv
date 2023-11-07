@@ -338,6 +338,14 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             auto memberToTime =  static_cast<qreal>(member->end.count());
             auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
 
+            // Experimental***
+            if(activeThresholdREG){
+                long regLength = memberEffectiveToTime - memberEffectiveFromTime;
+                long timeFraction = (runtime/1000) * activeThresholdREG;
+                if(regLength<timeFraction)continue;
+            }
+            // Experimental***
+
             int IndicatorOffset = 0;
             auto rankRef = member->getLocation()->location_group().ref().get();
             auto threadRef = std::to_string(member->getLocation()->ref().get());

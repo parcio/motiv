@@ -61,7 +61,7 @@ private: // widgets
     TimelineView *view = nullptr;
 
     // Experimental***
-    enum Mode { proc, slow, fast };
+    enum Mode { perc, slow, fast };
     QLabel *modeLabel = nullptr;
     QSlider *modeSlider = nullptr;
     QSlider *modeIntensitySlider = nullptr;

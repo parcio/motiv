@@ -92,7 +92,7 @@ QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
         sliderLabelBox->addWidget(sliderLabel);
         sliderLabelBox->addWidget(sliderObj);
     } else {
-        if(this->modeLabel==nullptr)this->modeLabel = new QLabel("Mode:\nproc", this);
+        if(this->modeLabel==nullptr)this->modeLabel = new QLabel("Mode:\nperc", this);
         if(this->modeIntensitySlider==nullptr) this->modeIntensitySlider = new QSlider(Qt::Vertical, this);
         QFont font;
         font.setPointSize(8);
@@ -100,7 +100,7 @@ QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
         sliderObj->setRange(0, 2);
         sliderObj->setValue(0);
         // sliderObj->setFixedHeight(this->header->height()+8);
-        this->modeIntensitySlider->setRange(0, 3);
+        this->modeIntensitySlider->setRange(0, 5);
         // this->modeIntensitySlider->setFixedHeight(this->header->height()+8);
         // this->modeLabel->setFixedHeight(this->header->height()+8);
         this->modeLabel->setFixedWidth(this->labelList->width()-32);
@@ -132,8 +132,8 @@ void Timeline::addSliderTicks(){
 
 void Timeline::changeModeEvent(){
     switch(this->modeSlider->value()){
-        case Mode::proc: 
-            this->modeLabel->setText("Mode:\nproc");
+        case Mode::perc: 
+            this->modeLabel->setText("Mode:\nperc");
             this->modeLabel->setToolTip("f(x) = x");
             break;
         case Mode::slow:
@@ -151,18 +151,33 @@ void Timeline::changeModeEvent(){
 
 double Timeline::scaleSliderValue(int trueVal){
     int intensityValue = this->modeIntensitySlider->value();
-    double scaledVal;
+    double scaledVal, base, exponent, factor;
     switch(this->modeSlider->value()){
-        case Mode::proc: 
+        case Mode::perc: 
+            qInfo() << trueVal << "true ---> " << trueVal;
             return (double) trueVal;
         case Mode::slow:
             // This growth-factor was chosen because of 1.0069...^1000 approx 1000
-            scaledVal = (pow(1.006931669, trueVal) - 1)  * 1/pow(10, intensityValue);
+            scaledVal = (pow(1.006931669, trueVal) - 1)  * pow(trueVal/100, intensityValue)/pow(10, intensityValue);
+            qInfo() << trueVal << "slow (classic) ---> " << scaledVal;
+            scaledVal = (pow(1.006233959, trueVal) - 1) * 2;
+            qInfo() << trueVal << "slow (classic_pure) ---> " << scaledVal;
+            base = (1 + 6931669/(pow(10, 9+intensityValue)));
+            exponent = trueVal * pow(10, intensityValue) * trueVal/1000;
+            scaledVal = pow(base, exponent) - 1;
+            qInfo() << trueVal << "slow (new a) ---> " << scaledVal;
+            base = (1 + 6931669/(pow(10, 9+intensityValue)));
+            exponent = trueVal * pow(10, intensityValue) * trueVal/1000;
+            factor = pow(trueVal/100, intensityValue)/pow(10, intensityValue);
+            scaledVal = pow(base, exponent) * factor;
+            qInfo() << trueVal << "slow (new b) ---> " << scaledVal;
             return scaledVal;
         case Mode::fast:
             scaledVal = 1000.0 * std::pow(trueVal, intensityValue+1) / (std::pow(trueVal, intensityValue+1) + 10);
+            qInfo() << trueVal << "fast ---> " << scaledVal;
             return scaledVal;
     }
+    return 0;
 }
 
 void Timeline::changeOverviewEvent(){
