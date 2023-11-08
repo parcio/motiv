@@ -134,9 +134,8 @@ void TraceOverviewTimelineView::updateView() {
     this->scene()->clear();
 
     auto sceneRect = this->rect();
-    // Fomer calc: why -2?
-    //sceneRect.setHeight(size().height() - 2);
-    sceneRect.setHeight(size().height());
+    // With this -2 offset we can see all of the overview without the need to scroll
+    sceneRect.setHeight(size().height() - 2);
 
     this->scene()->setSceneRect(sceneRect);
     this->populateScene(this->scene());

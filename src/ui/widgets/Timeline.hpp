@@ -79,6 +79,7 @@ private: // methods
     void addSliderTicks();
     void changeModeEvent();
     double scaleSliderValue(int trueVal);
+    void hideSliderBox();
 // Experimental***
 
 private: // data

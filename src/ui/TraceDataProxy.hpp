@@ -123,6 +123,10 @@ public: Q_SIGNALS:
 
     void flamegraphRequest();
 
+    // Experimental***
+    void hideSlidersBoxRequest();
+    // Experimental***
+
     void triggerUITimerStartIfPossible();
     void triggerUITimerEndIfPossible();
 

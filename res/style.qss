@@ -29,3 +29,22 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0px;
 }
 
+
+QSlider::groove:vertical {
+    border: 1px solid #F5F5F5;
+    background: qradialgradient(cx:0.5, cy:0.5, radius:1, fx:0.5, fy:0.5, stop:0 #C0C0C0, stop:1 #FFFFFF);
+    width: 1px;
+    margin: 2px 0 2px 0;
+}
+
+QSlider::handle:vertical {
+    background: qradialgradient(cx:0.5, cy:0.5, radius:1, fx:0.5, fy:0.5, stop:0 #B0C4DE, stop:1 #D3D3D3);
+    border: 1px solid gray;
+    height: 9px;
+    width: 9px;
+    margin: -2px -6px;
+    border-radius: 2px;
+}
+
+
+

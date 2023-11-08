@@ -17,11 +17,13 @@
  */
 #include "Timeline.hpp"
 #include "src/models/ViewSettings.hpp"
+#include "src/ui/TraceDataProxy.hpp"
 #include "src/ui/views/TimelineView.hpp"
 #include "src/ui/widgets/TimelineHeader.hpp"
 #include "src/ui/windows/FlamegraphPopup.hpp"
 #include "src/ui/ScrollSynchronizer.hpp"
 
+#include <qaction.h>
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <qnamespace.h>
@@ -49,7 +51,10 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     // Experimental***
     this->prepareSlidersBoxLayouts();
     this->addSliderTicks();
-    layout->addWidget(this->slidersBox, 2, 0, 1, 2);  
+    layout->addWidget(this->slidersBox, 2, 0, 1, 2);
+
+    // Make the Box hideable via shortcut (the relevant action is located in MainWindow)
+    connect(this->data, &TraceDataProxy::hideSlidersBoxRequest, this, &Timeline::hideSliderBox);
     // Experimental***
 
     this->view = new TimelineView(this->data, this);
@@ -94,13 +99,17 @@ QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
     } else {
         if(this->modeLabel==nullptr)this->modeLabel = new QLabel("Mode:\nperc", this);
         if(this->modeIntensitySlider==nullptr) this->modeIntensitySlider = new QSlider(Qt::Vertical, this);
+        connect(this->modeIntensitySlider, &QSlider::valueChanged, this, [this]() {
+            this->changeModeEvent();
+        });
+        this->modeIntensitySlider->setDisabled(true);
         QFont font;
         font.setPointSize(8);
         this->modeLabel->setFont(font);
         sliderObj->setRange(0, 2);
         sliderObj->setValue(0);
         // sliderObj->setFixedHeight(this->header->height()+8);
-        this->modeIntensitySlider->setRange(0, 5);
+        this->modeIntensitySlider->setRange(0, 6);
         // this->modeIntensitySlider->setFixedHeight(this->header->height()+8);
         // this->modeLabel->setFixedHeight(this->header->height()+8);
         this->modeLabel->setFixedWidth(this->labelList->width()-32);
@@ -135,14 +144,17 @@ void Timeline::changeModeEvent(){
         case Mode::perc: 
             this->modeLabel->setText("Mode:\nperc");
             this->modeLabel->setToolTip("f(x) = x");
+            this->modeIntensitySlider->setDisabled(true);
             break;
         case Mode::slow:
             this->modeLabel->setText("Mode:\nslow");
-            this->modeLabel->setToolTip(QString("f(x) = (1.006931669^x - 1) * (1/10^%1)").arg(this->modeIntensitySlider->value()));
+            this->modeLabel->setToolTip(QString("f(x) = ((1 + 6931669/10^9+%1)^(x*x/1000*10^%1) - 1) * ((x/100)^%1/10^%1)").arg(this->modeIntensitySlider->value()));
+            this->modeIntensitySlider->setDisabled(false);
             break;
         case Mode::fast:
             this->modeLabel->setText("Mode:\nfast");
             this->modeLabel->setToolTip(QString("f(x) = 1000 * (x^(%1+1))/(x^(%1+1)+10)").arg(this->modeIntensitySlider->value()));
+            this->modeIntensitySlider->setDisabled(false);
             break;
     }
     this->changeOverviewEvent();
@@ -154,27 +166,24 @@ double Timeline::scaleSliderValue(int trueVal){
     double scaledVal, base, exponent, factor;
     switch(this->modeSlider->value()){
         case Mode::perc: 
-            qInfo() << trueVal << "true ---> " << trueVal;
             return (double) trueVal;
         case Mode::slow:
-            // This growth-factor was chosen because of 1.0069...^1000 approx 1000
-            scaledVal = (pow(1.006931669, trueVal) - 1)  * pow(trueVal/100, intensityValue)/pow(10, intensityValue);
-            qInfo() << trueVal << "slow (classic) ---> " << scaledVal;
-            scaledVal = (pow(1.006233959, trueVal) - 1) * 2;
-            qInfo() << trueVal << "slow (classic_pure) ---> " << scaledVal;
-            base = (1 + 6931669/(pow(10, 9+intensityValue)));
-            exponent = trueVal * pow(10, intensityValue) * trueVal/1000;
-            scaledVal = pow(base, exponent) - 1;
-            qInfo() << trueVal << "slow (new a) ---> " << scaledVal;
-            base = (1 + 6931669/(pow(10, 9+intensityValue)));
-            exponent = trueVal * pow(10, intensityValue) * trueVal/1000;
-            factor = pow(trueVal/100, intensityValue)/pow(10, intensityValue);
-            scaledVal = pow(base, exponent) * factor;
-            qInfo() << trueVal << "slow (new b) ---> " << scaledVal;
+            if(trueVal==1000) {
+                scaledVal=trueVal;
+            } else {
+                // This growth-factor was chosen because of 1.0069...^1000 approx 1000
+                base = (1 + 6931669/(pow(10, 9+intensityValue)));
+                exponent = trueVal * pow(10, intensityValue) * trueVal/1000;
+                factor = pow(trueVal/100, intensityValue)/pow(10, intensityValue);
+                scaledVal = (pow(base, exponent) - 1) * factor;
+            }
             return scaledVal;
         case Mode::fast:
-            scaledVal = 1000.0 * std::pow(trueVal, intensityValue+1) / (std::pow(trueVal, intensityValue+1) + 10);
-            qInfo() << trueVal << "fast ---> " << scaledVal;
+            if(trueVal==1000) {
+                scaledVal=trueVal;
+            } else {
+                scaledVal = 1000.0 * std::pow(trueVal, intensityValue+1) / (std::pow(trueVal, intensityValue+1) + 10);
+            }
             return scaledVal;
     }
     return 0;
@@ -240,4 +249,7 @@ void Timeline::prepareSlidersBoxLayouts(){
     this->slidersBox->setMaximumHeight(86);
 }
 
+void Timeline::hideSliderBox(){
+    this->slidersBox->isHidden() ? this->slidersBox->setHidden(false) : this->slidersBox->setHidden(true);
+}
 // Experimental***

@@ -57,7 +57,8 @@ TimelineView::TimelineView(TraceDataProxy *data, QWidget *parent) : QGraphicsVie
 
 void TimelineView::populateScene(QGraphicsScene *scene) {
     this->data->triggerUITimerStartIfPossible();
-    auto width = scene->width();
+    // This -5 offset removes the tiny scrollable area to the right
+    auto width = scene->width() - 5;
     auto selection = this->data->getSelection();
     auto runtime = selection->getRuntime().count();
     auto runtimeR = static_cast<qreal>(runtime);
@@ -436,7 +437,8 @@ void TimelineView::updateView() {
         sceneHeightOffset+=threadMap.first*(threadMap.second.size()-1)*ROW_HEIGHT;
     }
     auto sceneRect = this->rect();
-    sceneRect.setHeight(sceneHeight+sceneHeightOffset);
+    // The -2 offset fixes the tiny discrepancy in scrollable space between labels and scene
+    sceneRect.setHeight(sceneHeight+sceneHeightOffset - 2);
     this->scene()->setSceneRect(sceneRect);
     this->populateScene(this->scene());
 }

@@ -68,7 +68,7 @@ SettingsPopup::SettingsPopup(TraceDataProxy *data, QWidget *parent):QDialog(pare
     // Show settings for flamegraphs (rendered via FlamegraphView)
     
     // General - start
-    auto flamegraphWindowGeneralSettings = new QGroupBox(tr("Main window - general"));
+    auto flamegraphWindowGeneralSettings = new QGroupBox(tr("Flamegraphs - general"));
     useRealWidthFlamegraph = new QCheckBox(tr("Use real width for regions/functions"));
     useRealWidthFlamegraph->setChecked(settings->getUseRealWidthFlamegraph());
 
