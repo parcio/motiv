@@ -1,0 +1,53 @@
+Interlines: 4096 
+Iterations: 1000
+
+PARTDIFF_TEST_RUN: 3 
+Nodes: 1 
+Tasks: 16 
+Threads_per_task: 1
+Submitted batch job 419285
+
+
+
+
+Coverage Output
+N: 32776
+
+Process:  0 / 16  |  Coverage-Indexes (S-E):     1 - 2049   |  Covarage-Lines:  2048  |  Covarage-Percantage: 6.2485 %
+Process:  1 / 16  |  Coverage-Indexes (S-E):  2049 - 4097   |  Covarage-Lines:  2048  |  Covarage-Percantage: 6.2485 %
+Process:  2 / 16  |  Coverage-Indexes (S-E):  4097 - 6146   |  Covarage-Lines:  2049  |  Covarage-Percantage: 6.2515 %
+Process:  3 / 16  |  Coverage-Indexes (S-E):  6146 - 8194   |  Covarage-Lines:  2048  |  Covarage-Percantage: 6.2485 %
+Process:  4 / 16  |  Coverage-Indexes (S-E):  8194 - 10243  |  Covarage-Lines:  2049  |  Covarage-Percantage: 6.2515 %
+Process:  5 / 16  |  Coverage-Indexes (S-E): 10243 - 12291  |  Covarage-Lines:  2048  |  Covarage-Percantage: 6.2485 %
+Process:  6 / 16  |  Coverage-Indexes (S-E): 12291 - 14340  |  Covarage-Lines:  2049  |  Covarage-Percantage: 6.2515 %
+Process:  7 / 16  |  Coverage-Indexes (S-E): 14340 - 16388  |  Covarage-Lines:  2048  |  Covarage-Percantage: 6.2485 %
+Process:  8 / 16  |  Coverage-Indexes (S-E): 16388 - 18437  |  Covarage-Lines:  2049  |  Covarage-Percantage: 6.2515 %
+Process:  9 / 16  |  Coverage-Indexes (S-E): 18437 - 20485  |  Covarage-Lines:  2048  |  Covarage-Percantage: 6.2485 %
+Process: 10 / 16  |  Coverage-Indexes (S-E): 20485 - 22534  |  Covarage-Lines:  2049  |  Covarage-Percantage: 6.2515 %
+Process: 11 / 16  |  Coverage-Indexes (S-E): 22534 - 24582  |  Covarage-Lines:  2048  |  Covarage-Percantage: 6.2485 %
+Process: 12 / 16  |  Coverage-Indexes (S-E): 24582 - 26631  |  Covarage-Lines:  2049  |  Covarage-Percantage: 6.2515 %
+Process: 13 / 16  |  Coverage-Indexes (S-E): 26631 - 28679  |  Covarage-Lines:  2048  |  Covarage-Percantage: 6.2485 %
+Process: 14 / 16  |  Coverage-Indexes (S-E): 28679 - 30728  |  Covarage-Lines:  2049  |  Covarage-Percantage: 6.2515 %
+Process: 15 / 16  |  Coverage-Indexes (S-E): 30728 - 32776  |  Covarage-Lines:  2048  |  Covarage-Percantage: 6.2485 %
+
+
+Berechnungszeit:    638.058400 s
+Speicherbedarf:     16393.001236 MiB
+Avg. rows/process:  2048.437500
+Berechnungsmethode: Jacobi
+Interlines:         4096
+Stoerfunktion:      f(x,y) = 2 * pi^2 * sin(pi * x) * sin(pi * y)
+Terminierung:       Anzahl der Iterationen
+Anzahl Iterationen: 1000
+Norm des Fehlers:   4.593628e-09
+
+Matrix:
+0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 
+0.0000000000000000 0.0000006725671660 0.0000012427420777 0.0000016237207737 0.0000017575027009 0.0000016237207737 0.0000012427420777 0.0000006725671660 0.0000000000000000 
+0.0000000000000000 0.0000012429105741 0.0000022965992802 0.0000030006515647 0.0000032478818495 0.0000030006515647 0.0000022965992802 0.0000012429105741 0.0000000000000000 
+0.0000000000000000 0.0000016240321143 0.0000030008200611 0.0000039207603560 0.0000042438004286 0.0000039207603560 0.0000030008200611 0.0000016240321143 0.0000000000000000 
+0.0000000000000000 0.0000017579094870 0.0000032481931901 0.0000042439689249 0.0000045936388626 0.0000042439689249 0.0000032481931901 0.0000017579094870 0.0000000000000000 
+0.0000000000000000 0.0000016241610758 0.0000030010583508 0.0000039210716966 0.0000042441374212 0.0000039210716966 0.0000030010583508 0.0000016241610758 0.0000000000000000 
+0.0000000000000000 0.0000012431488639 0.0000022970395824 0.0000030012268472 0.0000032485045307 0.0000030012268472 0.0000022970395824 0.0000012431488639 0.0000000000000000 
+0.0000000000000000 0.0000006728785066 0.0000012433173602 0.0000016244724164 0.0000017583162731 0.0000016244724164 0.0000012433173602 0.0000006728785066 0.0000000000000000 
+0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 0.0000000000000000 

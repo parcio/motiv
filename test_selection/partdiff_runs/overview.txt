@@ -1,0 +1,57 @@
+Alle Runs:
+	4096 Interlines
+
+
+
+
+Run_1 - Run_3:
+	10 Iterationen
+	1 Node
+	
+	Run_1:
+		4 Prozesse
+		1 Thread
+		
+	Run_2:
+		4 Prozesse
+		4 Threads
+		
+	Run_3:
+		16 Prozesse
+		1 Thread
+
+
+
+
+Run_4 - Run_6:
+	10 Iterationen
+	
+	Run_4:
+		4 Nodes
+		4 Prozesse
+		1 Thread
+		
+	Run_5:
+		4 Nodes
+		4 Prozesse
+		4 Threads
+		
+	Run_6:
+		7 Nodes (eine Node war allokiert, deshalb keine 8)
+		16 Prozesse
+		1 Thread
+
+
+
+
+Run_7 - Run_8:
+	1000 Iterationen
+	1 Node
+	
+	Run_7:
+		4 Prozesse
+		4 Thread
+		
+	Run_8:
+		16 Prozesse
+		1 Threads
