@@ -156,12 +156,10 @@ void MainWindow::createMenus() {
     if(!this->settingsWindow) this->settingsWindow = new SettingsPopup(this->data, this);
     connect(settingsWindowAction, &QAction::triggered, this->settingsWindow, &SettingsPopup::show);
 
-    // Experimental***
     auto hideSlidersBoxAction = new QAction(tr("Sliders"), this);
     // Makes the slidersBox hideable
     hideSlidersBoxAction->setShortcut(tr("F3"));
     connect(hideSlidersBoxAction, &QAction::triggered, this->data, &TraceDataProxy::hideSlidersBoxRequest);
-    // Experimental***
 
     auto widgetMenuCustomColors = new QMenu(tr("Custom Colors"));
 

@@ -69,13 +69,11 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
             // Ensures slots ending after `end` (like main) are considered to end at end
             auto effectiveEndTime = qMin(end, endTime);
 
-            // Experimental***
             if(activeThresholdOV){
-                long regLength = effectiveEndTime - effectiveStartTime;
-                long timeFraction = (runtime/1000) * activeThresholdOV;
+                long regLength = endTime - startTime;
+                long timeFraction = (runtime/1000.0) * activeThresholdOV;
                 if(regLength<timeFraction)continue;
             }
-            // Experimental***
 
             auto slotBeginPos = qMax(0.0,
                                      (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) *

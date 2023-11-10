@@ -1,7 +1,9 @@
 QToolTip {
     background-color: black;
     color: white;
-    border: black solid 1px
+    border: 1px outset #8A8A8A;
+    padding: 1px;
+    font-size: 11pt;
 }
 
 QScrollBar:vertical {

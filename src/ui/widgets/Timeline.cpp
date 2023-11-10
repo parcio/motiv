@@ -17,6 +17,7 @@
  */
 #include "Timeline.hpp"
 #include "src/models/ViewSettings.hpp"
+#include "src/ui/TimeUnit.hpp"
 #include "src/ui/TraceDataProxy.hpp"
 #include "src/ui/views/TimelineView.hpp"
 #include "src/ui/widgets/TimelineHeader.hpp"
@@ -48,14 +49,14 @@ Timeline::Timeline(TraceDataProxy *data, QWidget *parent) : QWidget(parent), dat
     // We don't want to have the context menu for layout elements in the label region
     this->labelList->setContextMenuPolicy(Qt::PreventContextMenu);
 
-    // Experimental***
     this->prepareSlidersBoxLayouts();
     this->addSliderTicks();
     layout->addWidget(this->slidersBox, 2, 0, 1, 2);
 
     // Make the Box hideable via shortcut (the relevant action is located in MainWindow)
     connect(this->data, &TraceDataProxy::hideSlidersBoxRequest, this, &Timeline::hideSliderBox);
-    // Experimental***
+    // It's not enough to update the tooltips alongside slider changes, if the selection changes we have to consider new time values
+    connect(this->data, &TraceDataProxy::selectionChanged, this, &Timeline::updateAllTooltips);
 
     this->view = new TimelineView(this->data, this);
     QBrush backgroundPattern = QBrush(QColorConstants::Svg::silver, Qt::Dense7Pattern);
@@ -78,7 +79,6 @@ void Timeline::showFlamegraphPopup(){
     flamegraph->openFlamegraphWindow();
 }
 
-// Experimental***
 QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
 
     QHBoxLayout* sliderLabelBox = new QHBoxLayout();
@@ -90,9 +90,13 @@ QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
         sliderLabel->setFont(font);
         sliderLabel->setFixedWidth(24);
         sliderLabel->setFixedHeight(32);
+        sliderLabel->setToolTip(QString("Active threshold slider for %1").arg(this->giveElementDescr(sliderObj->objectName())));
         sliderObj->setRange(0, 1000);
         sliderObj->setValue(0);
         sliderObj->setFixedHeight(32);
+        sliderObj->setToolTip("No active threshold");
+        // We don't want to rush a user to read possibly complex tooltips: 600*10^3 msec => 10 min 
+        sliderObj->setToolTipDuration(600000);
 
         sliderLabelBox->addWidget(sliderLabel);
         sliderLabelBox->addWidget(sliderObj);
@@ -108,10 +112,9 @@ QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
         this->modeLabel->setFont(font);
         sliderObj->setRange(0, 2);
         sliderObj->setValue(0);
-        // sliderObj->setFixedHeight(this->header->height()+8);
+        sliderObj->setToolTip("Mode control");
         this->modeIntensitySlider->setRange(0, 6);
-        // this->modeIntensitySlider->setFixedHeight(this->header->height()+8);
-        // this->modeLabel->setFixedHeight(this->header->height()+8);
+        this->modeIntensitySlider->setToolTip("Intensity control\ne.g. higher value means even slower growth in slow mode");
         this->modeLabel->setFixedWidth(this->labelList->width()-32);
 
 
@@ -148,7 +151,7 @@ void Timeline::changeModeEvent(){
             break;
         case Mode::slow:
             this->modeLabel->setText("Mode:\nslow");
-            this->modeLabel->setToolTip(QString("f(x) = ((1 + 6931669/10^9+%1)^(x*x/1000*10^%1) - 1) * ((x/100)^%1/10^%1)").arg(this->modeIntensitySlider->value()));
+            this->modeLabel->setToolTip(QString("f(x) = ((1 + 6931669/10^(9+%1))^(x*(x/1000)*10^%1) - 1) * ((x/100)^%1/10^%1)").arg(this->modeIntensitySlider->value()));
             this->modeIntensitySlider->setDisabled(false);
             break;
         case Mode::fast:
@@ -161,6 +164,14 @@ void Timeline::changeModeEvent(){
     this->changeMainviewEvent();
 }
 
+QString Timeline::giveElementDescr(QString compactName){
+    if(compactName=="OV") return "regions/functions in overview";
+    if(compactName=="REG") return "regions/functions";
+    if(compactName=="P2P") return "point-to-point communications";
+    if(compactName=="CCM") return "collective communications";
+    return "unkown";
+}
+
 double Timeline::scaleSliderValue(int trueVal){
     int intensityValue = this->modeIntensitySlider->value();
     double scaledVal, base, exponent, factor;
@@ -168,13 +179,14 @@ double Timeline::scaleSliderValue(int trueVal){
         case Mode::perc: 
             return (double) trueVal;
         case Mode::slow:
+            // This is only needed because of the -1 in the final scaledVal calc, which caps the value at 999 rather than 1000
             if(trueVal==1000) {
                 scaledVal=trueVal;
             } else {
                 // This growth-factor was chosen because of 1.0069...^1000 approx 1000
                 base = (1 + 6931669/(pow(10, 9+intensityValue)));
-                exponent = trueVal * pow(10, intensityValue) * trueVal/1000;
-                factor = pow(trueVal/100, intensityValue)/pow(10, intensityValue);
+                exponent = trueVal * pow(10, intensityValue) * trueVal/1000.0;
+                factor = pow(trueVal/100.0, intensityValue)/pow(10, intensityValue);
                 scaledVal = (pow(base, exponent) - 1) * factor;
             }
             return scaledVal;
@@ -192,15 +204,40 @@ double Timeline::scaleSliderValue(int trueVal){
 void Timeline::changeOverviewEvent(){
     auto settings = ViewSettings::getInstance();
     settings->setActiveThresholdOV(this->scaleSliderValue(this->thresholdSliderOV->value()));
+    auto fullTime = this->data->getTotalRuntime().count();
+    this->updateTooltip(this->thresholdSliderOV, settings->getActiveThresholdOV(), fullTime);
     Q_EMIT data->refreshOverviewRequest();
 }
 
 void Timeline::changeMainviewEvent(){
     auto settings = ViewSettings::getInstance();
-    settings->setActiveThresholdREG(this->scaleSliderValue(this->thresholdSliderREG->value()));
+    settings->setActiveThresholdREG(this->scaleSliderValue(this->thresholdSliderREG->value()));   
     settings->setActiveThresholdP2P(this->scaleSliderValue(this->thresholdSliderP2P->value()));
     settings->setActiveThresholdCCM(this->scaleSliderValue(this->thresholdSliderCCM->value()));
+    this->updateAllTooltips();
     this->view->updateView();
+}
+
+void Timeline::updateAllTooltips(){
+    auto settings = ViewSettings::getInstance();
+    auto fullTime = this->data->getSelection()->getDuration().count();
+    this->updateTooltip(this->thresholdSliderREG, settings->getActiveThresholdREG(), fullTime);
+    this->updateTooltip(this->thresholdSliderP2P, settings->getActiveThresholdP2P(), fullTime);
+    this->updateTooltip(this->thresholdSliderCCM, settings->getActiveThresholdCCM(), fullTime);
+}
+
+void Timeline::updateTooltip(QSlider* sliderObj, double currentScaledValue, long fullTime){
+
+    QString relativeToWhat = "current selection size";
+    if(sliderObj->objectName()=="OV") relativeToWhat = "full trace size";
+
+    if(sliderObj->value()){
+        QString activeFilterMsg = QString("Active threshold:\n%1 < %2 [ns] are ignored!\nwhich is %3\% of the %4 %5 [ns]").arg(this->giveElementDescr(sliderObj->objectName())).arg(fullTime*currentScaledValue/1000.0).arg(currentScaledValue/10.0).arg(relativeToWhat).arg((double)fullTime);
+        QString activeFilterMsgFull = QString("Active threshold:\n%1 < %4 %5 [ns] are ignored!").arg(this->giveElementDescr(sliderObj->objectName())).arg(relativeToWhat).arg((double)fullTime);
+        sliderObj->value() < 1000 ? sliderObj->setToolTip(activeFilterMsg) : sliderObj->setToolTip(activeFilterMsgFull);
+    } else {
+        sliderObj->setToolTip("No active threshold");
+    }
 }
 
 void Timeline::prepareSlidersBoxLayouts(){
@@ -252,4 +289,3 @@ void Timeline::prepareSlidersBoxLayouts(){
 void Timeline::hideSliderBox(){
     this->slidersBox->isHidden() ? this->slidersBox->setHidden(false) : this->slidersBox->setHidden(true);
 }
-// Experimental***

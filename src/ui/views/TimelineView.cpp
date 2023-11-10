@@ -90,11 +90,9 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     bool countIndicatorsCCM = settings->getCountIndicatorsCCM();
     bool useRealWidth = settings->getUseRealWidthMainWindow();
 
-    // Experimental***
     auto activeThresholdREG = settings->getActiveThresholdREG();
     auto activeThresholdP2P = settings->getActiveThresholdP2P();
     auto activeThresholdCCM = settings->getActiveThresholdCCM();
-    // Experimental***
 
     for (const auto &item: selection->getSlots()) {
 
@@ -139,13 +137,11 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                 // Ensures slots ending after `end` (like main) are considered to end at end
                 auto effectiveEndTime = qMin(end, endTime);
 
-                // Experimental***
                 if(activeThresholdREG){
-                    long regLength = effectiveEndTime - effectiveStartTime;
-                    long timeFraction = (runtime/1000) * activeThresholdREG;
+                    long regLength = endTime - startTime;
+                    long timeFraction = (runtime/1000.0) * activeThresholdREG;
                     if(regLength<timeFraction)continue;
                 }
-                // Experimental***
 
                 auto slotBeginPos = (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) * width;
                 auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
@@ -213,13 +209,11 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto toTime = endEventStart + (endEventEnd - endEventStart) / 2;
         auto effectiveToTime = qMin(endR, toTime) - beginR;
 
-        // Experimental***
         if(activeThresholdP2P){
-            long commLength = effectiveToTime - effectiveFromTime;
-            long timeFraction = (runtime/1000) * activeThresholdP2P;
+            long commLength = toTime - fromTime;
+            long timeFraction = (runtime/1000.0) * activeThresholdP2P;
             if(commLength<timeFraction)continue;
         }
-        // Experimental***
 
         /*
         This is the original way to get rank references:
@@ -279,7 +273,8 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto rankNameTo = endEvent->getLocation()->location_group().name().str();
         auto threadNameTo = endEvent->getLocation()->name().str();
 
-        QString Info = QString::fromStdString("From:\t"+rankNameFrom+"\n\t"+threadNameFrom+"\nTo:\t"+rankNameTo+"\n\t"+threadNameTo);
+        
+        QString Info = QString::fromStdString("From:\t"+rankNameFrom+" @ "+threadNameFrom+"\nTo:\t"+rankNameTo+" @ "+threadNameTo);
 
         auto fromX = effectiveFromTime / runtimeR * width;
         auto fromY = static_cast<qreal>(fromRank * ROW_HEIGHT) + .5 * ROW_HEIGHT + 20 + fromOffset;
@@ -310,13 +305,11 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto toTime = static_cast<qreal>(communication->getEndTime().count());
         auto effectiveToTime = qMin(endR, toTime) - beginR;
 
-        // Experimental***
         if(activeThresholdCCM){
-            long commLength = effectiveToTime - effectiveFromTime;
-            long timeFraction = (runtime/1000) * activeThresholdCCM;
+            long commLength = toTime - fromTime;
+            long timeFraction = (runtime/1000.0) * activeThresholdCCM;
             if(commLength<timeFraction)continue;
         }
-        // Experimental***
 
         auto fromX = (effectiveFromTime / runtimeR) * width;
         auto fromY = 10;
@@ -339,13 +332,11 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             auto memberToTime =  static_cast<qreal>(member->end.count());
             auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
 
-            // Experimental***
             if(activeThresholdREG){
-                long regLength = memberEffectiveToTime - memberEffectiveFromTime;
-                long timeFraction = (runtime/1000) * activeThresholdREG;
+                long regLength = memberToTime - memberFromTime;
+                long timeFraction = (runtime/1000.0) * activeThresholdREG;
                 if(regLength<timeFraction)continue;
             }
-            // Experimental***
 
             int IndicatorOffset = 0;
             auto rankRef = member->getLocation()->location_group().ref().get();

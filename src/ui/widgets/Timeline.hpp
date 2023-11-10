@@ -50,17 +50,14 @@ public:
 
 public Q_SLOTS:
     void showFlamegraphPopup();
-    // Experimental***
     void changeOverviewEvent();
     void changeMainviewEvent();
-    // Experimental***
 
 private: // widgets
     // TimelineHeader *header = nullptr;
     TimelineLabelList *labelList = nullptr;
     TimelineView *view = nullptr;
 
-    // Experimental***
     enum Mode { perc, slow, fast };
     QLabel *modeLabel = nullptr;
     QSlider *modeSlider = nullptr;
@@ -70,17 +67,17 @@ private: // widgets
     QSlider *thresholdSliderP2P = nullptr;
     QSlider *thresholdSliderCCM = nullptr;
     QGroupBox *slidersBox = nullptr;
-    // Experimental***  
 
-// Experimental***
 private: // methods
     QHBoxLayout* prepareSlider(QSlider* thresholdSlider, QString Name);
     void prepareSlidersBoxLayouts();
     void addSliderTicks();
     void changeModeEvent();
+    void updateAllTooltips();
+    QString giveElementDescr(QString compactName);
+    void updateTooltip(QSlider* sliderObj, double currentScaledValue, long fullTime);
     double scaleSliderValue(int trueVal);
     void hideSliderBox();
-// Experimental***
 
 private: // data
     TraceDataProxy *data = nullptr;
