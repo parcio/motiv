@@ -39,16 +39,20 @@ SettingsPopup::SettingsPopup(TraceDataProxy *data, QWidget *parent):QDialog(pare
     // General - start
     auto mainWindowGeneralSettings = new QGroupBox(tr("Main window - general"));
     useRealWidthMainWindow = new QCheckBox(tr("Use real width for regions/functions"));
-    useRealWidthMainWindow->setToolTip("If this option is unchecked you will have:\n\t* generally easier navigation, since functions are then limited in their minimum size and thus can't get extremly tiny\n\t* visible function collisions, especially if the option below (use of priority levels) is also unchecked");
+    useRealWidthMainWindow->setToolTip("If this option is unchecked you will have:\n\t* Generally easier navigation, since functions are then limited in their minimum size and thus can't get extremly tiny\n\t* visible function collisions, especially if the option below (use of priority levels) is also unchecked!");
+    useRealWidthMainWindow->setToolTipDuration(600000);
     useRealWidthMainWindow->setChecked(settings->getUseRealWidthMainWindow());
     usePriorityOverview = new QCheckBox(tr("Use priority levels to elevate functions/regions"));
-    usePriorityOverview->setToolTip("If this option is unchecked functions will have their priority based on their length only: priority <=> 1/duration, which means smaller duration <=> higher priority!");
+    usePriorityOverview->setToolTip("If this option is unchecked functions will have their priority based on their length only: \npriority <=> 1/duration, which means smaller duration <=> higher priority!");
+    usePriorityOverview->setToolTipDuration(600000);
     usePriorityOverview->setChecked(settings->getUsePriorityOverview());
     absoluteDurationsForSliders = new QCheckBox(tr("Use absolute durations for active threshold sliders"));
-    absoluteDurationsForSliders->setToolTip("For example: assuming that a function runs for 5 min but our current selection only shows the first half,\nis this function visible with an active threshold of 3 min?\n\n\t* IF this checkbox is checked we will compare 5min (absolute duration) < 3min, which is false => the function will be invisible!\n\n\t* Otherwise we will compare 2.5min (drawn duration) < 3min, which is true => it will be visible!");
+    absoluteDurationsForSliders->setToolTip("For example: assuming that a function runs for 5 min but our current selection only shows the first half,\nis this function visible with an active threshold equal to 3 min?\n\n\t* IF this checkbox is checked we will compare 5min (absolute duration) < 3min, which is false => the function will be invisible!\n\n\t* Otherwise we will compare 2.5min (drawn duration) < 3min, which is true => it will be visible!");
+    absoluteDurationsForSliders->setToolTipDuration(600000);
     absoluteDurationsForSliders->setChecked(settings->getAbsoluteDurationsForSliders());
-    useREGSliderForOV = new QCheckBox(tr("Use the active threshold slider for regions/functions for the overview"));
-    useREGSliderForOV->setToolTip("This allows a more synchronized relationship between overview and selection, altough there are possible downsides:\nThe filter process via the OV-slider doesn't depend on the selection width, with this option checked the overview might change drastically with zoom or selection events!\n\nHint: it's possible to move through the trace with a constant selection width via Shift+Scrolling");
+    useREGSliderForOV = new QCheckBox(tr("Use the active threshold slider REG for selection *and* overview"));
+    useREGSliderForOV->setToolTip("This allows a more synchronized relationship between overview and selection, although there are possible downsides:\nThe filter process via the OV-slider doesn't depend on the selection width, with this option checked the overview might change drastically with zoom or selection events!\n\nHint: It's possible to move through the trace with a constant selection width via Shift+Scrolling.");
+    useREGSliderForOV->setToolTipDuration(600000);
     useREGSliderForOV->setChecked(settings->getUseREGSliderForOV());
 
     auto mainWindowGeneralSettingsLayout = new QVBoxLayout();
@@ -84,7 +88,8 @@ SettingsPopup::SettingsPopup(TraceDataProxy *data, QWidget *parent):QDialog(pare
     // General - start
     auto flamegraphWindowGeneralSettings = new QGroupBox(tr("Flamegraphs - general"));
     useRealWidthFlamegraph = new QCheckBox(tr("Use real width for regions/functions"));
-    useRealWidthFlamegraph->setToolTip("Unchecking this option is not recommended: while it appears to be a similar trade-off like the one in the main window (easier navigation for possible collisions), \nwe actually might have even worse navigation, because the collisions can cause false call hierarchies!");
+    useRealWidthFlamegraph->setToolTip("Unchecking this option is not recommended: \nWhile it appears to be a similar trade-off like the one in the main window (easier navigation for possible collisions), \nwe actually might have even worse navigation, because the collisions can cause false call hierarchies!");
+    useRealWidthFlamegraph->setToolTipDuration(600000);
     useRealWidthFlamegraph->setChecked(settings->getUseRealWidthFlamegraph());
 
     auto flamegraphWindowGeneralSettingsLayout = new QVBoxLayout();
@@ -98,7 +103,8 @@ SettingsPopup::SettingsPopup(TraceDataProxy *data, QWidget *parent):QDialog(pare
     countIndicatorDetailsFlamegraph = new QCheckBox(tr("Show missing regions/functions-traces by name"));
     countIndicatorDetailsFlamegraph->setChecked(settings->getCountIndicatorDetailsFlamegraph());
     useThresholdFlamegraph = new QCheckBox(tr("Use 1px-threshold for drawing"));
-    useThresholdFlamegraph->setToolTip("Unchecking this option is not recommended: to stack functions that are very close to each other and smaller than this can cause false hierarchies");
+    useThresholdFlamegraph->setToolTip("Unchecking this option is not recommended: \nTo stack functions that are very close to each other and smaller than this can cause false hierarchies");
+    useThresholdFlamegraph->setToolTipDuration(600000);
     useThresholdFlamegraph->setChecked(settings->getPxThresholdFlamegraph());
 
     auto flamegraphWindowPerformanceSettingsLayout = new QVBoxLayout();

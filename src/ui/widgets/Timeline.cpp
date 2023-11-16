@@ -110,6 +110,7 @@ QHBoxLayout* Timeline::prepareSlider(QSlider* sliderObj, QString Name = ""){
         QFont font;
         font.setPointSize(8);
         this->modeLabel->setFont(font);
+        this->modeLabel->setToolTipDuration(600000);
         sliderObj->setRange(0, 2);
         sliderObj->setValue(0);
         sliderObj->setToolTip("Mode control");
@@ -161,7 +162,7 @@ void Timeline::changeModeEvent(){
             this->modeIntensitySlider->setDisabled(false);
             break;
     }
-    this->changeOverviewEvent();
+    if(!ViewSettings::getInstance()->getUseREGSliderForOV())this->changeOverviewEvent();
     this->changeMainviewEvent();
 }
 
@@ -226,6 +227,7 @@ void Timeline::changeMainviewEvent(){
 void Timeline::updateAllTooltips(){
     auto settings = ViewSettings::getInstance();
     auto fullTime = this->data->getSelection()->getDuration().count();
+    // The OV-update is handled in Timeline::changeOverviewEvent
     this->updateTooltip(this->thresholdSliderREG, settings->getActiveThresholdREG(), fullTime);
     this->updateTooltip(this->thresholdSliderP2P, settings->getActiveThresholdP2P(), fullTime);
     this->updateTooltip(this->thresholdSliderCCM, settings->getActiveThresholdCCM(), fullTime);
