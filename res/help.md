@@ -3,12 +3,14 @@
 - View related options: F1 (filter), F2 (settings), F3 (active thresholds)
 - Zoom out: Space
 - Zoom in: 
-   - double click (regarding indicators)
+   - double click (onto indicators)
    - CTRL+scroll
 - Move left/right: Shift+scroll
 - Search: CTRL+S
 #### Notable interactions
-- Making a Selection: click, hold the button and drag (overview) to the left or right to select the required section
+- Making a selection: 
+   - Click, hold the button and drag (overview) to the left or right to select the required section
+   - Input the start and / or end time in the fields at the bottom of the view and press ENTER
 - Multi-threading view: +/- icons near ranknames
 - Flamegraph view: right click (context menu) onto ranknames
 - Toggle P2P (in and out): right click (context menu) onto ranknames
