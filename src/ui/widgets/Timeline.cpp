@@ -148,6 +148,7 @@ void Timeline::changeModeEvent(){
             this->modeLabel->setText("Mode:\nperc");
             this->modeLabel->setToolTip("f(x) = x");
             this->modeIntensitySlider->setDisabled(true);
+            this->modeIntensitySlider->setValue(0);
             break;
         case Mode::slow:
             this->modeLabel->setText("Mode:\nslow");
@@ -216,6 +217,10 @@ void Timeline::changeMainviewEvent(){
     settings->setActiveThresholdCCM(this->scaleSliderValue(this->thresholdSliderCCM->value()));
     this->updateAllTooltips();
     this->view->updateView();
+    if(settings->getUseREGSliderForOV()){
+        this->thresholdSliderOV->setToolTip("currently not used!");
+        Q_EMIT data->refreshOverviewRequest();
+    } 
 }
 
 void Timeline::updateAllTooltips(){

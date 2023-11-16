@@ -100,6 +100,8 @@ public:
     void setUseBorderOverview(bool newState);
     void setUsePriorityOverview(bool newState);
     void setColorCodingTimeRecords(bool newState);
+    void setAbsoluteDurationsForSliders(bool newState);
+    void setUseREGSliderForOV(bool newState);
 
     void setActiveThresholdOV(double newVal);
     void setActiveThresholdREG(double newVal);
@@ -116,6 +118,8 @@ public:
     bool getUseBorderOverview();
     bool getUsePriorityOverview();
     bool getColorCodingTimeRecords();
+    bool getAbsoluteDurationsForSliders();
+    bool getUseREGSliderForOV();
 
     double getActiveThresholdOV();
     double getActiveThresholdREG();
@@ -174,6 +178,8 @@ private:
     bool useBorderOverview=true;
     bool usePriorityOverview=true;
     bool colorCodingTimeRecords=true;
+    bool absoluteDurationsForSliders=true;
+    bool useREGSliderForOV=false;
 
     double activeThresholdOV=0;
     double activeThresholdREG=0;

@@ -40,27 +40,29 @@ private: // widgets
     //QDialog *PerformancePopupWindow = nullptr;
     TraceDataProxy *data = nullptr;
 
+    // Main window general settings
+    QCheckBox *useRealWidthMainWindow = nullptr;
+    QCheckBox *usePriorityOverview = nullptr;
+
     // Main window performance settings
     QCheckBox *countIndicatorsREG = nullptr;
     QCheckBox *countIndicatorsP2P = nullptr;
     QCheckBox *countIndicatorsCCM = nullptr;
 
-    // Main window general settings
-    QCheckBox *useRealWidthMainWindow = nullptr;
+    // Flamegraph general settings
+    QCheckBox *useRealWidthFlamegraph = nullptr;
 
     // Flamegraph performance settings
     QCheckBox *countIndicatorDetailsFlamegraph = nullptr;
     QCheckBox *useThresholdFlamegraph = nullptr;
 
-    // Flamegraph general settings
-    QCheckBox *useRealWidthFlamegraph = nullptr;
-
     // Overview
     QCheckBox *useBorderOverview = nullptr;
-    QCheckBox *usePriorityOverview = nullptr;
 
     // Misc
     QCheckBox *colorCodingTimeRecords = nullptr;
+    QCheckBox *absoluteDurationsForSliders = nullptr;
+    QCheckBox *useREGSliderForOV = nullptr;
 };
 
 

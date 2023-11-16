@@ -79,11 +79,11 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
     int top = 0;
     unsigned int baseRowLevel = 0;
     unsigned int localMaxHeight = 0;
-    int threadDrawOffset = 30;
     this->globalMaxHeight=0;
 
     auto * settings = ViewSettings::getInstance();
     auto ROW_HEIGHT = settings->getRowHeight();
+    int threadDrawOffset = ROW_HEIGHT*2.2;
     auto * rankThreadMap = settings->getRankThreadMap();
     auto * rankAdrMap = settings->getRankAdrMap();
     auto rank = settings->getRankAdrMap()->at(this->requestedRank);
@@ -197,7 +197,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
                 threadDscr->setDefaultTextColor(Qt::darkGray);
                 threadDscr->setPlainText(threadName.c_str());
                 // Slightly above the Slot
-                y = rectItem->rect().center().y() - (threadDrawOffset+6);
+                y = rectItem->rect().center().y() - (threadDrawOffset/2 + 10);
                 threadDscr->setPos(slotBeginPos,y);
                 threadDscr->setTextInteractionFlags(Qt::NoTextInteraction);
                 threadDscr->setParentItem(rectItem);
@@ -255,9 +255,11 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
 void FlamegraphView::resizeEvent(QResizeEvent *event) {
     auto rectVal = this->rect();
     // We don't want to make the scene height depandand on the window height
-    rectVal.setHeight(this->scene()->height());
-    this->scene()->setSceneRect(rectVal);
+    //rectVal.setHeight(this->scene()->height());
+    //this->scene()->setSceneRect(rectVal);
     this->updateView();
+    rectVal.setHeight(this->getGlobalMaxHeight());
+    this->scene()->setSceneRect(rectVal);
     QGraphicsView::resizeEvent(event);
 }
 
@@ -309,10 +311,10 @@ void FlamegraphView::wheelEvent(QWheelEvent *event) {
             newBegin = qMin(newBeginBounded, newEndBounded - data->getSelection()->getRuntime());
             newEnd = qMax(newEndBounded, newBeginBounded + data->getSelection()->getRuntime());
         }
-
+        
         data->setSelection(newBegin, newEnd);
         event->accept();
+    } else {
+        QGraphicsView::wheelEvent(event);
     }
-
-    QGraphicsView::wheelEvent(event);
 }

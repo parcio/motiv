@@ -55,7 +55,12 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
     auto settings = ViewSettings::getInstance();
     auto useBorder = settings->getUseBorderOverview();
     auto usePriority = settings->getUsePriorityOverview();
-    auto activeThresholdOV = settings->getActiveThresholdOV();
+    auto useRealWidth = settings->getUseRealWidthMainWindow();
+    auto useREGSliderForOV = settings->getUseREGSliderForOV();
+    double activeThresholdOV;
+    useREGSliderForOV ? activeThresholdOV=settings->getActiveThresholdREG() : activeThresholdOV=settings->getActiveThresholdOV();
+    long usedRuntimeForThreshold;
+    useREGSliderForOV ? usedRuntimeForThreshold=selectionTo.count()-selectionFrom.count() : usedRuntimeForThreshold=runtime;
     
     for (const auto &item: uiTrace->getSlots()) {
         // Display slots
@@ -70,8 +75,8 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
             auto effectiveEndTime = qMin(end, endTime);
 
             if(activeThresholdOV){
-                long regLength = endTime - startTime;
-                long timeFraction = (runtime/1000.0) * activeThresholdOV;
+                double regLength = effectiveEndTime - effectiveStartTime;
+                double timeFraction = (usedRuntimeForThreshold/1000.0) * activeThresholdOV;
                 if(regLength<timeFraction)continue;
             }
 
@@ -81,7 +86,8 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
             auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
             auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
 
-            //QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
+            if(!useRealWidth) rectWidth = qMax(rectWidth, 5.0);
+
             QRectF rect(slotBeginPos, top, rectWidth, ROW_HEIGHT);
             auto rectItem = scene->addRect(rect);
 

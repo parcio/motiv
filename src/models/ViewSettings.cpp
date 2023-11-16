@@ -127,6 +127,14 @@ void ViewSettings::setColorCodingTimeRecords(bool newState) {
     this->colorCodingTimeRecords = newState;
 }
 
+void ViewSettings::setAbsoluteDurationsForSliders(bool newState) {
+    this->absoluteDurationsForSliders = newState;
+}
+
+void ViewSettings::setUseREGSliderForOV(bool newState) {
+    this->useREGSliderForOV = newState;
+}
+
 void ViewSettings::setActiveThresholdOV(double newVal) {
     this->activeThresholdOV = newVal;
 }
@@ -181,6 +189,14 @@ bool ViewSettings::getUsePriorityOverview() {
 
 bool ViewSettings::getColorCodingTimeRecords() {
     return this->colorCodingTimeRecords;
+}
+
+bool ViewSettings::getAbsoluteDurationsForSliders() {
+    return this->absoluteDurationsForSliders;
+}
+
+bool ViewSettings::getUseREGSliderForOV() {
+    return this->useREGSliderForOV;
 }
 
 double ViewSettings::getActiveThresholdOV() {

@@ -85,10 +85,12 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
     auto * rankThreadMap = settings->getRankThreadMap();
     std::string searchName_ = settings->getSearchName().toStdString();
 
-    bool countIndicatorsREG = settings->getCountIndicatorsREG();
-    bool countIndicatorsP2P = settings->getCountIndicatorsP2P();
-    bool countIndicatorsCCM = settings->getCountIndicatorsCCM();
-    bool useRealWidth = settings->getUseRealWidthMainWindow();
+    auto countIndicatorsREG = settings->getCountIndicatorsREG();
+    auto countIndicatorsP2P = settings->getCountIndicatorsP2P();
+    auto countIndicatorsCCM = settings->getCountIndicatorsCCM();
+    auto usePriority = settings->getUsePriorityOverview();
+    auto useRealWidth = settings->getUseRealWidthMainWindow();
+    auto useAbsoluteDurationsForSliders = settings->getAbsoluteDurationsForSliders();
 
     auto activeThresholdREG = settings->getActiveThresholdREG();
     auto activeThresholdP2P = settings->getActiveThresholdP2P();
@@ -138,8 +140,9 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                 auto effectiveEndTime = qMin(end, endTime);
 
                 if(activeThresholdREG){
-                    long regLength = endTime - startTime;
-                    long timeFraction = (runtime/1000.0) * activeThresholdREG;
+                    double regLength = 0;
+                    useAbsoluteDurationsForSliders ? regLength = endTime - startTime : regLength = effectiveEndTime - effectiveStartTime;
+                    double timeFraction = (runtime/1000.0) * activeThresholdREG;
                     if(regLength<timeFraction)continue;
                 }
 
@@ -166,7 +169,7 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
                         rectItem->setBrush(colors::COLOR_SLOT_PLAIN);
                     } else rectItem->setZValue(20);
 
-                } else rectItem->setZValue(slot->priority);
+                } else rectItem->setZValue(usePriority ? slot->priority : 1/rectWidth);
                     scene->addItem(rectItem);
                     localDrawCount++;
                 }
@@ -210,8 +213,9 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto effectiveToTime = qMin(endR, toTime) - beginR;
 
         if(activeThresholdP2P){
-            long commLength = toTime - fromTime;
-            long timeFraction = (runtime/1000.0) * activeThresholdP2P;
+            double commLength = 0;
+            useAbsoluteDurationsForSliders ? commLength = toTime - fromTime : commLength = effectiveToTime - effectiveFromTime;
+            double timeFraction = (runtime/1000.0) * activeThresholdP2P;
             if(commLength<timeFraction)continue;
         }
 
@@ -306,8 +310,9 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
         auto effectiveToTime = qMin(endR, toTime) - beginR;
 
         if(activeThresholdCCM){
-            long commLength = toTime - fromTime;
-            long timeFraction = (runtime/1000.0) * activeThresholdCCM;
+            double commLength = 0;
+            useAbsoluteDurationsForSliders ? commLength = toTime - fromTime : commLength = effectiveToTime - effectiveFromTime;
+            double timeFraction = (runtime/1000.0) * activeThresholdCCM;
             if(commLength<timeFraction)continue;
         }
 
@@ -333,8 +338,9 @@ void TimelineView::populateScene(QGraphicsScene *scene) {
             auto memberEffectiveToTime = qMin(endR, memberToTime) - beginR;
 
             if(activeThresholdREG){
-                long regLength = memberToTime - memberFromTime;
-                long timeFraction = (runtime/1000.0) * activeThresholdREG;
+                double regLength = 0;
+                useAbsoluteDurationsForSliders ? regLength = memberToTime - memberFromTime : regLength = memberEffectiveToTime - memberEffectiveFromTime;
+                double timeFraction = (runtime/1000.0) * activeThresholdREG;
                 if(regLength<timeFraction)continue;
             }
 
@@ -431,6 +437,10 @@ void TimelineView::updateView() {
     // The -2 offset fixes the tiny discrepancy in scrollable space between labels and scene
     sceneRect.setHeight(sceneHeight+sceneHeightOffset - 2);
     this->scene()->setSceneRect(sceneRect);
+
+    // We have to check wether the REG-slider is used to update the overview, and if so to update the overview
+    auto settings = this->data->getSettings();
+    if(settings->getUseREGSliderForOV()) Q_EMIT this->data->refreshOverviewRequest();
     this->populateScene(this->scene());
 }
 
@@ -473,7 +483,7 @@ void TimelineView::wheelEvent(QWheelEvent *event) {
 
         data->setSelection(newBegin, newEnd);
         event->accept();
+    } else {
+        QGraphicsView::wheelEvent(event);
     }
-
-    QGraphicsView::wheelEvent(event);
 }

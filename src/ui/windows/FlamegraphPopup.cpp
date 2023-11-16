@@ -26,7 +26,7 @@ FlamegraphPopup::FlamegraphPopup(TraceDataProxy *data, QWidget *parent):QDialog(
     this->flamegraphWindow = new QDialog(parent);
     this->flamegraphWindow->setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint);
     this->flamegraphWindow->setWindowTitle("Flamegraph");
-    this->header = new TimelineHeader(this->data, this);
+    //this->header = new TimelineHeader(this->data, this);
     this->view = new FlamegraphView(this->data, this);
     this->infoBar = new QStatusBar(this);
     QFont font;
@@ -52,7 +52,8 @@ void FlamegraphPopup::openFlamegraphWindow(){
     // Prepare the Layout
     this->view->updateView();
     QVBoxLayout *popupLayout = new QVBoxLayout();
-    popupLayout->addWidget(this->header);
+    //popupLayout->addWidget(this->header);
+
     popupLayout->addWidget(this->view);
     this->view->setBackgroundBrush(backgroundPattern);
     popupLayout->addWidget(line);
