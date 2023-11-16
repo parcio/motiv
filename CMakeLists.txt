@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-project(motiv VERSION 1.0.0 LANGUAGES CXX)
+project(motiv VERSION 2.1.0 LANGUAGES CXX)
 
 set(PROJECT_SOURCE_URL https://github.com/parcio/motiv)
 set(PROJECT_ISSUES_URL ${PROJECT_SOURCE_URL}/issues)
@@ -27,8 +27,10 @@ set(PROJECT_SOURCES
         src/ReaderCallbacks.cpp
         src/main.cpp
         src/models/AppSettings.cpp
+        src/models/ColorMap.cpp
         src/models/Filetrace.cpp
         src/models/Filter.cpp
+        src/models/Search.cpp
         src/models/Slot.cpp
         src/models/SubTrace.cpp
         src/models/UITrace.cpp
@@ -51,6 +53,7 @@ set(PROJECT_SOURCES
         src/ui/TraceDataProxy.cpp
         src/ui/views/CollectiveCommunicationIndicator.cpp     
         src/ui/views/CommunicationIndicator.cpp
+        src/ui/views/FlamegraphView.cpp
         src/ui/views/GenericIndicator.cpp
         src/ui/views/SlotIndicator.cpp
         src/ui/views/TimelineView.cpp
@@ -69,9 +72,12 @@ set(PROJECT_SOURCES
         src/ui/widgets/infostrategies/InformationDockSlotStrategy.cpp
         src/ui/widgets/infostrategies/InformationDockTraceStrategy.cpp
         src/ui/windows/FilterPopup.cpp
+        src/ui/windows/FlamegraphPopup.cpp
         src/ui/windows/MainWindow.cpp
         src/ui/windows/Otf2FileDialog.cpp
         src/ui/windows/RecentFilesDialog.cpp
+        src/ui/windows/SearchPopup.cpp
+        src/ui/windows/SettingsPopup.cpp
         src/utils.cpp
         )
 

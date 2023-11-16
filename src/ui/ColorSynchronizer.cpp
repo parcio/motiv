@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Jessica Lafontaine
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ void ColorSynchronizer::synchronizeColors(const std::string& function, const QCo
                 if(slot->region->name().str()==function) slot->setColor(color);                    
             }
         }
-    data_->colorChanged();
+    Q_EMIT data_->colorChanged();
 }
 
 void ColorSynchronizer::synchronizeColors(const QColor& color, bool all){
@@ -55,7 +55,7 @@ void ColorSynchronizer::synchronizeColors(const QColor& color, bool all){
                 }
             }
         }
-    data_->colorChanged();
+    Q_EMIT data_->colorChanged();
 }
 
 
@@ -69,7 +69,7 @@ void ColorSynchronizer::synchronizeColors(){
                 slot->setColor(map->getColor(function_));                
             }
         }    
-    data_->colorChanged();
+    Q_EMIT data_->colorChanged();
 }
 
 void ColorSynchronizer::reCalculateColors(){
@@ -100,7 +100,7 @@ void ColorSynchronizer::reCalculateColors(){
                 }
             }
         }
-    data_->colorChanged();
+    Q_EMIT data_->colorChanged();
 }
 
 

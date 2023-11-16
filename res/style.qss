@@ -1,5 +1,52 @@
 QToolTip {
     background-color: black;
     color: white;
-    border: black solid 1px
+    border: 1px outset #8A8A8A;
+    padding: 1px;
+    font-size: 11pt;
 }
+
+QScrollBar:vertical {
+    border: 1px solid #8A8A8A;
+    background: #6B6B6B;
+    width: 10px;
+    margin: 0px 0 0px 0;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical {
+    background: qradialgradient(cx:0.5, cy:0.5, radius:1, fx:0.5, fy:0.5, stop:0 #B0C4DE, stop:1 #FFFFFF);
+    border: 1px solid #8A8A8A;
+    /*for some reason this border-radius is ignored, this causes the quadratic shape of the handle*/
+    border-radius: 5px;
+    margin: 0px 0 0px 0;
+}
+
+QScrollBar::handle:vertical:hover {
+    /* central point & focal point are inverted*/
+    background: qradialgradient(cx:0.5, cy:0.5, radius:1, fx:0.5, fy:0.5, stop:0 #FFFFFF, stop:1 #B0C4DE);
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+
+QSlider::groove:vertical {
+    border: 1px solid #F5F5F5;
+    background: qradialgradient(cx:0.5, cy:0.5, radius:1, fx:0.5, fy:0.5, stop:0 #C0C0C0, stop:1 #FFFFFF);
+    width: 1px;
+    margin: 2px 0 2px 0;
+}
+
+QSlider::handle:vertical {
+    background: qradialgradient(cx:0.5, cy:0.5, radius:1, fx:0.5, fy:0.5, stop:0 #B0C4DE, stop:1 #D3D3D3);
+    border: 1px solid gray;
+    height: 9px;
+    width: 9px;
+    margin: -2px -6px;
+    border-radius: 2px;
+}
+
+
+

@@ -1,6 +1,9 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023   Florian Gallrein,
+ *                      Björn Gehrke, 
+ *                      Jessica Lafontaine,
+ *                      Tomas Cirkov
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +24,12 @@
 #include "src/models/Slot.hpp"
 #include "Filter.hpp"
 
+#include <QIcon>
+#include <QCoreApplication>
+#include <QElapsedTimer>
+
 #define SETTINGS_DEFAULT_ZOOM_QUOTIENT 25
+#define SETTINGS_DEFAULT_ROW_HEIGHT 30
 
 /**
  * @brief The ViewSettings class encapsulates settings for the main view.
@@ -31,6 +39,7 @@
  */
 class ViewSettings {
 public:
+    static ViewSettings* getInstance();
 
     /**
      * @brief Returns the current filter.
@@ -63,7 +72,67 @@ public:
      */
     void setZoomFactor(int zoomFactor);
 
+    int getRowHeight();
+
+    void setRowHeight(int height);
+
+    void setSearchName(QString name);
+
+    QString getSearchName();
+
+    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>>* getRankThreadMap();
+
+    std::map< OTF2_StringRef, otf2::definition::location_group*>* getRankAdrMap();
+
+    QIcon* getIcon(std::string key);
+
+    int getFlamegraphRankRef();
+
+    void setFlamegraphRankRef(int rankRef);
+
+    void setCountIndicatorsREG(bool newState);
+    void setCountIndicatorsP2P(bool newState);
+    void setCountIndicatorsCCM(bool newState);
+    void setCountIndicatorDetailsFlamegraph(bool newState);
+    void setPxThresholdFlamegraph(bool newState);
+    void setUseRealWidthFlamegraph(bool newState);
+    void setUseRealWidthMainWindow(bool newState);
+    void setUseBorderOverview(bool newState);
+    void setUsePriorityOverview(bool newState);
+    void setColorCodingTimeRecords(bool newState);
+    void setAbsoluteDurationsForSliders(bool newState);
+    void setUseREGSliderForOV(bool newState);
+
+    void setActiveThresholdOV(double newVal);
+    void setActiveThresholdREG(double newVal);
+    void setActiveThresholdP2P(double newVal);
+    void setActiveThresholdCCM(double newVal);
+
+    bool getCountIndicatorsREG();
+    bool getCountIndicatorsP2P();
+    bool getCountIndicatorsCCM();
+    bool getCountIndicatorDetailsFlamegraph();
+    bool getPxThresholdFlamegraph();
+    bool getUseRealWidthFlamegraph();
+    bool getUseRealWidthMainWindow();
+    bool getUseBorderOverview();
+    bool getUsePriorityOverview();
+    bool getColorCodingTimeRecords();
+    bool getAbsoluteDurationsForSliders();
+    bool getUseREGSliderForOV();
+
+    double getActiveThresholdOV();
+    double getActiveThresholdREG();
+    double getActiveThresholdP2P();
+    double getActiveThresholdCCM();
+
+    QString globalMessage;
+
 private:
+    static ViewSettings* instance;    
+    ViewSettings();
+    ViewSettings(const ViewSettings& obj) = delete;
+
     /**
      * Backing field for the current zoom factor.
      */
@@ -72,6 +141,50 @@ private:
      * Backing field for the current filter.
      * */
     Filter filter_;
+
+    int rowHeight = SETTINGS_DEFAULT_ROW_HEIGHT;
+    
+    std::map< OTF2_StringRef, std::pair<bool, std::map<std::string, std::pair<int, std::vector<bool>>>>> rankThreadMap{};
+
+    std::map< OTF2_StringRef, otf2::definition::location_group *> rankAdrMap{};
+
+    QString searchName = "";
+
+    QString executablePath = QCoreApplication::applicationDirPath();
+
+    std::map<std::string, QIcon> Icons_ {
+        {std::pair<std::string, QIcon>{"plus", executablePath.chopped(6) + "/res/tango_icons_png/plus.png"}},
+        {std::pair<std::string, QIcon>{"plus_grey", executablePath.chopped(6) + "/res/tango_icons_png/plus_grey.png"}},
+        {std::pair<std::string, QIcon>{"minus", executablePath.chopped(6) + "/res/tango_icons_png/minus.png"}},
+        {std::pair<std::string, QIcon>{"zoom_in", executablePath.chopped(6) + "/res/tango_icons_png/zoom_in.png"}},
+        {std::pair<std::string, QIcon>{"zoom_out", executablePath.chopped(6) + "/res/tango_icons_png/zoom_out.png"}},
+        {std::pair<std::string, QIcon>{"zoom_fit", executablePath.chopped(6) + "/res/tango_icons_png/zoom_fit.png"}},
+        {std::pair<std::string, QIcon>{"search", executablePath.chopped(6)+ "/res/tango_icons_png/search.png"}},
+        {std::pair<std::string, QIcon>{"book", executablePath.chopped(6) + "/res/tango_icons_png/book.png"}},
+        {std::pair<std::string, QIcon>{"refresh", executablePath.chopped(6) + "/res/tango_icons_png/refresh.png"}},
+        {std::pair<std::string, QIcon>{"maximize", executablePath.chopped(6) + "/res/tango_icons_png/maximize.png"}}
+    };
+
+    int rankRef;
+
+    bool countIndicatorsREG=false;
+    bool countIndicatorsP2P=false;
+    bool countIndicatorsCCM=false;
+    bool countIndicatorDetailsFlamegraph=true;
+    bool pxThresholdFlamegraph=true;
+    bool useRealWidthFlamegraph=true;
+    bool useRealWidthMainWindow=false;
+
+    bool useBorderOverview=true;
+    bool usePriorityOverview=true;
+    bool colorCodingTimeRecords=true;
+    bool absoluteDurationsForSliders=true;
+    bool useREGSliderForOV=false;
+
+    double activeThresholdOV=0;
+    double activeThresholdREG=0;
+    double activeThresholdP2P=0;
+    double activeThresholdCCM=0;
 };
 
 

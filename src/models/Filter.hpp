@@ -18,9 +18,11 @@
 #ifndef MOTIV_FILTER_HPP
 #define MOTIV_FILTER_HPP
 
-#define FILTER_DEFAULT ((SlotKind) (SlotKind::MPI | SlotKind::OpenMP | SlotKind::Plain))
+#define SLOT_FILTER_DEFAULT ((SlotKind) (SlotKind::MPI | SlotKind::OpenMP | SlotKind::Plain))
+#define COMMUNICATION_FILTER_DEFAULT ((CommunicationKind) (CommunicationKind::PointToPoint | CommunicationKind::Collective | CommunicationKind::Synchronizing))
 
 #include "Slot.hpp"
+#include "src/models/communication/CommunicationKind.hpp"
 
 /**
  * @brief Class containing options to filter the view.
@@ -43,8 +45,24 @@ public: // methods
      */
     void setSlotKinds(SlotKind slotKinds);
 
+    /**
+     * @brief Returns the kinds of communication that should be rendered.
+     * @return The kinds of communication that should be rendered.
+     */
+    [[nodiscard]] CommunicationKind getCommunicationKinds() const;
+    
+    /**
+     * @brief Sets the communication that should be rendered.
+     *
+     * Note that CommunicationKind values can be used as a flag and be combined with a bitwise or.
+     * @param communicationKinds The kind of communication that should be rendered.
+     */
+    void setCommunicationKind(CommunicationKind communicationKinds);
+
+    
 private: // fields
-    SlotKind slotKinds_ = FILTER_DEFAULT;
+    SlotKind slotKinds_ = SLOT_FILTER_DEFAULT;
+    CommunicationKind communicationKinds_ = COMMUNICATION_FILTER_DEFAULT;
 };
 
 

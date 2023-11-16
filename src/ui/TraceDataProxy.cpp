@@ -54,7 +54,6 @@ ViewSettings *TraceDataProxy::getSettings() const {
     return settings;
 }
 
-
 types::TraceTime TraceDataProxy::getTotalRuntime() const {
     return trace->getRuntime();
 }

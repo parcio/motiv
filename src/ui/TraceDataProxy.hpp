@@ -115,6 +115,19 @@ public: Q_SIGNALS:
      */
     void filterChanged(Filter);
 
+    void verticalZoomChanged();
+
+    void refreshOverviewRequest();
+
+    void refreshButtonPressed();
+
+    void flamegraphRequest();
+
+    void hideSlidersBoxRequest();
+
+    void triggerUITimerStartIfPossible();
+    void triggerUITimerEndIfPossible();
+
 public Q_SLOTS:
     /**
      * Change the start time of the selection

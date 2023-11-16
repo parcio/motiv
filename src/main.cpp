@@ -1,6 +1,9 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023   Florian Gallrein,
+ *                      Björn Gehrke, 
+ *                      Jessica Lafontaine,
+ *                      Tomas Cirkov
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +51,7 @@ int main(int argc, char *argv[])
 
     QCommandLineOption helpOption = parser.addHelpOption();
     QCommandLineOption versionOption = parser.addVersionOption();
-	QCommandLineOption testrunOption("t", QCoreApplication::translate("main", "#todo: fitting descr?"), "file");
+	QCommandLineOption testrunOption("t", QCoreApplication::translate("main", "Runs motiv in test mode, i.e. pure trace-loading without GUI representation for benchmark purposes."), "file");
 	parser.addOption(testrunOption);
     parser.addPositionalArgument("file", QCoreApplication::translate("main", "filepath of the .otf2 trace file to open"), "[file]");
 
@@ -77,6 +80,11 @@ int main(int argc, char *argv[])
     RecentFilesDialog recentFilesDialog(&filepath);
     if(!filepath.isEmpty() || recentFilesDialog.exec() == QDialog::Accepted) {
         auto mainWindow = new MainWindow(filepath);
+        //std::string motivVersion = MOTIV_VERSION_STRING;
+        QString fullTitle;
+        QTextStream text(&fullTitle);
+        text << "Motiv " MOTIV_VERSION_STRING;
+        mainWindow->setWindowTitle(fullTitle);
         qInfo() << "motiv ready";
         mainWindow->show();
     } else {

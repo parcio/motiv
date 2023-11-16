@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Jessica Lafontaine
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 #include "src/ui/Constants.hpp"
 
 // Increment value for color updates, controls color diversity
-constexpr int COLOR_INCREMENT = 50;
+constexpr int COLOR_INCREMENT = 30;
 
 // Minimum value for color components, controls color saturation
 int MIN = 50;
@@ -27,7 +27,7 @@ int MIN = 50;
 // Singleton instance
 ColorGenerator* ColorGenerator::instance = nullptr_t();
 
-ColorGenerator::ColorGenerator():red{255}, green {0}, blue{50}, min{MIN}, token {0}
+ColorGenerator::ColorGenerator():red{255}, green {MIN}, blue{MIN}, min{MIN}, token {0}
 {
 }
 
@@ -38,16 +38,19 @@ ColorGenerator* ColorGenerator::getInstance()
 }
 
 // Update color value based on comparison color
-int ColorGenerator::updateColor(int color, int comparison_color){
-    if (token == 2 && this->red > 249 && this->green<min+6 && this->blue<min+6){
-      if(min<100) this->min+=COLOR_INCREMENT;
-      else{
-        this->red=189;
-        this->green=189;
-        this->blue=189;
-        this->token = 3;
-        return 189;
-      }
+int ColorGenerator::updateColor(int color, int comparison_color){    
+    if (token == 4 || (token == 2 && this->red == 255 && this->green >= min-COLOR_INCREMENT && this->blue == min)){
+        if(min<255-2*COLOR_INCREMENT) {           
+            this->min+=COLOR_INCREMENT;
+            return color-=COLOR_INCREMENT;
+        }
+        else{
+            this->red=250;
+            this->green=250;
+            this->blue=250;
+            this->token = 4;
+            return 250;
+        }
     }
 
 
@@ -60,7 +63,7 @@ if (comparison_color==min){
     }
 
 }else{
-    if ((color-COLOR_INCREMENT)>min-1) return color-=COLOR_INCREMENT;
+    if ((color-COLOR_INCREMENT)>=min) return color-=COLOR_INCREMENT;
     else{
     this->token = (token +1)%3;           
     return min;
@@ -73,30 +76,27 @@ if (comparison_color==min){
 QColor ColorGenerator::GetNewColor(){
     QColor color;      
     switch(token){
-         // Update red value
+        // Update red value
         case 1:
         color = QColor(red,green,blue);
         this->red=updateColor(red,blue);
-        if(token == 2) this->green=updateColor(green,red);
         break;
         
 
-         // Update green value
+        // Update green value
         case 2:
         color = QColor(red,green,blue);
         this->green=updateColor(green,red);
-        if(token==0) this->blue=updateColor(blue,green);
         break;
 
         // Update blue value
         case 0:
         color = QColor(red,green,blue);
-        this->blue = updateColor(blue,green);
-        if(token==1) this->red=updateColor(red,blue);
+        this->blue = updateColor(blue,green);       
         break;
         
-        default:
-        color = colors::COLOR_SLOT_PLAIN;
+        default:        
+        color = QColor::fromRgb(0xFAFAFA);
         break;
     }
     return color;
@@ -105,8 +105,8 @@ QColor ColorGenerator::GetNewColor(){
 
 void ColorGenerator::setDefault(){
     this->red=255;
-    this->green=0;
-    this->blue=50;
+    this->green=MIN;
+    this->blue=MIN;
     this->min=MIN; 
     this->token=0;
 }

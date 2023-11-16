@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Florian Gallrein, Björn Gehrke, Jessica Lafontaine
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,7 +75,9 @@ private:
     /**
      * Vectors for building the non blocking communication datatypes. Key is the request id.
      */
-    std::map<uint64_t, NonBlockingCommunicationEventBuilder> uncompletedRequests;
+    std::map<uint64_t, NonBlockingCommunicationEventBuilder> uncompletedIsendRequests;
+
+    std::map<uint64_t, NonBlockingCommunicationEventBuilder> uncompletedIrecvRequests;
 
     otf2::chrono::time_point program_start_;
     otf2::chrono::time_point program_end_;

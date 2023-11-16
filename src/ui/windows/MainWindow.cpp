@@ -1,6 +1,9 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023   Florian Gallrein,
+ *                      Björn Gehrke, 
+ *                      Jessica Lafontaine,
+ *                      Tomas Cirkov
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,14 +28,21 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QProcess>
+#include <QPushButton>
 #include <QToolBar>
+#include <QStatusBar>
+#include <qaction.h>
+#include <qtmetamacros.h>
+#include <string>
 #include <utility>
 
 #include "src/models/AppSettings.hpp"
 #include "src/models/ColorMap.hpp"
+#include "src/models/ViewSettings.hpp"
 #include "src/ui/ColorGenerator.hpp"
 #include "src/ui/ColorSynchronizer.hpp"
 #include "src/ui/Constants.hpp"
+#include "src/ui/TraceDataProxy.hpp"
 #include "src/ui/widgets/License.hpp"
 #include "src/ui/widgets/Help.hpp"
 #include "src/ui/widgets/TimeInputField.hpp"
@@ -46,6 +56,12 @@
 #include "src/ui/widgets/infostrategies/InformationDockTraceStrategy.hpp"
 #include "src/ui/widgets/infostrategies/InformationDockCommunicationStrategy.hpp"
 #include "src/ui/widgets/infostrategies/InformationDockCollectiveCommunicationStrategy.hpp"
+#include "src/ui/windows/SettingsPopup.hpp"
+
+extern bool testRun;
+
+
+ColorSynchronizer* colorsynchronizer = ColorSynchronizer::getInstance();
 
 extern bool testRun;
 
@@ -56,6 +72,7 @@ MainWindow::MainWindow(QString filepath) : QMainWindow(nullptr), filepath(std::m
     if (this->filepath.isEmpty()) {
         this->promptFile();
     }
+    this->startUITimerIfPossible();
     this->loadSettings();   
     AppSettings::getInstance().setColorConfigName(this->filepath);
     AppSettings::getInstance().loadColorConfigs();
@@ -135,16 +152,18 @@ void MainWindow::createMenus() {
 
     /// View Menu
     auto filterAction = new QAction(tr("&Filter"));
-    filterAction->setShortcut(tr("Ctrl+S"));
+    filterAction->setShortcut(tr("F1"));
     connect(filterAction, SIGNAL(triggered()), this, SLOT(openFilterPopup()));
 
-    auto searchAction = new QAction(tr("&Find"));
-    searchAction->setShortcut(tr("Ctrl+F"));
-    connect(searchAction, SIGNAL(triggered()), this, SLOT(openFilterPopup()));
+    auto settingsWindowAction = new QAction(tr("Settings"));
+    settingsWindowAction->setShortcut(tr("F2"));
+    if(!this->settingsWindow) this->settingsWindow = new SettingsPopup(this->data, this);
+    connect(settingsWindowAction, &QAction::triggered, this->settingsWindow, &SettingsPopup::show);
 
-    auto resetZoomAction = new QAction(tr("&Reset zoom"));
-    connect(resetZoomAction, SIGNAL(triggered()), this, SLOT(resetZoom()));
-    resetZoomAction->setShortcut(tr("Ctrl+R"));
+    auto hideSlidersBoxAction = new QAction(tr("Sliders"), this);
+    // Makes the slidersBox hideable
+    hideSlidersBoxAction->setShortcut(tr("F3"));
+    connect(hideSlidersBoxAction, &QAction::triggered, this->data, &TraceDataProxy::hideSlidersBoxRequest);
 
     auto widgetMenuCustomColors = new QMenu(tr("Custom Colors"));
 
@@ -153,16 +172,12 @@ void MainWindow::createMenus() {
 
     auto saveAsGlobalColorsAction = new QAction(tr("&Save as gobal colors"));
     connect(saveAsGlobalColorsAction, SIGNAL(triggered()),this,SLOT(saveAsGlobalColors()));
-
-    auto grayFilterAction = new QAction (tr("Grayfilter"));
-    connect(grayFilterAction, SIGNAL(triggered()),this,SLOT(grayFilter()));
- 
+   
     auto deleteCustomColorsAction = new QAction (tr("&Delete custom colors"));
     connect(deleteCustomColorsAction, SIGNAL(triggered()),this,SLOT(deleteCustomColors()));
 
     widgetMenuCustomColors->addAction(loadGlobalColorsAction);
     widgetMenuCustomColors->addAction(saveAsGlobalColorsAction);
-    widgetMenuCustomColors->addAction(grayFilterAction);
     widgetMenuCustomColors->addAction(deleteCustomColorsAction);
 
     auto widgetMenuToolWindows = new QMenu(tr("Tool Windows"));
@@ -182,18 +197,11 @@ void MainWindow::createMenus() {
 
     auto viewMenu = menuBar->addMenu(tr("&View"));
     viewMenu->addAction(filterAction);
-    viewMenu->addAction(searchAction);
-    viewMenu->addAction(resetZoomAction);   
+    viewMenu->addAction(settingsWindowAction);
+    viewMenu->addAction(hideSlidersBoxAction);
     viewMenu->addMenu(widgetMenuCustomColors);
     viewMenu->addMenu(widgetMenuToolWindows);
-
-    /// Window menu
-    auto minimizeAction = new QAction(tr("&Minimize"));
-    minimizeAction->setShortcut(tr("Ctrl+M"));
-    connect(minimizeAction, SIGNAL(triggered()), this, SLOT(showMinimized()));
-
-    auto windowMenu = menuBar->addMenu(tr("&Window"));
-    windowMenu->addAction(minimizeAction);
+    
 
     /// Help menu
     auto showLicenseAction = new QAction(tr("&View license"));
@@ -202,7 +210,7 @@ void MainWindow::createMenus() {
         this->licenseWindow->show();
     });
     auto showHelpAction = new QAction(tr("&Show help"));
-    showHelpAction->setShortcut(tr("F1"));
+    showHelpAction->setShortcut(tr("Ctrl+H"));
     connect(showHelpAction, &QAction::triggered, this, [this] {
         if(!this->helpWindow) this->helpWindow = new Help;
         this->helpWindow->show();
@@ -210,7 +218,6 @@ void MainWindow::createMenus() {
     auto showAboutQtAction = new QAction(tr("&About Qt"));
     connect(showAboutQtAction, &QAction::triggered, qApp, &QApplication::aboutQt);
     auto showAboutAction = new QAction(tr("&About"));
-    showAboutAction->setShortcut(tr("Shift+F1"));
     connect(showAboutAction, &QAction::triggered, this, [this] {
         if(!this->aboutWindow) this->aboutWindow= new About;
         this->aboutWindow->show();
@@ -224,19 +231,17 @@ void MainWindow::createMenus() {
 }
 
 void MainWindow::createToolBars() {
-    // Top toolbar contains preview/control of whole trace
-//    this->topToolbar = new QToolBar(this);
-//    this->topToolbar->setMovable(false);
-//    addToolBar(Qt::TopToolBarArea, this->topToolbar);
 
     // Bottom toolbar contains control fields
     this->bottomToolbar = new QToolBar(this);
     this->bottomToolbar->setMovable(false);
+    //this->bottomToolbar
     this->addToolBar(Qt::BottomToolBarArea, this->bottomToolbar);
 
     auto bottomContainerWidget = new QWidget(this->bottomToolbar);
     auto containerLayout = new QHBoxLayout(bottomContainerWidget);
     bottomContainerWidget->setLayout(containerLayout);
+    this->bottomToolbar->addWidget(bottomContainerWidget);
 
     // TODO populate with initial time stamps
     this->startTimeInputField = new TimeInputField("Start", TimeUnit::Second, data->getFullTrace()->getStartTime(),
@@ -252,11 +257,111 @@ void MainWindow::createToolBars() {
     connect(data, SIGNAL(beginChanged(types::TraceTime)), this->startTimeInputField, SLOT(setTime(types::TraceTime)));
     connect(data, SIGNAL(endChanged(types::TraceTime)), this->endTimeInputField, SLOT(setTime(types::TraceTime)));
 
-    this->bottomToolbar->addWidget(bottomContainerWidget);
+    QFrame *line = new QFrame;
+    line->setFrameShape(QFrame::VLine);
+    line->setFrameShadow(QFrame::Sunken);
+    line->setContentsMargins(0,-3,0,-3);
+    containerLayout->addWidget(line);
+    containerLayout->addSpacing(5);
 
+    // Zoom Buttons
+    auto zoomInButton = new QPushButton(tr(""));
+    zoomInButton->setIcon(*(this->settings->getInstance()->getIcon("zoom_in")));
+    zoomInButton->setIconSize(QSize(32, 32));
+    
+    auto zoomOutButton = new QPushButton(tr(""));
+    zoomOutButton->setIcon(*(this->settings->getInstance()->getIcon("zoom_out")));
+    zoomOutButton->setIconSize(QSize(32, 32));
+
+    auto resetZoomButton = new QPushButton(tr(""));
+    resetZoomButton->setIcon(*(this->settings->getInstance()->getIcon("zoom_fit")));
+    resetZoomButton->setIconSize(QSize(32, 32));
+    resetZoomButton->setToolTip("Reset Zoom\nSpace");
+    resetZoomButton->setShortcut(tr("Space"));
+
+    auto searchButton = new QPushButton(tr(""));
+    searchButton->setIcon(*(this->settings->getInstance()->getIcon("book")));
+    searchButton->setIconSize(QSize(32, 32));
+    searchButton->setToolTip("Search\nCtrl+F");
+    searchButton->setShortcut(tr("Ctrl+F"));
+    
+    containerLayout->addWidget(zoomInButton);
+    containerLayout->addWidget(zoomOutButton);
+    containerLayout->addWidget(resetZoomButton);
+    containerLayout->addWidget(searchButton);
+
+    connect(zoomInButton, &QPushButton::clicked, this, &MainWindow::verticalZoomIn);
+    connect(zoomOutButton, &QPushButton::clicked, this, &MainWindow::verticalZoomOut);
+    connect(resetZoomButton, &QPushButton::clicked, this, &MainWindow::resetZoom);
+    connect(searchButton, &QPushButton::clicked,this, &MainWindow::openSearchPopup);
+
+    // Refresh Button
+    auto refreshButton = new QPushButton(tr(""));
+    refreshButton->setIcon(*(this->settings->getInstance()->getIcon("refresh")));
+    containerLayout->addWidget(refreshButton);
+    refreshButton->setIconSize(QSize(32, 32));
+
+    connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshView);
+
+    // infoBar
+    this->infoBar = new QStatusBar(this);
+    this->infoLabel = new QLabel(this->infoBar);
+    //this->infoLabel->setAlignment(Qt::AlignLeft);
+    this->infoBar->addPermanentWidget(infoLabel, 1);
+    QFont font;
+    font.setPointSize(10);
+    this->infoBar->setFont(font);
+    this->infoLabel->setFont(font);
+    QPalette palette;
+    palette.setColor(QPalette::WindowText, QColorConstants::Svg::slategray);
+    this->infoBar->setPalette (palette);
+    this->infoBar->setFixedHeight(26);
+    this->setStatusBar(this->infoBar);
+
+    connect(data, &TraceDataProxy::triggerUITimerStartIfPossible, this, &MainWindow::startUITimerIfPossible);
+    connect(data, &TraceDataProxy::triggerUITimerEndIfPossible, this, &MainWindow::endUITimerIfPossible);
 }
 
+void MainWindow::showInfo() {
+
+    // old mode
+    /*
+    this->infoBar->setToolTip("last message: "+this->infoBar->currentMessage());
+    if (MainWindow::currentUITimerValue < 0) {
+        this->infoLabel->setText(settings->globalMessage+" "+"error: negative drawing time");
+    } else if (MainWindow::currentUITimerValue == 0) {
+        this->infoBar->showMessage(settings->globalMessage+" "+"<1"+" [ms]", 0);
+    } else {
+        this->infoBar->showMessage(settings->globalMessage+" "+std::to_string(MainWindow::currentUITimerValue).c_str()+" [ms]", 0);
+    }
+    */
+
+    // new mode
+    std::string timeValue;
+    MainWindow::currentUITimerValue==0 ? timeValue = "&lt;1" : timeValue = std::to_string(MainWindow::currentUITimerValue);
+    this->infoBar->setToolTip("last message: "+this->infoLabel->text());
+    if (MainWindow::currentUITimerValue < 0) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#FF0000'> error: negative drawing time </font>");
+    } else if (!this->settings->getColorCodingTimeRecords()) {
+        this->infoLabel->setText("<font color='#708090'>"+settings->globalMessage+" "+timeValue.c_str()+" [ms]"+"</font>");
+    } else if (MainWindow::currentUITimerValue <= 25) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#0BBF01'>"+timeValue.c_str()+"</font>"+"[ms]");
+    } else if (MainWindow::currentUITimerValue <= 50) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#86AC1D'>"+timeValue.c_str()+"</font>"+"[ms]");
+    } else if (MainWindow::currentUITimerValue <= 100) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#B3B538'>"+timeValue.c_str()+"</font>"+"[ms]");
+    } else if (MainWindow::currentUITimerValue <= 250) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#B57D4B'>"+timeValue.c_str()+"</font>"+"[ms]");
+    } else if (MainWindow::currentUITimerValue > 250) {
+        this->infoLabel->setText(settings->globalMessage+" "+"<font color='#FF0000'>"+timeValue.c_str()+"</font>"+"[ms]");
+    }
+
+    settings->globalMessage="";
+}
+
+
 void MainWindow::createDockWidgets() {
+
     this->information = new InformationDock();
     information->addElementStrategy(new InformationDockSlotStrategy());
     information->addElementStrategy(new InformationDockTraceStrategy());
@@ -273,6 +378,14 @@ void MainWindow::createDockWidgets() {
     this->addDockWidget(Qt::RightDockWidgetArea, this->information);
 
     this->traceOverview = new TraceOverviewDock(this->data);
+    QPalette palette;
+    palette.setColor(QPalette::WindowText, QColorConstants::Svg::slategray);
+    this->traceOverview->setPalette (palette);
+    QFont font;
+    font.setPointSize(10);
+    this->traceOverview->setFont(font);
+    //this->traceOverview->setWindowTitle("  Timeline - Overview");
+    this->traceOverview->setWindowTitle(this->filepath.section("/", -3));
     this->addDockWidget(Qt::TopDockWidgetArea, this->traceOverview);
 }
 
@@ -311,6 +424,7 @@ void MainWindow::loadTrace() {
     auto slots = this->callbacks->getSlots();
     auto communications = this->callbacks->getCommunications();
     auto collectives = this->callbacks->getCollectiveCommunications();
+
     auto trace = new FileTrace(slots, communications, collectives, this->callbacks->duration());
 
     this->data = new TraceDataProxy(trace, this->settings, this);
@@ -321,26 +435,11 @@ void MainWindow::loadTrace() {
 }
 
 void MainWindow::loadSettings() {
-    this->settings = new ViewSettings();
+    this->settings = ViewSettings::getInstance();
 }
 
 void MainWindow::resetZoom() {
     data->setSelection(types::TraceTime(0), data->getTotalRuntime());
-}
-
-void MainWindow::grayFilter(){
-    // Shows a warning message if save as global color is checked
-    if(AppSettings::getInstance().getuseGlobalColorConfig()){
-        QMessageBox warningBox;
-        warningBox.setIcon(QMessageBox::Warning);
-        warningBox.setWindowTitle("Saving gray filter globally");
-        warningBox.setText("You are about to save the color changes globally. This will affect all traces in the application. \n\nAre you sure you want to continue?");
-        warningBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-        warningBox.setDefaultButton(QMessageBox::No);
-        int choice = warningBox.exec();
-        if(choice == QMessageBox::No) return;
-    }
-    colorsynchronizer->synchronizeColors(colors::COLOR_SLOT_PLAIN);
 }
 
 void MainWindow::deleteCustomColors(){
@@ -385,3 +484,37 @@ void MainWindow::openNewWindow(QString path) {
             QStringList(path));
 }
 
+void MainWindow::verticalZoomIn(){
+    auto currentRowHeight=this->settings->getRowHeight();
+    this->settings->setRowHeight(currentRowHeight+5);
+    Q_EMIT this->data->verticalZoomChanged();   
+}
+
+void MainWindow::verticalZoomOut(){
+    auto currentRowHeight=this->settings->getRowHeight();
+    this->settings->setRowHeight(currentRowHeight-5);
+    Q_EMIT this->data->verticalZoomChanged();    
+}
+
+void MainWindow::refreshView(){
+    Q_EMIT this->data->refreshButtonPressed();
+}
+
+void MainWindow::openSearchPopup(){
+    if(this->searchWindow == nullptr) this->searchWindow = new SearchPopup(this->data,this->information, this);
+    Q_EMIT this->searchWindow->searchButtonPressed();
+}
+
+void MainWindow::startUITimerIfPossible() {
+    if(!this->mainUITimer.isValid())this->mainUITimer.start();
+}
+
+void MainWindow::endUITimerIfPossible() {
+    if(this->mainUITimer.isValid()) {
+        auto newVal = this->mainUITimer.elapsed();
+        //qInfo() << newVal << "[ms]";
+        this->currentUITimerValue=newVal;
+        this->mainUITimer.invalidate();
+        this->showInfo();
+    }
+}

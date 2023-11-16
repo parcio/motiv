@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Florian Gallrein, Björn Gehrke, Tomas Cirkov
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,10 @@
 
 
 #include <QWidget>
+#include <QGroupBox>
+#include <QHBoxLayout>
+#include <QLabel>
+
 
 #include "TimelineHeader.hpp"
 #include "TimelineLabelList.hpp"
@@ -44,10 +48,36 @@ public:
      */
     explicit Timeline(TraceDataProxy *data, QWidget *parent = nullptr);
 
+public Q_SLOTS:
+    void showFlamegraphPopup();
+    void changeOverviewEvent();
+    void changeMainviewEvent();
+
 private: // widgets
-    TimelineHeader *header = nullptr;
+    // TimelineHeader *header = nullptr;
     TimelineLabelList *labelList = nullptr;
     TimelineView *view = nullptr;
+
+    enum Mode { perc, slow, fast };
+    QLabel *modeLabel = nullptr;
+    QSlider *modeSlider = nullptr;
+    QSlider *modeIntensitySlider = nullptr;
+    QSlider *thresholdSliderOV = nullptr;
+    QSlider *thresholdSliderREG = nullptr;
+    QSlider *thresholdSliderP2P = nullptr;
+    QSlider *thresholdSliderCCM = nullptr;
+    QGroupBox *slidersBox = nullptr;
+
+private: // methods
+    QHBoxLayout* prepareSlider(QSlider* thresholdSlider, QString Name);
+    void prepareSlidersBoxLayouts();
+    void addSliderTicks();
+    void changeModeEvent();
+    void updateAllTooltips();
+    QString giveElementDescr(QString compactName);
+    void updateTooltip(QSlider* sliderObj, double currentScaledValue, long fullTime);
+    double scaleSliderValue(int trueVal);
+    void hideSliderBox();
 
 private: // data
     TraceDataProxy *data = nullptr;
