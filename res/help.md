@@ -1,41 +1,56 @@
-# Views
+### Basic controls
+#### Notable shortcuts
+- View related options: F1 (filter), F2 (settings), F3 (active thresholds)
+- Zoom out: Space
+- Zoom in: 
+   - double click (regarding indicators)
+   - CTRL+scroll
+- Move left/right: Shift+scroll
+- Search: CTRL+S
+#### Notable interactions
+- Making a Selection: click, hold the button and drag (overview) to the left or right to select the required section
+- Multi-threading view: +/- icons near ranknames
+- Flamegraph view: right click (context menu) onto ranknames
+- Toggle P2P (in and out): right click (context menu) onto ranknames
+- Set custom colors: details pane (per default to the right)
 
-## Central view
-In the center a visualisation of the otf2 trace is shown.
+---
 
-**Each line** represents the function calls in an MPI rank.
+### Views
+#### Central view (Selection)
+Each **row** represents an **MPI rank**; when the thread view is expanded, multiple rows can represent a single MPI rank, with one thread per row. The mode of view is indicated by +/- icons:
+- A + means the row can be expanded into the thread view.
+- A - means the row has been expanded into the thread view.
+- A grayed-out + indicates that no multi-threading was detected.
 
-**Each block** represents a function call. Nested calls are shown on top. To see an entire call hover over it. The color of the block indicates its type. By default, these are:
-- MPI calls: green
-- OpenMP calls: red
-- Any other calls: grey
+Within and between the rows, there are **various indicators**: (1) rectangular, colored blocks, (2) arrows, and (3) blue frames.
+	
+The rectangular blocks within the rows represent **function calls** or recordings of entered regions (often abbreviated as REG). Different functions are assigned different colors:
+- MPI functions are usually yellowish-green.
+- OpenMPI functions are usually red-orange.
+- Other functions are assigned arbitrary colors.
 
-**Arrows** depict MPI communications between ranks.
+The arrows describe **point-to-point communications** (often abbreviated as P2P) between the ranks or threads, generally between rows.
 
-**Rectangles** stretching over all ranks show collective operations.  
+The blue, rectangular frames that span the rows describe **collective communications** (often abbreviated as CCM); ranks involved are highlighted by hatched function calls within these frames.
 
-## Overview
-On the top an overview of the whole trace is shown. The current selected time window is highlighted. 
+#### Overview
+Directly below the upper menu bar is the overview. Here, one can always see the entire trace and also the current selection for the main view.
 
+Differences from the main view include that only functions/regions are displayed here, and docking behavior: This element can be detached from and reattached to the main window.
 
-# Usage
+#### Flamegraph
+Through a context menu regarding the rank names, one has the option to open the flamegraph view, for a particular rank. In this view, similar to the overview, only functions/regions are displayed; however, they are not overlapping but rather stacked according to their runtime into call hierarchies. 
 
-## Navigating the view
+This view is always synchronized with the central view or the current selection.
 
-Use `CTRL` and scroll to **zoom in and out**. Use `SHIFT` and scroll to **move the view horizontally**. Reset the view with *View -> Reset* zoom or press `CTRL+R`. Alternatively, input the start and / or end time in the fields at the bottom of the view and press `ENTER` to zoom to a precise time window.
+---
 
-In addition, click and drag a selection in the overview to select a time window.
+### Colors
+#### At start
+Colors are assigned in static steps via RGB-coordinates, there are 159 valid positions between (0|0|0) and (255|255|255) which are assigned in the same order as the functions are encountered (first come, first serve). Encountered functions past these 159 positions will all be assigned white. 
+#### During Search
+During a search, functions are assigned gray, except the one being searched for, which is displayed in purple.
 
-## Interactions
-
-Click on any element to see more information on it in the right pane. Click the *Zoom into view* button to zoom to the current selected item.
-
-## Filter
-
-Use *View -> Filter* or press `CTRL+S` to open a filter window.
-
-### Filter function call types
-
-Check or uncheck the kinds of functions that should be shown.
-
+---
 
