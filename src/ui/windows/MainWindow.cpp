@@ -58,10 +58,6 @@
 #include "src/ui/widgets/infostrategies/InformationDockCollectiveCommunicationStrategy.hpp"
 #include "src/ui/windows/SettingsPopup.hpp"
 
-extern bool testRun;
-
-
-ColorSynchronizer* colorsynchronizer = ColorSynchronizer::getInstance();
 
 extern bool testRun;
 
