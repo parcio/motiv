@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-project(motiv VERSION 2.1.0 LANGUAGES CXX)
+project(motiv VERSION 2.1.1 LANGUAGES CXX)
 
 set(PROJECT_SOURCE_URL https://github.com/parcio/motiv)
 set(PROJECT_ISSUES_URL ${PROJECT_SOURCE_URL}/issues)
