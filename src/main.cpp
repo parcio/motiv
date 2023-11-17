@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     // Test run without window display
 	if (parser.isSet(testrunOption)){     
 		testRun = true;
-        auto dummyWindow = new MainWindow(parser.value(testrunOption));
+        [[maybe_unused]] auto dummyWindow = new MainWindow(parser.value(testrunOption));
         app.quit();
         std::cout << "%application in general%" << appTimer.elapsed() << "%ms%";
         return EXIT_SUCCESS;

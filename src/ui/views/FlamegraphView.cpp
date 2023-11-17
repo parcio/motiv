@@ -76,7 +76,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
         this->data->setSelection(element->getStartTime(), element->getEndTime());
     };
     
-    int top = 0;
+    unsigned top = 0;
     unsigned int baseRowLevel = 0;
     unsigned int localMaxHeight = 0;
     this->globalMaxHeight=0;
@@ -197,7 +197,7 @@ void FlamegraphView::populateScene(QGraphicsScene *scene) {
                 threadDscr->setDefaultTextColor(Qt::darkGray);
                 threadDscr->setPlainText(threadName.c_str());
                 // Slightly above the Slot
-                y = rectItem->rect().center().y() - (threadDrawOffset/2 + 10);
+                y = rectItem->rect().center().y() - (ROW_HEIGHT/2.0 + 20);
                 threadDscr->setPos(slotBeginPos,y);
                 threadDscr->setTextInteractionFlags(Qt::NoTextInteraction);
                 threadDscr->setParentItem(rectItem);
