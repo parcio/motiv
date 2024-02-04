@@ -118,9 +118,7 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/res/motiv.png DESTINATION share/icons)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/res/buttons/book.png DESTINATION share/icons/buttons)
 
 file(GLOB BUTTON_PNG_FILES "${CMAKE_CURRENT_SOURCE_DIR}/res/buttons/*.png")
-
 foreach(PNG_FILE ${BUTTON_PNG_FILES})
-        #get_filename_component(FILE_NAME ${PNG_FILE} NAME)
         install(FILES ${PNG_FILE} DESTINATION share/icons/buttons)
 endforeach()
 
