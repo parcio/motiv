@@ -4,6 +4,6 @@
         <file>res/help.md</file>
         <file>res/style.qss</file>
         <file>res/motiv.png</file>
-        <file>res/book.png</file>
+        <file>res/buttons/book.png</file>
     </qresource>
 </RCC>
