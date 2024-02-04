@@ -23,7 +23,7 @@ SCRIPT_LOCATION=$(realpath "$0")
 WORK_LOCATION=$(dirname "$SCRIPT_LOCATION")
 MOTIV_LOCATION=$(dirname "$WORK_LOCATION")
 CFG_LOCATION=$WORK_LOCATION/stats.cfg
-BIN_LOCATION=$MOTIV_LOCATION/build/motiv
+BIN_LOCATION=$(find "$MOTIV_LOCATION" -type f -name "motiv" -exec readlink -f {} \;)
 GIT_AVAILABLE=true;
 DATE_FORMAT="%Y-%m-%d@%H-%M-%S"
 RED=`tput setaf 1`
@@ -379,6 +379,14 @@ else
 fi
 
 # *** basic crital errors ***
+# multiple binaries
+if [ "$(echo "$BIN_LOCATION" | wc -l)" -gt 0 ] 2> /dev/null; then
+    conditional_clear
+    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: multiple motiv binaries within the motiv dir, unclear how to proceed..."
+    echo "          -> locations: "$BIN_LOCATION
+    echo "          -> more details via -h/--help"
+    exit 1
+fi
 # can't find motiv
 if ! [ -f "$BIN_LOCATION" ] 2> /dev/null; then
     conditional_clear
