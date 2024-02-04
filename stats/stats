@@ -380,7 +380,7 @@ fi
 
 # *** basic crital errors ***
 # multiple binaries
-if [ "$(echo "$BIN_LOCATION" | wc -l)" -gt 0 ] 2> /dev/null; then
+if [ "$(echo "$BIN_LOCATION" | wc -l)" -gt 1 ] 2> /dev/null; then
     conditional_clear
     echo "${BG_RED}${BOLD}Critical${NOFORMAT}: multiple motiv binaries within the motiv dir, unclear how to proceed..."
     echo "          -> locations: "$BIN_LOCATION
