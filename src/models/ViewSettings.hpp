@@ -160,7 +160,7 @@ private:
         {std::pair<std::string, QIcon>{"zoom_out", executablePath.chopped(6) + "/res/tango_icons_png/zoom_out.png"}},
         {std::pair<std::string, QIcon>{"zoom_fit", executablePath.chopped(6) + "/res/tango_icons_png/zoom_fit.png"}},
         {std::pair<std::string, QIcon>{"search", executablePath.chopped(6)+ "/res/tango_icons_png/search.png"}},
-        {std::pair<std::string, QIcon>{"book", executablePath.chopped(6) + ":/res/tango_icons_png/book.png"}},
+        {std::pair<std::string, QIcon>{"book", executablePath.chopped(6) + ":/res/book.png"}},
         {std::pair<std::string, QIcon>{"refresh", executablePath.chopped(6) + "/res/tango_icons_png/refresh.png"}},
         {std::pair<std::string, QIcon>{"maximize", executablePath.chopped(6) + "/res/tango_icons_png/maximize.png"}}
     };

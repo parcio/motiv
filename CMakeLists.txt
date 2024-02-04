@@ -115,4 +115,4 @@ install(TARGETS ${PROJECT_NAME}
         BUNDLE DESTINATION .)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/motiv.desktop DESTINATION share/applications)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/res/motiv.png DESTINATION share/icons)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/res/tango_icons_png/book.png DESTINATION share/icons)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/res/book.png DESTINATION share/icons)
