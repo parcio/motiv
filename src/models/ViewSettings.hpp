@@ -153,7 +153,7 @@ private:
     QString executablePath = QCoreApplication::applicationDirPath();
 
     std::map<std::string, QIcon> Icons_ {
-        {std::pair<std::string, QIcon>{"plus", executablePath.chopped(6) + "/res/tango_icons_png/plus.png"}},
+        {std::pair<std::string, QIcon>{"plus", executablePath.chopped(6) + ":/res/tango_icons_png/plus.png"}},
         {std::pair<std::string, QIcon>{"plus_grey", executablePath.chopped(6) + "/res/tango_icons_png/plus_grey.png"}},
         {std::pair<std::string, QIcon>{"minus", executablePath.chopped(6) + "/res/tango_icons_png/minus.png"}},
         {std::pair<std::string, QIcon>{"zoom_in", executablePath.chopped(6) + "/res/tango_icons_png/zoom_in.png"}},

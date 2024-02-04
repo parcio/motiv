@@ -4,5 +4,6 @@
         <file>res/help.md</file>
         <file>res/style.qss</file>
         <file>res/motiv.png</file>
+        <file>res/tango_icons_png/plus.png</file>
     </qresource>
 </RCC>
