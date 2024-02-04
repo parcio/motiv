@@ -153,16 +153,16 @@ private:
     QString executablePath = QCoreApplication::applicationDirPath();
 
     std::map<std::string, QIcon> Icons_ {
-        {std::pair<std::string, QIcon>{"plus", executablePath.chopped(6) + "/res/tango_icons_png/plus.png"}},
-        {std::pair<std::string, QIcon>{"plus_grey", executablePath.chopped(6) + "/res/tango_icons_png/plus_grey.png"}},
-        {std::pair<std::string, QIcon>{"minus", executablePath.chopped(6) + "/res/tango_icons_png/minus.png"}},
-        {std::pair<std::string, QIcon>{"zoom_in", executablePath.chopped(6) + "/res/tango_icons_png/zoom_in.png"}},
-        {std::pair<std::string, QIcon>{"zoom_out", executablePath.chopped(6) + "/res/tango_icons_png/zoom_out.png"}},
-        {std::pair<std::string, QIcon>{"zoom_fit", executablePath.chopped(6) + "/res/tango_icons_png/zoom_fit.png"}},
-        {std::pair<std::string, QIcon>{"search", executablePath.chopped(6)+ "/res/tango_icons_png/search.png"}},
+        {std::pair<std::string, QIcon>{"plus", ":/res/buttons/plus.png"}},
+        {std::pair<std::string, QIcon>{"plus_grey", ":/res/buttons/plus_grey.png"}},
+        {std::pair<std::string, QIcon>{"minus", ":/res/buttons/minus.png"}},
+        {std::pair<std::string, QIcon>{"zoom_in", ":/res/buttons/zoom_in.png"}},
+        {std::pair<std::string, QIcon>{"zoom_out", ":/res/buttons/zoom_out.png"}},
+        {std::pair<std::string, QIcon>{"zoom_fit", ":/res/buttons/zoom_fit.png"}},
+        {std::pair<std::string, QIcon>{"search", ":/res/buttons/search.png"}},
         {std::pair<std::string, QIcon>{"book", ":/res/buttons/book.png"}},
-        {std::pair<std::string, QIcon>{"refresh", executablePath.chopped(6) + "/res/tango_icons_png/refresh.png"}},
-        {std::pair<std::string, QIcon>{"maximize", executablePath.chopped(6) + "/res/tango_icons_png/maximize.png"}}
+        {std::pair<std::string, QIcon>{"refresh", ":/res/buttons/refresh.png"}},
+        {std::pair<std::string, QIcon>{"maximize", ":/res/buttons/maximize.png"}}
     };
 
     int rankRef;

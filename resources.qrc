@@ -5,5 +5,27 @@
         <file>res/style.qss</file>
         <file>res/motiv.png</file>
         <file>res/buttons/book.png</file>
+        <file>res/buttons/colors.png</file>
+        <file>res/buttons/crit_warning.png</file>
+        <file>res/buttons/emblem_star.png</file>
+        <file>res/buttons/executable.png</file>
+        <file>res/buttons/faq.png</file>
+        <file>res/buttons/folder.png</file>
+        <file>res/buttons/info.png</file>
+        <file>res/buttons/maximize.png</file>
+        <file>res/buttons/measure.png</file>
+        <file>res/buttons/minus.png</file>
+        <file>res/buttons/plus.png</file>
+        <file>res/buttons/plus_grey.png</file>
+        <file>res/buttons/preferences.png</file>
+        <file>res/buttons/questionmark.png</file>
+        <file>res/buttons/refresh.png</file>
+        <file>res/buttons/search.png</file>
+        <file>res/buttons/settings.png</file>
+        <file>res/buttons/start.png</file>
+        <file>res/buttons/warning.png</file>
+        <file>res/buttons/zoom_fit.png</file>
+        <file>res/buttons/zoom_in.png</file>
+        <file>res/buttons/zoom_out.png</file>
     </qresource>
 </RCC>
