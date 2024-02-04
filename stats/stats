@@ -675,7 +675,7 @@ if [ "$GIT_AVAILABLE" = true ]; then
         no_errors=false;
     fi
     if ! [ -d "$MOTIV_LOCATION/.git" ]; then
-        git_info="\ncan't find .git in "$WORK_LOCATIO"\n"
+        git_info="\ncan't find .git in "$MOTIV_LOCATION"\n"
         no_errors=false;
     fi
     if [ "$no_errors" = true ]; then
