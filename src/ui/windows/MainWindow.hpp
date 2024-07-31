@@ -22,17 +22,18 @@
 #include <QMainWindow>
 #include <QElapsedTimer>
 #include <iostream>
-
-#include<QDebug>
+#include <QDebug>
 
 #include "src/ui/widgets/TimeInputField.hpp"
 #include "src/ui/TraceDataProxy.hpp"
 #include "src/ReaderCallbacks.hpp"
+#include "src/ui/windows/SearchPopup.hpp"
 #include "src/ui/widgets/TraceOverviewDock.hpp"
 #include "src/ui/widgets/InformationDock.hpp"
 #include "src/ui/widgets/License.hpp"
 #include "src/ui/widgets/Help.hpp"
 #include "src/ui/widgets/About.hpp"
+#include "src/ui/windows/SettingsPopup.hpp"
 
 /**
  * @brief The main window of the application.
@@ -42,7 +43,7 @@
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-public: // constructors
+public: // constructors & timer for the UI
     /**
      * @brief Creates a new instance of the MainWindow class.
      *
@@ -50,6 +51,9 @@ public: // constructors
      */
     explicit MainWindow(QString filepath = QString());
     ~MainWindow() override;
+
+    void startUITimerIfPossible();
+    void endUITimerIfPossible();
 
 public: Q_SIGNALS:
     // TODO
@@ -59,13 +63,6 @@ public Q_SLOTS:
      * @brief Resets the zoom to show the entire trace.
      */
     void resetZoom();
-
-    /**
-     * @brief Applies a gray filter to all generic functions. 
-     * 
-     * The change is not saved in the ColorConfigFile.
-     */
-    void grayFilter();
 
     /**
      * @brief Deletes all color settings
@@ -92,6 +89,26 @@ public Q_SLOTS:
      */
     void openNewTrace();
 
+    /**
+     * @brief Zooms in the timeline view vertically
+     */
+    void verticalZoomIn();
+
+    /**
+     * @brief Zooms out the timeline view vertically
+     */
+    void verticalZoomOut();
+
+    /**
+     * @brief todo
+     */
+    void refreshView();
+
+    /**
+     * @brief Opens and shows the SearchPopup
+     */
+    void openSearchPopup();
+
 private: // methods
     void createMenus();
     void createToolBars();
@@ -102,10 +119,13 @@ private: // methods
     void loadTrace();
     void loadSettings();
     void openNewWindow(QString path);
+    void showInfo();
 
 private: // widgets
     QToolBar *topToolbar = nullptr;
     QToolBar *bottomToolbar = nullptr;
+    QStatusBar *infoBar = nullptr;
+    QLabel *infoLabel = nullptr;
 
     InformationDock *information = nullptr;
     TraceOverviewDock *traceOverview = nullptr;
@@ -117,6 +137,9 @@ private: // widgets
     Help *helpWindow = nullptr;
     About *aboutWindow = nullptr;
 
+    SearchPopup *searchWindow = nullptr;
+    SettingsPopup *settingsWindow = nullptr;
+
 private: // properties
     QString filepath;
     TraceDataProxy *data = nullptr;
@@ -125,6 +148,9 @@ private: // properties
     ReaderCallbacks *callbacks = nullptr;
 
     ViewSettings *settings = nullptr;
+
+    QElapsedTimer mainUITimer;
+    qint64 currentUITimerValue;
 };
 
 

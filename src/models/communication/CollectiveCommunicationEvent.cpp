@@ -49,7 +49,18 @@ types::communicator * CollectiveCommunicationEvent::getCommunicator() const {
 }
 
 CommunicationKind CollectiveCommunicationEvent::getKind() const {
-    return Collective;
+    switch(operation){
+        case otf2::collective_type::barrier:
+        case otf2::collective_type::all_gather:
+        case otf2::collective_type::all_gatherv:
+        case otf2::collective_type::all_to_all:
+        case otf2::collective_type::all_to_allv:
+        case otf2::collective_type::all_to_allw:
+        case otf2::collective_type::all_reduce:
+            return Synchronizing;
+        default:
+            return Collective;
+    } 
 }
 
 otf2::collective_type CollectiveCommunicationEvent::getOperation() const {

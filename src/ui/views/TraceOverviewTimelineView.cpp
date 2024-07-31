@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Florian Gallrein, Björn Gehrke, Tomas Cirkov
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "TraceOverviewTimelineView.hpp"
+#include "src/models/ViewSettings.hpp"
 #include "src/ui/views/CommunicationIndicator.hpp"
 #include "src/ui/ColorGenerator.hpp"
 #include "src/ui/Constants.hpp"
@@ -26,6 +27,7 @@
 #include <QApplication>
 #include <QWheelEvent>
 #include <QRubberBand>
+#include <qnamespace.h>
 
 TraceOverviewTimelineView::TraceOverviewTimelineView(Trace *fullTrace, QWidget *parent) : QGraphicsView(parent), fullTrace(fullTrace) {
     auto scene = new QGraphicsScene(this);
@@ -33,6 +35,7 @@ TraceOverviewTimelineView::TraceOverviewTimelineView(Trace *fullTrace, QWidget *
     this->setStyleSheet("background: transparent");
     this->setScene(scene);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     selectionFrom = types::TraceTime(0);
     selectionTo = fullTrace->getRuntime();
@@ -47,6 +50,18 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
 
     qreal top = 0;
     auto ROW_HEIGHT = scene->height() / static_cast<qreal>(uiTrace->getSlots().size());
+    std::string searchName_ = ViewSettings::getInstance()->getSearchName().toStdString();
+
+    auto settings = ViewSettings::getInstance();
+    auto useBorder = settings->getUseBorderOverview();
+    auto usePriority = settings->getUsePriorityOverview();
+    auto useRealWidth = settings->getUseRealWidthMainWindow();
+    auto useREGSliderForOV = settings->getUseREGSliderForOV();
+    double activeThresholdOV;
+    useREGSliderForOV ? activeThresholdOV=settings->getActiveThresholdREG() : activeThresholdOV=settings->getActiveThresholdOV();
+    long usedRuntimeForThreshold;
+    useREGSliderForOV ? usedRuntimeForThreshold=selectionTo.count()-selectionFrom.count() : usedRuntimeForThreshold=runtime;
+    
     for (const auto &item: uiTrace->getSlots()) {
         // Display slots
         for (const auto &slot: item.second) {
@@ -59,39 +74,38 @@ void TraceOverviewTimelineView::populateScene(QGraphicsScene *scene) {
             // Ensures slots ending after `end` (like main) are considered to end at end
             auto effectiveEndTime = qMin(end, endTime);
 
+            if(activeThresholdOV){
+                double regLength = effectiveEndTime - effectiveStartTime;
+                double timeFraction = (usedRuntimeForThreshold/1000.0) * activeThresholdOV;
+                if(regLength<timeFraction)continue;
+            }
+
             auto slotBeginPos = qMax(0.0,
                                      (static_cast<qreal>(effectiveStartTime - begin) / static_cast<qreal>(runtime)) *
                                      width);
             auto slotRuntime = static_cast<qreal>(effectiveEndTime - effectiveStartTime);
             auto rectWidth = (slotRuntime / static_cast<qreal>(runtime)) * width;
 
-            QRectF rect(slotBeginPos, top, qMax(rectWidth, 5.0), ROW_HEIGHT);
+            if(!useRealWidth) rectWidth = qMax(rectWidth, 5.0);
+
+            QRectF rect(slotBeginPos, top, rectWidth, ROW_HEIGHT);
             auto rectItem = scene->addRect(rect);
 
             // Determine color based on name
             QColor rectColor = slot->getColor();
-            rectItem->setZValue(slot->priority);
-            
-            /*
-            switch (slot->getKind()) {
-                case ::MPI:
-                    rectColor = colors::COLOR_SLOT_MPI;
-                    rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 2);
-                    break;
-                case ::OpenMP:
-                    rectColor = colors::COLOR_SLOT_OPEN_MP;
-                    rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 1);
-                    break;
-                case ::None:
-                case ::Plain:
-                default:
-                    rectColor = colors::COLOR_SLOT_PLAIN;
-                    rectItem->setZValue(layers::Z_LAYER_SLOTS_MIN_PRIORITY + 0);
-                    break;
-            }
-            */
-
             rectItem->setBrush(rectColor);
+
+            if(!useBorder) rectItem->setPen(Qt::NoPen);
+
+            // Set search filter
+            if(searchName_!= ""){
+                std::string slotName_= slot->region->name().str();
+                if(searchName_ != slot->region->name().str()){ 
+                    rectItem->setBrush(colors::COLOR_SLOT_PLAIN);
+                } else rectItem->setZValue(20);
+
+            } else rectItem->setZValue(usePriority ? slot->priority : 1/rectWidth);
+                
         }
 
         top += ROW_HEIGHT;
@@ -115,15 +129,16 @@ void TraceOverviewTimelineView::resizeEvent(QResizeEvent *event) {
     QGraphicsView::resizeEvent(event);
 }
 
-void TraceOverviewTimelineView::updateUITrace(){    
+void TraceOverviewTimelineView::updateUITrace(){  
     uiTrace = UITrace::forResolution(fullTrace, window()->size().width());
-     this->updateView();
+    this->updateView();
 }
 
 void TraceOverviewTimelineView::updateView() {
     this->scene()->clear();
 
     auto sceneRect = this->rect();
+    // With this -2 offset we can see all of the overview without the need to scroll
     sceneRect.setHeight(size().height() - 2);
 
     this->scene()->setSceneRect(sceneRect);
@@ -166,7 +181,7 @@ void TraceOverviewTimelineView::mouseMoveEvent(QMouseEvent *event)
     rubberBand->setGeometry(QRect(rubberBandOrigin, nextPoint).normalized());
 }
 
-void TraceOverviewTimelineView::mouseReleaseEvent(QMouseEvent *)
+void TraceOverviewTimelineView::mouseReleaseEvent(QMouseEvent *event)
 {
     rubberBand->hide();
 

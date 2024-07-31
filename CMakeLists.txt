@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-project(motiv VERSION 1.0.0 LANGUAGES CXX)
+project(motiv VERSION 2.2.0 LANGUAGES CXX)
 
 set(PROJECT_SOURCE_URL https://github.com/parcio/motiv)
 set(PROJECT_ISSUES_URL ${PROJECT_SOURCE_URL}/issues)
@@ -27,8 +27,10 @@ set(PROJECT_SOURCES
         src/ReaderCallbacks.cpp
         src/main.cpp
         src/models/AppSettings.cpp
+        src/models/ColorMap.cpp
         src/models/Filetrace.cpp
         src/models/Filter.cpp
+        src/models/Search.cpp
         src/models/Slot.cpp
         src/models/SubTrace.cpp
         src/models/UITrace.cpp
@@ -43,6 +45,7 @@ set(PROJECT_SOURCES
         src/models/communication/NonBlockingReceiveEvent.cpp
         src/models/communication/NonBlockingSendEvent.cpp
         src/models/communication/RequestCancelledEvent.cpp
+        src/models/mpianalysis/Node.cpp
         src/ui/ColorGenerator.cpp
         src/ui/ColorSynchronizer.cpp
         src/ui/widgets/InformationDock.cpp
@@ -51,7 +54,9 @@ set(PROJECT_SOURCES
         src/ui/TraceDataProxy.cpp
         src/ui/views/CollectiveCommunicationIndicator.cpp     
         src/ui/views/CommunicationIndicator.cpp
+        src/ui/views/FlamegraphView.cpp
         src/ui/views/GenericIndicator.cpp
+        src/ui/views/NodeIndicator.cpp
         src/ui/views/SlotIndicator.cpp
         src/ui/views/TimelineView.cpp
         src/ui/views/TraceOverviewTimelineView.cpp   
@@ -68,10 +73,15 @@ set(PROJECT_SOURCES
         src/ui/widgets/infostrategies/InformationDockElementBaseStrategy.cpp
         src/ui/widgets/infostrategies/InformationDockSlotStrategy.cpp
         src/ui/widgets/infostrategies/InformationDockTraceStrategy.cpp
+        src/ui/widgets/mpianalysis/LogicalClock.cpp
         src/ui/windows/FilterPopup.cpp
+        src/ui/windows/FlamegraphPopup.cpp
         src/ui/windows/MainWindow.cpp
+        src/ui/windows/MpiAnalysisWindow.cpp
         src/ui/windows/Otf2FileDialog.cpp
         src/ui/windows/RecentFilesDialog.cpp
+        src/ui/windows/SearchPopup.cpp
+        src/ui/windows/SettingsPopup.cpp
         src/utils.cpp
         )
 
@@ -109,3 +119,10 @@ install(TARGETS ${PROJECT_NAME}
         BUNDLE DESTINATION .)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/motiv.desktop DESTINATION share/applications)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/res/motiv.png DESTINATION share/icons)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/res/buttons/book.png DESTINATION share/icons/buttons)
+
+file(GLOB BUTTON_PNG_FILES "${CMAKE_CURRENT_SOURCE_DIR}/res/buttons/*.png")
+foreach(PNG_FILE ${BUTTON_PNG_FILES})
+        install(FILES ${PNG_FILE} DESTINATION share/icons/buttons)
+endforeach()
+

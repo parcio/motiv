@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Florian Gallrein, Björn Gehrke, Jessica Lafontaine
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,14 @@
 
 #include <QSettings>
 #include <QString>
+
+// Swap mode ID to run Motiv in alternative mode by default. 
+// Also, update mode control in main.cpp.
+enum Mode{
+    Default = 0,
+    MPI_Analysis = 1
+};
+
 
 /**
  * @brief Singleton holding persistent information.
@@ -109,6 +117,10 @@ public:
     void clearColorConfig();
 
     bool getuseGlobalColorConfig();
+
+    void setMode(Mode mode);
+
+    Mode getMode();
     
 public: Q_SIGNALS:
     /**
@@ -132,6 +144,7 @@ private:
     QStringList recentlyOpenedFiles_;
     QString colorConfigName_;
     bool useGlobalColorConfig = false;
+    Mode mode = Default;
 };
 
 

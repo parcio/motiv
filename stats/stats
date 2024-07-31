@@ -1,8 +1,30 @@
 #!/bin/bash
 
+#   Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
+#   Copyright (C) 2023 Tomas Cirkov
+#   
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#   
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#   
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# *** constants ***
-CFG_LOCATION=/home/$(whoami)/.config/stats.cfg
+
+
+# *** positions & constants ***
+SCRIPT_LOCATION=$(realpath "$0")
+WORK_LOCATION=$(dirname "$SCRIPT_LOCATION")
+MOTIV_LOCATION=$(dirname "$WORK_LOCATION")
+CFG_LOCATION=$WORK_LOCATION/stats.cfg
+BIN_LOCATION=$(find "$MOTIV_LOCATION" -type f -name "motiv" -exec readlink -f {} \;)
+GIT_AVAILABLE=true;
 DATE_FORMAT="%Y-%m-%d@%H-%M-%S"
 RED=`tput setaf 1`
 GREEN=`tput setaf 2`
@@ -23,7 +45,7 @@ NOFORMAT=`tput sgr0`
 LINEFRAMES=(" / " " ‒ " " \\ " " | ")
 DOTFRAMES=("working   " "working.  " "working.. " "working...") 
 CALIBRATION_QUESTION_1="[1/6] Do you wish to run ${CYAN}${BOLD}memory tests${NOFORMAT} via smem? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
-CALIBRATION_QUESTION_2="[2/6] How many seconds shall stats ${CYAN}${BOLD}wait${NOFORMAT} between a motiv startup and the RAM sampling via smem?"
+CALIBRATION_QUESTION_2="[2/6] How many seconds shall stats ${CYAN}${BOLD}wait${NOFORMAT} between a motiv start and the RAM sampling via smem?"
 CALIBRATION_QUESTION_3="[3/6] How many ${CYAN}${BOLD}decimal places${NOFORMAT} after the decimal point (precision) are required?"
 CALIBRATION_QUESTION_4="[4/6] Do you want to ${CYAN}${BOLD}print debug information${NOFORMAT} (only for time tests) to the terminal? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
 CALIBRATION_QUESTION_5="[5/6] How many ${CYAN}${BOLD}data triplets${NOFORMAT} like <%h%v%u%...> does a <motiv -t [path]>-run produce?"
@@ -38,8 +60,8 @@ trap 'error_line ${LINENO}' ERR
 # we probably don't want to keep logs from situations like "ctrl+c"-ed runs
 clean_up_full() {
     exitcode=$?
-    if [ -f "tmpfile@$file_name" ] && [ "$memory" = "1" ]; then
-        rm tmpfile@$file_name
+    if [ -f "$WORK_LOCATION/tmpfile@$file_name" ] && [ "$memory" = "1" ]; then
+        rm $WORK_LOCATION/tmpfile@$file_name
     fi
     if [ -f "$file_name" ] && [ "$dbg_info" = "0" ] && [ "$exitcode" -gt 0 ]; then
         rm $file_name
@@ -56,7 +78,7 @@ trap 'clean_up_full' EXIT
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     clear
     echo "*******************************************************************************"
-    echo "*** ${CYAN}-h --help${NOFORMAT}              <=> shows legal arguments for 'stats'            ***"
+    echo "*** ${CYAN}-h --help${NOFORMAT}                  <=> shows legal arguments for 'stats'        ***"
     echo "*** ${CYAN}-c --calibration${NOFORMAT}           <=> interactive calibration of 'stats'       ***"
     echo "***                            -> Do we need debug-prints?                  ***"
     echo "***                            -> How precise does our calc. has to be?     ***"
@@ -112,8 +134,8 @@ dbg_info=1
 dbg_log=""
 # how many >>%h%v%u%<< do we have?
 triplet_count=2
-# where do we want to save the results? ("" <=> same dir as stats)
-res_path=""
+# where do we want to save the results? (default choice: same dir as stats)
+res_path=$WORK_LOCATION
 # how many arguments do we have?
 argc=$#
 # how many samples do we want? (first argument)
@@ -181,8 +203,8 @@ read_all_nonflag_params() {
     fi
     if [ -n "$res_path_new" ]; then
         if [ "$res_path_new" == "\"\"" ] ; then
-            # "" means, we want to save the results to the same directory as stats
-            res_path=""
+            # "" means, we want to save the results to default choice
+            res_path=$WORK_LOCATION
         else
             if [ -d "$res_path_new" ]; then
                 res_path=$res_path_new
@@ -237,7 +259,7 @@ if [ "$1" = "-c" ] || [ "$1" = "--calibration" ]; then
     conditional_clear
     if ! [ -f "$CFG_LOCATION" ]; then
         echo -e "${YELLOW}${BOLD}Info${NOFORMAT}: could not find the config file ${CFG_LOCATION} for stats, will create a default config..."
-        echo -e "# do we want to measure memory use? (0 <=> no)\nmemory=0\n# how many seconds have to pass between the start of motiv and the memory snapshot via smem?\ngrace_period=2\n# amount of decimal places after the decimal point\nprecision=3\n# do we want to see debug information? (0 <=> no)\ndbg_info=0\n# how many >>%h%v%u%<< do we have?\ntriplet_count=2\n# where do we want to save the results? ("" <=> same dir as stats)\nres_path=\"\"" >> $CFG_LOCATION
+        echo -e "# do we want to measure memory use? (0 <=> no)\nmemory=0\n# how many seconds have to pass between the start of motiv and the memory snapshot via smem?\ngrace_period=2\n# amount of decimal places after the decimal point\nprecision=3\n# do we want to see debug information? (0 <=> no)\ndbg_info=0\n# how many data "units" does a <motiv -t [path]>-run produce? (1.0.0 has no stats support; version 1.0.1 up to at least 2.1.1 => 2)\ntriplet_count=2\n# where do we want to save the results? (\"\" <=> default choice: same dir as stats)\nres_path=\"\"" >> $CFG_LOCATION
         echo -e "[-/6] Do you wish to proceed with the calibration of the newly created <stats.cfg>? (${BOLD}${GREEN}Y${NOFORMAT}/${BOLD}${RED}N${NOFORMAT})"
         echo ""
         read -p "" -n 1 answer1
@@ -303,7 +325,7 @@ if [ "$1" = "-c" ] || [ "$1" = "--calibration" ]; then
     conditional_clear
     echo ""
     while true; do
-        echo -e "$CALIBRATION_QUESTION_5\n      -> Example (too small): %h1%v1%u1%%h2%v2%u2%%h3%v3%u3% with the value 2 is going to make stats to collect the data for %h1...% up until only %h2...%\n      -> Hint: stats will simply crash if the value is too big"
+        echo -e "$CALIBRATION_QUESTION_5\n      -> Example: %MainWindow::loadTrace()%4%ms%%application in general%73%ms%%\n      -> Hint: the default value for Motiv is 2\n      -> Hint: too small => stats will ignore some data; too big => stats will crash"
         echo ""
         read -p "Answer: " answer5
         if test $answer5 -ge 1 ; then
@@ -351,10 +373,27 @@ else
     # we have a regular stats run
     check_config
     read_all_nonflag_params
-    check_smem
+    if [ "$memory" -ne 0 ]; then
+        check_smem
+    fi
 fi
 
 # *** basic crital errors ***
+# multiple binaries
+if [ "$(echo "$BIN_LOCATION" | wc -l)" -gt 1 ] 2> /dev/null; then
+    conditional_clear
+    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: multiple motiv binaries within the motiv dir, unclear how to proceed..."
+    echo "          -> locations: "$BIN_LOCATION
+    echo "          -> more details via -h/--help"
+    exit 1
+fi
+# can't find motiv
+if ! [ -f "$BIN_LOCATION" ] 2> /dev/null; then
+    conditional_clear
+    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: can't find motiv, expected in: "$BIN_LOCATION
+    echo "          -> more details via -h/--help"
+    exit 1
+fi
 # FAQ: Q1
 # no sample size
 if ! [ "$count" -gt 0 ] 2> /dev/null; then
@@ -473,7 +512,7 @@ do
     	fi
     	
     	# we collect the raw data
-    	output_time=$(time (./build/motiv -t $cur_path 2>/dev/null) 2>&1)
+    	output_time=$(time ($BIN_LOCATION -t $cur_path 2>/dev/null) 2>&1)
     		
     	# that's the array pattern: e(mpty) h(int) v(value) u(unit), e h v u ... time values (user, real, sys)
     	# FAQ: Q4
@@ -485,11 +524,11 @@ do
                
         # RAM usage review
         if [ "$memory" -ne 0 ]; then
-            ./build/motiv $cur_path 2>> tmpfile@$file_name &
+            $BIN_LOCATION $cur_path 2>> $WORK_LOCATION/tmpfile@$file_name &
             prog_pid=$!
             sleep 2
             while true; do
-                if grep -q "motiv ready" tmpfile@$file_name; then
+                if grep -q "motiv ready" $WORK_LOCATION/tmpfile@$file_name; then
                     break
                 fi
             done
@@ -539,7 +578,7 @@ do
             else
                 conditional_clear
                 if [ $val_pos -gt ${#ehvu_array[@]} ]; then
-                    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: out of bound regarding the value array, please check wether <triplet_count=...> in corresponds to the true amount of %h%v%u%-data triplets produced via <./motiv -t [trace]>-runs"
+                    echo "${BG_RED}${BOLD}Critical${NOFORMAT}: out of bound regarding the value array, please check wether <triplet_count=...> in $CFG_LOCATION corresponds to the true amount of %h%v%u%-data triplets produced via <./motiv -t [trace]>-runs"
                 else
                     echo "${BG_RED}${BOLD}Critical${NOFORMAT}: unkown time unit <${RED}${ehvu_array[$(($val_pos+1))]}${NOFORMAT}>, that happend for the ${j}. trace in the ${p}. iteration for the ${q}. sum/metric <${BG_YELLOW}${BOLD}${ehvu_array[$(($val_pos-1))]}${NOFORMAT}>"
                 fi
@@ -628,29 +667,43 @@ done
 
 
 # *** context-information ***
-if [ -n "$(whereis -b git | cut -d ' ' -f 2)" ]; then
-    git fetch
-    git_info="\nGIT\nRepo URL:\t"$(git remote get-url origin)
+if [ "$GIT_AVAILABLE" = true ]; then
+    no_errors=true;
+    git_info="\nGIT\n"
+    if ! [ -n "$(whereis -b git | cut -d ' ' -f 2)" ]; then
+        git_info="\ncan't find git\n!"
+        no_errors=false;
+    fi
+    if ! [ -d "$MOTIV_LOCATION/.git" ]; then
+        git_info="\ncan't find .git in "$MOTIV_LOCATION"\n"
+        no_errors=false;
+    fi
+    if [ "$no_errors" = true ]; then
+        git -C $MOTIV_LOCATION fetch
+        git_info=$git_info"Repo URL:\t\t"$(git -C $MOTIV_LOCATION remote get-url origin)
 
-    # what branch do we test?
-    git_branch=$(git branch --show-current)
-    git_info=$git_info"\nBranch:\t\t"$git_branch
+        # what branch do we test?
+        git_branch=$(git -C $MOTIV_LOCATION branch --show-current)
+        git_info=$git_info"\n\nBranch:\t\t\t"$git_branch"\n"
 
-    # documentation of the development status
+        # documentation of the development status
 
-    # we assume that $(git rev-parse HEAD) represents the current used revision
-    git_local_commit_hash=$(git rev-parse HEAD)
+        # we assume that $(git rev-parse HEAD) represents the current used revision
+        git_local_commit_hash=$(git -C $MOTIV_LOCATION rev-parse HEAD)
 
-    # do we have any changes relative to the most recent branch commit?
-    git_info=$git_info"\n\t\t-> any difference to the latest commit?\n"$git_last_commit$(git diff --stat $git_branch | sed 's/ /\t\t/')
+        # do we have any changes relative to the most recent branch commit?
+        git_info=$git_info"\n\t\t-> any difference to the latest commit?\n"$git_last_commit$(git -C $MOTIV_LOCATION diff --stat $git_branch | sed 's/ /\t\t/')
 
-    git_info=$git_info"\n\nHEAD (Hash):\t"$git_local_commit_hash
-    # do we have any changes relative to the used "version" of our branch?
-    git_info=$git_info"\n\t\t-> any difference to the used revision?\n"$(git diff --stat $git_local_commit_hash | sed 's/ /\t\t/')
+        git_info=$git_info"\n\nHEAD (Hash):\t"$git_local_commit_hash
+        # do we have any changes relative to the used "version" of our branch?
+        git_info=$git_info"\n\n\t\t-> any difference to the used revision?\n"$(git -C $MOTIV_LOCATION diff --stat $git_local_commit_hash | sed 's/ /\t\t/')
+    fi
 fi
 
 echo -e "\n\n\n" >> $path_plus_file_name
 echo -e "***************************\n*** context information ***\n***************************" >> $path_plus_file_name
+echo -e "\n"$($BIN_LOCATION --version) >> $path_plus_file_name
+echo -e $git_info >> $path_plus_file_name
 echo -e "\nOS\n"$(uname -a) >> $path_plus_file_name
 echo -e "\nCPU\n"$(lscpu | grep "Model name:" | sed -r 's/Model name:\s{1,}//g') >> $path_plus_file_name
 # this is an alternative to echo, the upside is that we can keep the format of $(free -h)
@@ -659,17 +712,15 @@ cat <<EOF >> $path_plus_file_name
 RAM
 $(free -h)
 EOF
-echo -e "\nSAMPLE SIZE\n"$count"#" >> $path_plus_file_name
-echo -e $git_info >> $path_plus_file_name
-echo -e "\nSAMPLE-LOG\n"$log >> $path_plus_file_name
 
+echo -e "\nSAMPLE-LOG\nSample size:\t"$count"# (measurements per tracefile)\n"$log >> $path_plus_file_name
 
 # *** final exit ***
 conditional_clear
 echo "${BOLD}stats${NOFORMAT}: ${BG_CYAN}${path_plus_file_name}${NOFORMAT}"
 # small clean up
 if [ "$memory" = "1" ]; then
-    rm tmpfile@$file_name
+    rm $WORK_LOCATION/tmpfile@$file_name
 fi
 exit 0
 
@@ -677,7 +728,7 @@ exit 0
 # *** FAQ ***
 
 # Q1: Why not test against <$#> (rather than <$argc>), if we have enough traces?
-# A1: *Both* will variables will change throughout the script, but with a different meaning: <$#> will be always changed via <shift> up until zero, when we prepare the trace-paths. On the other hand <$argc> will be changed only *and if only* when we discard some paths as unusable!
+# A1: *Both* variables will change throughout the script, but with a different meaning: <$#> will be always changed via <shift> up until zero, when we prepare the trace-paths. On the other hand <$argc> will be changed only *and if only* when we discard some paths as unusable!
 
 # Q2: Why not test against <$1> (rather than <$count>) if we have a plausible sample size?
 # A2: That's a similar situation to Q., <$1> will change it's meaning, while <$count> is a constant and really represents our sample size, <$1> is just the initial way how we get it!

@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Florian Gallrein, Björn Gehrke, Jessica Lafontaine
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,8 +33,7 @@ ReaderCallbacks::ReaderCallbacks(otf2::reader::reader &rdr) :
     collectiveCommunications_(std::vector<CollectiveCommunicationEvent*>()),
     slotsBuilding(),
     program_start_(),
-    rdr_(rdr) {
-        
+    rdr_(rdr) { 
 }
 
 
@@ -60,36 +59,44 @@ void ReaderCallbacks::event(const otf2::definition::location &, const otf2::even
 
 
 void ReaderCallbacks::event(const otf2::definition::location &loc, const otf2::event::enter &event) {
-    auto start = event.timestamp() - this->program_start_;
+    if(mode_ == MPI_Analysis && event.region().paradigm() != otf2::common::paradigm_type::mpi){
+        return;
+    }else{
+        auto start = event.timestamp() - this->program_start_;
 
-    Slot::Builder builder{};
-    auto region = new otf2::definition::region(event.region());
-    auto location = new otf2::definition::location(loc);
-    builder.start(start)->location(location)->region(region);
+        Slot::Builder builder{};
+        auto region = new otf2::definition::region(event.region());
+        auto location = new otf2::definition::location(loc);
+        builder.start(start)->location(location)->region(region);
 
-    std::vector<Slot::Builder> *builders;
-    auto buildersIt = this->slotsBuilding.find(location->ref().get());
-    if (buildersIt == this->slotsBuilding.end()) {
-        builders = new std::vector<Slot::Builder>();
-        this->slotsBuilding.insert({location->ref().get(), builders});
-    } else {
-        builders = buildersIt->second;
-    }
+        std::vector<Slot::Builder> *builders;
+        auto buildersIt = this->slotsBuilding.find(location->ref().get());
+        if (buildersIt == this->slotsBuilding.end()) {
+            builders = new std::vector<Slot::Builder>();
+            this->slotsBuilding.insert({location->ref().get(), builders});
+        } else {
+            builders = buildersIt->second;
+        }
 
-    builders->push_back(builder);
+        builders->push_back(builder);
+        }    
 }
 
 void ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::leave &event) {
-    auto builders = this->slotsBuilding.at(location.ref().get());
+    if(mode_ == MPI_Analysis && event.region().paradigm() != otf2::common::paradigm_type::mpi){
+        return;
+    }else{
+        auto builders = this->slotsBuilding.at(location.ref().get());
 
-    Slot::Builder &builder = builders->back();
+        Slot::Builder &builder = builders->back();
 
-    auto end = event.timestamp() - this->program_start_;
-    builder.end(end);
+        auto end = event.timestamp() - this->program_start_;
+        builder.end(end);
 
-    this->slots_.push_back(new Slot(builder.build()));
+        this->slots_.push_back(new Slot(builder.build()));
 
-    builders->pop_back();
+        builders->pop_back();
+    }
 }
 
 
@@ -100,10 +107,14 @@ void ReaderCallbacks::communicationEvent(T* self, uint32_t matching,
 ) {
     // Check for a pending matching call
     if (matchingPending.contains(matching)) {
-        auto& matchingEvents = matchingPending[matching];
+        auto& matchingEvents = matchingPending[matching];           
         auto matchingEvent = matchingEvents->back();
-
-        auto communication = new Communication(matchingEvent, self);
+        Communication* communication = nullptr;
+        
+        // Check for the source of the start event in non-blocking communication
+        if(matchingEvent->getStartTime()<= self->getStartTime()) communication = new Communication(matchingEvent, self);
+        else communication = new Communication(self, matchingEvent);
+        
         communications_.push_back(communication);
 
         matchingEvents->pop_back();
@@ -138,7 +149,7 @@ void ReaderCallbacks::event(const otf2::definition::location &loc, const otf2::e
     auto comm = new types::communicator(receive.comm());
     auto ev = new BlockingReceiveEvent(relative(receive.timestamp()), location, comm);
 
-    this->communicationEvent(ev, receive.sender(), pendingReceives, pendingSends);
+    this->communicationEvent<BlockingReceiveEvent>(ev, receive.sender(), pendingReceives, pendingSends);
 }
 
 void ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_isend_request &request) {
@@ -152,19 +163,18 @@ void ReaderCallbacks::event(const otf2::definition::location &location, const ot
     builder.start(start);
     builder.receiver(receiver);
 
-    this->uncompletedRequests.insert({request.request_id(), builder});
+    // this->uncompletedIsendRequests.insert({request.request_id(), builder});
+    this->uncompletedIsendRequests[location.ref()].insert({request.request_id(), builder});
 }
 
 void
-ReaderCallbacks::event(const otf2::definition::location &, const otf2::event::mpi_isend_complete &complete) {
-    if (!uncompletedRequests.contains(complete.request_id())) {
+ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_isend_complete &complete) {
+    if (!uncompletedIsendRequests[location.ref()].contains(complete.request_id())) {
         throw std::logic_error("Found a mpi_isend_complete event with no matching mpi_isend_request event!");
     }
 
-    auto builderVariant = uncompletedRequests[complete.request_id()];
-    if(!holds_alternative<NonBlockingSendEvent::Builder>(builderVariant)) {
-        throw std::logic_error("mpi_isend_complete event completes an mpi_ireceive event!");
-    }
+    // auto loc = new otf2::definition::location(location); 
+    auto builderVariant = uncompletedIsendRequests[location.ref()][complete.request_id()];
     
     auto builder = get<NonBlockingSendEvent::Builder>(builderVariant);
 
@@ -173,44 +183,41 @@ ReaderCallbacks::event(const otf2::definition::location &, const otf2::event::mp
 
     auto ev = new NonBlockingSendEvent(builder.build());
 
-    communicationEvent(ev, builder.receiver(), pendingSends, pendingReceives);
+    this->communicationEvent<NonBlockingSendEvent>(ev, builder.receiver(), pendingSends, pendingReceives);
 }
 
 void
-ReaderCallbacks::event(const otf2::definition::location &, const otf2::event::mpi_ireceive_complete &complete) {
-    if (!uncompletedRequests.contains(complete.request_id())) {
+ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_ireceive_complete &complete) {
+    if (!uncompletedIrecvRequests[location.ref()].contains(complete.request_id())) {
         throw std::logic_error("Found a mpi_ireceive_complete event with no matching mpi_ireceive_request event!");
     }
 
-    auto builderVariant = uncompletedRequests[complete.request_id()];
-    if(!holds_alternative<NonBlockingReceiveEvent::Builder>(builderVariant)) {
-        throw std::logic_error("mpi_ireceive_complete event completes an mpi_isend event!");
-    }
-
+    // auto builderVariant = uncompletedIrecvRequests[complete.request_id()];
+    auto builderVariant = uncompletedIrecvRequests[location.ref()][complete.request_id()];
     auto builder = get<NonBlockingReceiveEvent::Builder>(builderVariant);
+
+    auto comm = new types::communicator (complete.comm());
+    auto sender = complete.sender();
+    builder.communicator(comm);
+    builder.sender(sender);
 
     auto end = relative(complete.timestamp());
     builder.end(end);
 
-    auto ev = new NonBlockingReceiveEvent(builder.build());
+    auto ev = new NonBlockingReceiveEvent(builder.build());   
 
-    communicationEvent(ev, builder.sender(), pendingReceives, pendingSends);
+    this->communicationEvent<NonBlockingReceiveEvent>(ev, builder.sender(), pendingReceives, pendingSends);
 }
 
-void
-ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_ireceive_request &request) {
-
+void    
+ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_ireceive_request &request) {        
     NonBlockingReceiveEvent::Builder builder;
-    auto comm = new types::communicator (request.comm());
     auto loc = new otf2::definition::location(location);
-    auto start = relative(request.timestamp());
-    auto sender = request.sender();
-    builder.communicator(comm);
+    auto start = relative(request.timestamp());  
     builder.location(loc);
     builder.start(start);
-    builder.sender(sender);
 
-    this->uncompletedRequests.insert({request.request_id(), builder});
+    this->uncompletedIrecvRequests[location.ref()].insert({request.request_id(), builder});
 }
 
 void ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_request_test &test) {
@@ -235,10 +242,12 @@ ReaderCallbacks::event(const otf2::definition::location &location, const otf2::e
 }
 
 void ReaderCallbacks::event(const otf2::definition::location &location, const otf2::event::mpi_collective_end &anEnd) {
+    using CommGroup = otf2::definition::group<otf2::definition::location, otf2::common::group_type::comm_group>;
+
     if(ongoingCollectiveCommunication == nullptr) {
         ongoingCollectiveCommunication = new CollectiveCommunicationEvent::Builder();
         std::vector<CollectiveCommunicationEvent::Member*> members;
-        auto loc = new otf2::definition::location( location);
+        auto loc = new otf2::definition::location(location);
         auto comm = new types::communicator (anEnd.comm());
         auto operation = anEnd.type();
         auto root = anEnd.root();
@@ -256,13 +265,41 @@ void ReaderCallbacks::event(const otf2::definition::location &location, const ot
     ongoingCollectiveCommunication->members()->push_back(new CollectiveCommunicationEvent::Member(member.build()));
     ongoingCollectiveCommunicationMembers.erase(location.ref().get());
 
-    // If the map is now empty, all ranks have completed the collective operation and the communication event can be build
-    if(ongoingCollectiveCommunicationMembers.empty()){
+    // Check the number of members involved in this collective operation
+    size_t MembersSize = 0;
+    const auto& commVariant = anEnd.comm();
+    auto interComm = std::get_if<otf2::definition::inter_comm>(&commVariant);
+    if (interComm != nullptr) {
+        auto groupA = std::get<CommGroup>(interComm->groupA());
+        auto groupB = std::get<CommGroup>(interComm->groupB());
+        MembersSize = groupA.size()+groupB.size();
+    } else {
+        auto comm = std::get_if<otf2::definition::comm>(&commVariant);
+        if (comm != nullptr) {            
+            auto& group = std::get<CommGroup>(comm->group());
+            MembersSize = group.size();
+        }
+    }
+
+    // If the current number of members equals the actual size of the group,
+    // all ranks have completed the collective operation and the communication event can be build
+    auto currendMembersSize = ongoingCollectiveCommunication->members().get()->size();
+    if(MembersSize == currendMembersSize){ 
         auto event = new CollectiveCommunicationEvent(ongoingCollectiveCommunication->build());
         collectiveCommunications_.push_back(event);
         delete ongoingCollectiveCommunication;
         ongoingCollectiveCommunication = nullptr;
-    }
+     }
+
+    // Old version
+    // // If the map is now empty, all ranks have completed the collective operation and the communication event can be build
+    // if(ongoingCollectiveCommunicationMembers.empty()){
+    //     auto event = new CollectiveCommunicationEvent(ongoingCollectiveCommunication->build());
+    //     collectiveCommunications_.push_back(event);
+    //     delete ongoingCollectiveCommunication;
+    //     ongoingCollectiveCommunication = nullptr;
+    // }
+   
 }
 
 
@@ -294,7 +331,8 @@ void ReaderCallbacks::events_done(const otf2::reader::reader &) {
     std::destroy(this->slotsBuilding.begin(), this->slotsBuilding.end());
     std::destroy(this->pendingSends.begin(), this->pendingSends.end());
     std::destroy(this->pendingReceives.begin(), this->pendingReceives.end());
-    std::destroy(this->uncompletedRequests.begin(), this->uncompletedRequests.end());
+    std::destroy(this->uncompletedIsendRequests.begin(), this->uncompletedIsendRequests.end());
+    std::destroy(this->uncompletedIrecvRequests.begin(), this->uncompletedIrecvRequests.end());
 }
 
 otf2::chrono::duration ReaderCallbacks::relative(otf2::chrono::time_point timepoint) const {

@@ -51,7 +51,7 @@ InformationDockElementBaseStrategy<T>::update(QFormLayout *layout, TimedElement 
     if (t) {
         updateView(layout, t);
     }
-
+    
     return t;
 }
 

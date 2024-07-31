@@ -86,4 +86,5 @@ void GenericIndicator<T, G>::hoverLeaveEvent(QGraphicsSceneHoverEvent *event) {
 
 template class GenericIndicator<Communication, QGraphicsPolygonItem>;
 template class GenericIndicator<Slot, QGraphicsRectItem>;
+template class GenericIndicator<Slot, QGraphicsEllipseItem>;
 template class GenericIndicator<CollectiveCommunicationEvent, QGraphicsRectItem>;

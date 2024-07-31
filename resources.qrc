@@ -4,5 +4,13 @@
         <file>res/help.md</file>
         <file>res/style.qss</file>
         <file>res/motiv.png</file>
+        <file>res/buttons/book.png</file>
+        <file>res/buttons/minus.png</file>
+        <file>res/buttons/plus.png</file>
+        <file>res/buttons/plus_grey.png</file>
+        <file>res/buttons/refresh.png</file>
+        <file>res/buttons/zoom_fit.png</file>
+        <file>res/buttons/zoom_in.png</file>
+        <file>res/buttons/zoom_out.png</file>
     </qresource>
 </RCC>

@@ -20,7 +20,6 @@
 #include <QScrollBar>
 
 ScrollSynchronizer::ScrollSynchronizer(QObject *parent) : QObject(parent) {
-
 }
 
 void ScrollSynchronizer::addWidget(QAbstractScrollArea *newWidget) {
@@ -28,6 +27,7 @@ void ScrollSynchronizer::addWidget(QAbstractScrollArea *newWidget) {
         return;
     }
     for (const auto &widget : this->widgets) {
+        // Classic
         connect(widget->verticalScrollBar(), &QScrollBar::valueChanged, newWidget->verticalScrollBar(), &QScrollBar::setValue);
         connect(newWidget->verticalScrollBar(), &QScrollBar::valueChanged, widget->verticalScrollBar(), &QScrollBar::setValue);
     }

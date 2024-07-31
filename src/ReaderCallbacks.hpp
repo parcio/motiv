@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Florian Gallrein, Björn Gehrke, Jessica Lafontaine
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +21,14 @@
 #include <otf2xx/otf2.hpp>
 #include <cstdint>
 
+#include "src/models/AppSettings.hpp"
 #include "src/models/Slot.hpp"
 #include "src/models/communication/Communication.hpp"
 #include "src/models/communication/NonBlockingSendEvent.hpp"
 #include "src/models/communication/NonBlockingReceiveEvent.hpp"
 #include "src/models/communication/CollectiveCommunicationEvent.hpp"
+
+
 
 template<typename T>
 using BuilderSetLocation = std::function<typename T::Builder *(typename T::Builder &,
@@ -54,6 +57,8 @@ private:
     std::vector<Communication *> communications_;
     std::vector<CollectiveCommunicationEvent *> collectiveCommunications_;
 
+    Mode mode_ = AppSettings::getInstance().getMode();
+
     /**
      * Vectors for building the slot datatypes. Key is the location of the events.
      */
@@ -75,7 +80,11 @@ private:
     /**
      * Vectors for building the non blocking communication datatypes. Key is the request id.
      */
-    std::map<uint64_t, NonBlockingCommunicationEventBuilder> uncompletedRequests;
+    // std::map<uint64_t, NonBlockingCommunicationEventBuilder> uncompletedIsendRequests;
+    std::map<uint64_t, std::map<uint64_t, NonBlockingCommunicationEventBuilder>> uncompletedIsendRequests;
+
+    // std::map<uint64_t, NonBlockingCommunicationEventBuilder> uncompletedIrecvRequests;
+    std::map<uint64_t, std::map<uint64_t, NonBlockingCommunicationEventBuilder>> uncompletedIrecvRequests;
 
     otf2::chrono::time_point program_start_;
     otf2::chrono::time_point program_end_;

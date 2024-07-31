@@ -28,7 +28,9 @@ TimeInputField::TimeInputField(QString text, TimeUnit resolution, types::TraceTi
     this->textLabel = new QLabel(this->text, this);
 
     this->lineEdit = new QLineEdit(QString::number(this->time.count()), this);
-    this->lineEdit->setValidator(new QDoubleValidator(this));
+    auto validator = new QDoubleValidator(this);
+    validator->setLocale(QLocale::English);
+    this->lineEdit->setValidator(validator);
 
     this->comboBox = new QComboBox(this);
     for (const auto &unit : TIME_UNITS) {

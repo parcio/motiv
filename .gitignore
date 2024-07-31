@@ -1,6 +1,10 @@
 .cache
 build
 cmake-build-debug
+stats/*
+!stats/stats
+!stats/stats.cfg
+
 
 .vscode
 .idea

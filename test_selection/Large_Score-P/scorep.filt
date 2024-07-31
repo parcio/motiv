@@ -1,0 +1,27 @@
+SCOREP_FILE_NAMES_BEGIN # This is a comment
+  EXCLUDE */external/*
+  EXCLUDE */frame/*
+  EXCLUDE */share/*
+  EXCLUDE */tools/*
+SCOREP_FILE_NAMES_END
+
+SCOREP_REGION_NAMES_BEGIN
+  EXCLUDE MPI_Comm_rank
+  EXCLUDE vspow_
+  EXCLUDE seccmp_
+  EXCLUDE normalize_basetime_
+  EXCLUDE buffer_for_proc
+  EXCLUDE nfeb_
+  EXCLUDE esmf_basetimemod_mp_esmf_basetimesum_
+  EXCLUDE esmf_basetimemod_mp_esmf_basetimege_
+  EXCLUDE ndaysinyear_
+  EXCLUDE nsecondsinyear_
+  EXCLUDE esmf_basetimemod_mp_esmf_basetimedifference_
+  EXCLUDE buffer_size_for_proc
+  EXCLUDE f_pack_int_
+  EXCLUDE f_unpack_int_
+  EXCLUDE f_unpack_int_ikj_
+  EXCLUDE f_pack_int_ikj_
+  EXCLUDE task_for_point_
+  EXCLUDE rsl_lite_pack_period_
+SCOREP_REGION_NAMES_END

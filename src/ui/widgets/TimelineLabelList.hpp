@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Florian Gallrein, Björn Gehrke, Tomas Cirkov
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #include <QListWidget>
 
+#include "src/models/ViewSettings.hpp"
 #include "src/ui/TraceDataProxy.hpp"
 
 /**
@@ -39,6 +40,8 @@ public:
      * @param parent The parent QWidget
      */
     TimelineLabelList(TraceDataProxy *data, QWidget *parent = nullptr);
+
+    int getMaxLabelLength();
 
 protected:
     /*
@@ -61,6 +64,18 @@ protected:
 
 private:
     TraceDataProxy *data = nullptr;
+    QListWidget* widgetList;
+    QList<QListWidgetItem *> widgetPointerList;
+    QMenu *menu;
+    int maxLabelLength = 0;
+    QAction *labelAction1;
+    void highlightPreparation();
+    QAction *labelAction2;
+    void togglePointToPointPreparation();
+    QAction *labelAction3;
+    void flamegraphPreparation();
+    void resizeLabels();
+    void adjustIcon(QListWidgetItem * rankLabel, int rankKey);
 };
 
 

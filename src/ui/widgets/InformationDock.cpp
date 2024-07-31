@@ -1,6 +1,6 @@
 /*
  * Marvelous OTF2 Traces Interactive Visualizer (MOTIV)
- * Copyright (C) 2023 Florian Gallrein, Björn Gehrke
+ * Copyright (C) 2023 Florian Gallrein, Björn Gehrke, Jessica Lafontaine
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -112,8 +112,6 @@ void InformationDock::addElementStrategy(InformationDockElementStrategy* s) {
     
     auto infoLabel = new QLabel(tr("ⓘ"));
     infoLabel->setToolTip(tr("Check the box to store the colors in GlobalColors.conf"));
-    connect(infoLabel, SIGNAL(hovered()), infoLabel, SLOT(showToolTip()));
-    connect(infoLabel, SIGNAL(unhovered()), infoLabel, SLOT(hideToolTip()));
     gridLayout->addWidget(infoLabel,1,2);
     gridLayout->setContentsMargins(0, 0, 0, 0);
 
